@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 5400);
@@ -9,6 +10,7 @@ const uploadsDir = path.join(root, "uploads");
 const mediaFile = path.join(dataDir, "media.json");
 const authFile = path.join(dataDir, "auth.json");
 const maxUploadBytes = 12 * 1024 * 1024;
+const sessions = new Map();
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -53,6 +55,60 @@ function readAuthData() {
 
 function saveAuthData(payload) {
   saveJsonFile(authFile, payload);
+}
+
+function getAuthToken(req) {
+  const header = req.headers.authorization || "";
+  return header.startsWith("Bearer ") ? header.slice(7) : "";
+}
+
+function getSession(req) {
+  const token = getAuthToken(req);
+  return token ? sessions.get(token) : null;
+}
+
+function createSession(user) {
+  const token = crypto.randomBytes(32).toString("hex");
+  sessions.set(token, { userId: user.id, role: user.role, createdAt: Date.now() });
+  return token;
+}
+
+function sanitizeUser(user, includePrivate = false) {
+  if (!user) return null;
+  const { password, ...rest } = user;
+  if (includePrivate) return rest;
+  const { cpf, scout, birthDate, ...publicUser } = rest;
+  return publicUser;
+}
+
+function dataForCoach(data) {
+  return {
+    ...data,
+    users: data.users.map((user) => sanitizeUser(user, true)),
+  };
+}
+
+function dataForAthlete(data, userId) {
+  const user = data.users.find((item) => item.id === userId);
+  return {
+    users: user ? [sanitizeUser(user, true)] : [],
+    notices: data.notices || [],
+    messages: (data.messages || []).filter((msg) => msg.recipientId === "team" || msg.recipientId === userId || msg.fromId === userId),
+    media: [],
+    events: data.events || [],
+    interests: [],
+  };
+}
+
+function publicData(data) {
+  return {
+    users: [],
+    notices: [],
+    messages: [],
+    media: [],
+    events: data?.events || [],
+    interests: [],
+  };
 }
 
 function sendJson(res, status, payload) {
@@ -130,12 +186,55 @@ function getYoutubeVideoId(url) {
 }
 
 async function handleApi(req, res, cleanUrl) {
+  if (req.method === "GET" && cleanUrl === "/api/public-data") {
+    sendJson(res, 200, publicData(readAuthData() || { events: [] }));
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/login") {
+    try {
+      const body = await collectBody(req, 1024 * 64);
+      const payload = JSON.parse(body.toString("utf8"));
+      const cpf = String(payload.cpf || "").replace(/\D/g, "");
+      const data = readAuthData();
+      if (!data) {
+        sendJson(res, 503, { error: "Banco de dados ainda nao inicializado." });
+        return true;
+      }
+      const user = data.users.find((item) => item.role === payload.role && item.cpf === cpf);
+      if (!user || user.password !== payload.password) {
+        sendJson(res, 401, { error: "Login ou senha invalidos." });
+        return true;
+      }
+      const token = createSession(user);
+      sendJson(res, 200, {
+        token,
+        session: { userId: user.id, role: user.role },
+        data: user.role === "coach" ? dataForCoach(data) : dataForAthlete(data, user.id),
+      });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel fazer login." });
+    }
+    return true;
+  }
+
   if (req.method === "GET" && cleanUrl === "/api/auth") {
-    sendJson(res, 200, readAuthData());
+    const session = getSession(req);
+    if (!session) {
+      sendJson(res, 401, { error: "Sessao expirada ou nao autorizada." });
+      return true;
+    }
+    const data = readAuthData();
+    sendJson(res, 200, session.role === "coach" ? dataForCoach(data) : dataForAthlete(data, session.userId));
     return true;
   }
 
   if (req.method === "POST" && cleanUrl === "/api/auth") {
+    const session = getSession(req);
+    if (!session || session.role !== "coach") {
+      sendJson(res, 403, { error: "Acesso restrito ao treinador." });
+      return true;
+    }
     try {
       const body = await collectBody(req, 1024 * 1024 * 8);
       const payload = JSON.parse(body.toString("utf8"));
@@ -143,10 +242,85 @@ async function handleApi(req, res, cleanUrl) {
         sendJson(res, 400, { error: "Dados invalidos." });
         return true;
       }
+      const current = readAuthData() || { users: [] };
+      const currentById = new Map((current.users || []).map((user) => [user.id, user]));
+      payload.users = payload.users.map((user) => ({
+        ...user,
+        password: user.password || currentById.get(user.id)?.password || "1234",
+      }));
       saveAuthData(payload);
       sendJson(res, 200, { ok: true });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel salvar os dados." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/change-password") {
+    const session = getSession(req);
+    if (!session) {
+      sendJson(res, 401, { error: "Sessao expirada." });
+      return true;
+    }
+    try {
+      const body = await collectBody(req, 1024 * 64);
+      const payload = JSON.parse(body.toString("utf8"));
+      const data = readAuthData();
+      const user = data.users.find((item) => item.id === session.userId);
+      if (!user) {
+        sendJson(res, 404, { error: "Usuario nao encontrado." });
+        return true;
+      }
+      user.password = payload.password;
+      user.mustChangePassword = false;
+      saveAuthData(data);
+      sendJson(res, 200, { data: session.role === "coach" ? dataForCoach(data) : dataForAthlete(data, user.id) });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel trocar a senha." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/athlete-message") {
+    const session = getSession(req);
+    if (!session || session.role !== "athlete") {
+      sendJson(res, 403, { error: "Acesso restrito ao atleta." });
+      return true;
+    }
+    try {
+      const body = await collectBody(req, 1024 * 64);
+      const payload = JSON.parse(body.toString("utf8"));
+      const data = readAuthData();
+      const user = data.users.find((item) => item.id === session.userId);
+      data.messages = data.messages || [];
+      data.messages.push({
+        category: "internal",
+        from: user.name,
+        fromId: user.id,
+        recipientId: "coach-main",
+        recipientName: "Treinador",
+        text: String(payload.text || "").trim(),
+        createdAt: new Date().toISOString(),
+      });
+      saveAuthData(data);
+      sendJson(res, 200, { data: dataForAthlete(data, user.id) });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel enviar a mensagem." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/interests") {
+    try {
+      const body = await collectBody(req, 1024 * 128);
+      const payload = JSON.parse(body.toString("utf8"));
+      const data = readAuthData();
+      data.interests = data.interests || [];
+      data.interests.push(payload);
+      saveAuthData(data);
+      sendJson(res, 201, { ok: true });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel registrar o contato." });
     }
     return true;
   }

@@ -151,272 +151,7 @@ function goalkeeperScout(scores, notes, improvements) {
   };
 }
 
-const athleteSeeds = [
-  {
-    id: "athlete-estevam-goveia-damazio",
-    role: "athlete",
-    name: "Estevam Goveia Damazio",
-    cpf: "20507050770",
-    age: "15",
-    position: "Ponta direita",
-    school: "Heloísa Abreu",
-    scout: {
-      type: "line",
-      scores: {
-        shooting: 7,
-        pass: 7,
-        dribble: 6,
-        ballControl: 6,
-        defense: 7,
-        tacticalIntelligence: 6,
-        positioning: 5,
-        decisionMaking: 6,
-        transition: 6,
-        emotionalControl: 7,
-        discipline: 8,
-        commitment: 8,
-        communication: 7,
-      },
-      notes: "Atleta com potencial extremo, alto, rápido e chute forte. Bom comprometimento com a defesa e em ajudar seus colegas, gosta de jogo em velocidade e tem ótimo salto.",
-      improvements: "Inteligência tática de jogo, direção do arremesso e mais controle de jogo (cadência).",
-      updatedAt: new Date().toISOString(),
-    },
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-otavio-fernandes-da-silva",
-    role: "athlete",
-    name: "OtÃ¡vio Fernandes da Silva",
-    cpf: "20938472720",
-    birthDate: "2008-04-09",
-    age: "17",
-    position: "Pivo",
-    scout: lineScout({ shooting: 8, dribble: 5, defense: 7, pass: 7, positioning: 6, reading: 6, discipline: 8, commitment: 9 }, "Atleta fora da idade das categorias que temos no momento, mas devido ao seu excelente comportamento e capacidade tÃ©cnica mantemos sua presenÃ§a com o grupo. Tem um arremesso muito poderoso e assertivo. Muita forÃ§a fÃ­sica e por ser alto vence maioria dos duelos na barreira. Tem muito potencial ainda pra ser desenvolvido.", "Atleta um pouco lento, pouca leitura de jogo, necessita ajustar melhor sua movimentaÃ§Ã£o de jogo dentro da barreira e desenvolver melhor suas fintas e capacidade de giro rÃ¡pido na barreira."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-jheniffer-de-oliveira-lopes",
-    role: "athlete",
-    name: "Jheniffer de Oliveira Lopes",
-    cpf: "18505253744",
-    birthDate: "2012-03-12",
-    age: "14",
-    position: "Ponta",
-    scout: lineScout({ shooting: 4, dribble: 3, defense: 3, pass: 5, positioning: 6, reading: 2, discipline: 8, commitment: 6 }, "Atleta com grande potencial, Ã© esforÃ§ada e tem um passe regular. Disciplinada no geral fazendo os exercÃ­cios propostos.", "Uma dica seria cuidar mais do seu prÃ³prio desenvolvimento, focando no seu treino sem ficar grudada com ninguÃ©m, tem perdido muita evoluÃ§Ã£o por conta de depender da presenÃ§a de amizades durante o treino, o que compromete muito seu desenvolvimento. Tenha mais foco nas coisas que competem a sua vida."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-kaio-lucas-da-silva-martins",
-    role: "athlete",
-    name: "Kaio Lucas da Silva Martins",
-    cpf: "",
-    birthDate: "",
-    age: "14",
-    position: "Ponta",
-    scout: lineScout({ shooting: 5, dribble: 2, defense: 3, pass: 4, positioning: 4, reading: 4, discipline: 7, commitment: 7 }, "Atleta recÃ©m chegado ao grupo, grande potencial para ponta ou armador, Ã© veloz e tem um arremesso forte.", "Necessita evoluir em muitos fundamentos, o que Ã© super normal pra quem estÃ¡ comeÃ§ando. Atleta tem muito potencial para ponteiro ou armador."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-geisielly-siqueira-dos-santos",
-    role: "athlete",
-    name: "Geisielly Siqueira dos Santos",
-    cpf: "20431200777",
-    birthDate: "2010-11-19",
-    age: "15",
-    position: "Armador",
-    scout: lineScout({ shooting: 6, dribble: 6, defense: 6, pass: 7, positioning: 7, reading: 8, discipline: 10, commitment: 9 }, "Atleta que jÃ¡ tem muito tempo conosco, nesse tempo houve muita evoluÃ§Ã£o em seu estilo de jogo, melhorando sua capacidade tÃ©cnica e inteligÃªncia de jogo. Seus arremessos costumam ser muito corretos dando pouca chance para as goleiras, exceto quando cansa ou perde a concentraÃ§Ã£o. Muito comunicativa com a equipe na defesa e vibrante durante todo o jogo.", "Necessita mais agressividade na marcaÃ§Ã£o, manter a concentraÃ§Ã£o num tempo maior da partida, decisÃ£o com a bola na hora do passe Ã© um ponto importante pra se melhorar, tentar usar mais suas fintas e arremessos de fora."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-kayllan-bryan-da-silva-martins",
-    role: "athlete",
-    name: "Kayllan Bryan da Silva Martins",
-    cpf: "19077283765",
-    birthDate: "2012-07-22",
-    age: "14",
-    position: "Ponta",
-    school: "Heloísa Abreu",
-    scout: lineScout({ shooting: 6, dribble: 4, defense: 4, pass: 7, positioning: 7, reading: 5, discipline: 8, commitment: 7 }, "Atleta geralmente dedicado, com bons arremessos pelas pontas, bom passe no geral, e muita energia dentro da quadra pois vibra bastante com seus gols e de sua equipe.", "Pode melhorar mais sua movimentaÃ§Ã£o sem a bola, sua comunicaÃ§Ã£o com a defesa, leitura de jogo, tentar mais fintas no um pra um e ser mais agressivo na defesa. Uma observaÃ§Ã£o importante Ã© que tenho visto o atleta meio desmotivado em alguns exercÃ­cios, nÃ£o realizando os mesmos na mesma intensidade que o resto do grupo."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-arthur-henrique-martins-de-oliveira",
-    role: "athlete",
-    name: "Arthur Henrique Martins de Oliveira",
-    cpf: "18555606748",
-    birthDate: "2014-03-23",
-    age: "12",
-    position: "Ponta",
-    scout: lineScout({ shooting: 4, dribble: 3, defense: 1, pass: 4, positioning: 3, reading: 2, discipline: 9, commitment: 8 }, "Atleta recÃ©m chegado ao grupo, nÃ£o hÃ¡ muito do que se cobrar dele ainda, mas jÃ¡ se pode ver muito potencial, atleta respeitoso, dedicado com bom passe e bom chute de curta distÃ¢ncia.", "Ponto principal de evoluÃ§Ã£o neste primeiro momento Ã© entender e guardar posicionamento dentro da quadra de acordo com a posiÃ§Ã£o que ele entrar, as demais coisas virÃ£o com mais treinamentos de acordo com sua dedicaÃ§Ã£o nos treinamentos."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-mateus-cristiano-dias-souza",
-    role: "athlete",
-    name: "Mateus Cristiano Dias Souza",
-    cpf: "15795731773",
-    birthDate: "2009-10-14",
-    age: "16",
-    position: "Goleiro",
-    scout: goalkeeperScout({ shooting: 8, dribble: 6, defense: 6, pass: 7, positioning: 6, reading: 6, discipline: 7, commitment: 6 }, "Atleta com boa qualidade debaixo da trave, costuma fazer grandes defesas no um pra um, tem bom passe e Ã© bem disciplinado. HÃ¡ muita margem de crescimento pois Ã© muito talentoso no gol.", "Precisa ter mais gana de treinar, se dedicar mais nos treinamentos quando estÃ¡ presente, atleta falta muitos treinos, nÃ£o se comunica direito com a defesa e pode melhorar mais nas bolas baixas onde Ã© seu ponto mais negativo como goleiro. Se houver comprometimento do atleta pode alcanÃ§ar um nÃ­vel incrÃ­vel."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-davi-silva-neves-de-oliveira-souza",
-    role: "athlete",
-    name: "Davi Silva Neves de Oliveira Souza",
-    cpf: "23396629744",
-    birthDate: "2009-12-07",
-    age: "16",
-    position: "Ponta",
-    scout: lineScout({ shooting: 6, dribble: 4, defense: 6, pass: 6, positioning: 6, reading: 4, discipline: 6, commitment: 8 }, "Atleta bastante dedicado, com bom arremesso pois tem muita forÃ§a, passe razoÃ¡vel, muita velocidade e consegue fazer boa flutuaÃ§Ã£o na defesa adversÃ¡ria criando boas situaÃ§Ãµes pra seus colegas na quadra.", "Necessita ser mais disciplinado nos treinamentos, tem muito potencial e jÃ¡ poderia estar muito avanÃ§ado em muitos fundamentos, mas o excesso de brincadeiras em horas inapropriadas e vÃ¡rios momentos de descontraÃ§Ã£o atrapalham sua evoluÃ§Ã£o."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-ana-beatriz-costa-da-silva",
-    role: "athlete",
-    name: "Ana Beatriz Costa da Silva",
-    cpf: "21131817702",
-    birthDate: "2010-05-26",
-    age: "15",
-    position: "Armador",
-    scout: lineScout({ shooting: 7, dribble: 6, defense: 6, pass: 7, positioning: 7, reading: 6, discipline: 8, commitment: 9 }, "Atleta com muito potencial, tem muita forÃ§a fÃ­sica, arremesso poderoso, rÃ¡pida apesar da altura, agressiva no ataque se move bastante, contagia o grupo vibrando nas jogadas, boa comunicaÃ§Ã£o com a equipe, teve boa melhora defensiva e disciplinar.", "Necessita ler melhor o jogo em alguns momentos, entender o tempo de cadÃªncia e acelerar o jogo. Pode melhorar mais na defesa principalmente no um pra um quando Ã© necessÃ¡rio individual. Pode melhorar ainda mais seu arremesso de fora dando direÃ§Ã£o oposta ao posicionamento da goleira."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-miguel-candido-duarte-marques",
-    role: "athlete",
-    name: "Miguel CÃ¢ndido Duarte Marques",
-    cpf: "20373380747",
-    birthDate: "2012-08-29",
-    age: "14",
-    position: "Goleiro",
-    school: "Heloísa Abreu",
-    scout: goalkeeperScout({ shooting: 7, dribble: 6, defense: 6, pass: 6, positioning: 6, reading: 8, discipline: 6, commitment: 6 }, "Atleta com maior evoluÃ§Ã£o na equipe pra mim em questÃ£o tÃ©cnica, deu um salto de qualidade na capacidade de defesas difÃ­ceis durante o jogo, tem se posicionado bem na maioria das vezes na baliza, tem excelente comunicaÃ§Ã£o com a defesa e ainda tem muita margem pra crescimento.", "O atleta em minha visÃ£o tem seu maior desafio de melhora na questÃ£o comportamental e emocional, hÃ¡ pontos de melhora para posicionamento de baliza, resposta rÃ¡pida ao chute do adversÃ¡rio no um pra um e reposiÃ§Ã£o rÃ¡pida pra contra ataque."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-davi-batista-da-silva",
-    role: "athlete",
-    name: "Davi Batista da Silva",
-    cpf: "21588555763",
-    birthDate: "2010-05-14",
-    age: "16",
-    position: "Ponta",
-    scout: lineScout({ shooting: 6, dribble: 5, defense: 7, pass: 6, positioning: 7, reading: 6, discipline: 7, commitment: 9 }, "Atleta veloz, muito combativo na defesa, versÃ¡til pois pode fazer varias funÃ§Ãµes dentro de jogo e bastante dedicado.", "Precisa melhorar postura na hora do arremesso, mais comunicaÃ§Ã£o com a defesa, reclamar menos sobre arbitragem e desenvolver melhor as fintas."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-cleverson-da-silva-vitorino",
-    role: "athlete",
-    name: "Cleverson da Silva Vitorino",
-    cpf: "21105691748",
-    birthDate: "2011-04-21",
-    age: "15",
-    position: "Ponta",
-    school: "Heloísa Abreu",
-    scout: lineScout({ shooting: 6, dribble: 4, defense: 4, pass: 5, positioning: 6, reading: 4, discipline: 8, commitment: 8 }, "Atleta versÃ¡til, joga tanto no gol como na linha. Excelente potencial no gol mas atualmente segue atuando como ponteiro onde tambÃ©m existe muito potencial, arremesso forte, boa impulsÃ£o e boa disciplina.", "Precisa ajustar o controle do arremesso pois ainda perde muitos gols. Precisa de mais agressividade na marcaÃ§Ã£o e manter o corpo mais firme nas divididas e contatos."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-gabriel-filipe-costa-salles",
-    role: "athlete",
-    name: "Gabriel Filipe Costa Salles",
-    cpf: "16933787796",
-    birthDate: "2010-08-02",
-    age: "15",
-    position: "Armador",
-    scout: lineScout({ shooting: 7, dribble: 5, defense: 7, pass: 6, positioning: 6, reading: 4, discipline: 8, commitment: 7 }, "Atleta com potencial extremo, muita forÃ§a fÃ­sica, arremesso poderoso, forte na defesa, tem bom salto e tiro de 9M, tambÃ©m Ã© muito disciplinado.", "Pode melhorar a explosÃ£o de sua finta lateral e de giro, precisa melhorar as decisÃµes de jogo como quando passar e quando chutar forte ou com mais tÃ©cnica diante do gol, mais comunicaÃ§Ã£o com sua equipe, principalmente pivÃ´s e pontas."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-pietro-ramos-dos-santos",
-    role: "athlete",
-    name: "Pietro Ramos dos Santos",
-    cpf: "22673796789",
-    birthDate: "2011-12-21",
-    age: "14",
-    position: "Pivo",
-    scout: lineScout({ shooting: 8, dribble: 6, defense: 7, pass: 7, positioning: 8, reading: 6, discipline: 10, commitment: 10 }, "Atleta com muita qualidade no arremesso com boa variaÃ§Ã£o de chutes no alto e no baixo, muita forÃ§a fÃ­sica, controle do corpo no momento do arremesso, passe com qualidade e boa comunicaÃ§Ã£o com a equipe em todas as fases, seja ataque ou defesa. Atleta muito dedicado buscando sempre aprender mais sobre a posiÃ§Ã£o que joga.", "Precisa de mais mobilidade na barreira e ataque aos espaÃ§os durante engajamento. Quando fica cansado costuma errar mais arremessos, precisa ter atenÃ§Ã£o com isso e dosar o arremesso com mais inteligÃªncia."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-rebeca-siqueira-gomes",
-    role: "athlete",
-    name: "Rebeca Siqueira Gomes",
-    cpf: "20616987781",
-    birthDate: "2011-05-16",
-    age: "15",
-    position: "Goleiro",
-    scout: goalkeeperScout({ shooting: 5, dribble: 4, defense: 3, pass: 4, positioning: 5, reading: 5, discipline: 8, commitment: 7 }, "Atleta recÃ©m chegada, mas com muito potencial no gol, dedicada e vem evoluindo bem nos fundamentos.", "ComunicaÃ§Ã£o com a defesa, saÃ­da do gol e defesas de bolas baixas."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-rodrigo-matos-de-brito",
-    role: "athlete",
-    name: "Rodrigo Matos de Brito",
-    cpf: "17412450794",
-    birthDate: "2010-10-28",
-    age: "15",
-    position: "Armador",
-    scout: lineScout({ shooting: 7, dribble: 6, defense: 6, pass: 7, positioning: 7, reading: 6, discipline: 8, commitment: 10 }, "Atleta com boa lideranÃ§a de grupo, dedicado e com Ã³tima qualidade no arremesso e muita velocidade. Teve boa evoluÃ§Ã£o nos aspectos defensivos e vem adquirindo mais inteligÃªncia tÃ¡tica de jogo.", "Necessita evoluir na finta, pode ser mais agressivo na marcaÃ§Ã£o se dedicar mais a essa questÃ£o. Necessita melhorar seu salto com a bola. Pode melhorar seu posicionamento de quadra sem a bola."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-miguel-felipe-da-silva-alves",
-    role: "athlete",
-    name: "Miguel Felipe da Silva Alves",
-    cpf: "",
-    birthDate: "",
-    age: "15",
-    position: "Armador",
-    scout: lineScout({ shooting: 7, dribble: 5, defense: 5, pass: 7, positioning: 6, reading: 6, discipline: 9, commitment: 8 }, "Atleta com boa evoluÃ§Ã£o na armaÃ§Ã£o e construÃ§Ã£o de jogadas, inteligente na criaÃ§Ã£o e muito disciplinado. Arremesso de qualidade e boa impulsÃ£o. Apresenta melhora no combate defensivo.", "Precisa evoluir no ataque aos espaÃ§os vazios, na velocidade do jogo quando precisa, reforÃ§ar mais a marcaÃ§Ã£o e desenvolver mais a finta."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-irilene-lopes-da-silva",
-    role: "athlete",
-    name: "Irilene Lopes da Silva",
-    cpf: "23274311740",
-    birthDate: "2009-07-06",
-    age: "16",
-    position: "Armador",
-    scout: lineScout({ shooting: 4, dribble: 4, defense: 3, pass: 5, positioning: 5, reading: 4, discipline: 9, commitment: 10 }, "Atleta versÃ¡til, pode jogar na armaÃ§Ã£o e na ponta e faz boa flutuaÃ§Ã£o como pivÃ´, disciplinada e muito dedicada nas atividades propostas, muita margem para crescimento.", "Aspectos tÃ©cnicos individuais podem ser melhorados como finta, arremesso e combate defensivo."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-  {
-    id: "athlete-kayke-da-silva-pequeno",
-    role: "athlete",
-    name: "Kayke da Silva Pequeno",
-    cpf: "",
-    birthDate: "",
-    age: "14",
-    position: "Ponta",
-    school: "Heloísa Abreu",
-    scout: lineScout({ shooting: 4, dribble: 3, defense: 2, pass: 4, positioning: 3, reading: 3, discipline: 6, commitment: 5 }, "Atleta recÃ©m acolhido pelo grupo, com mÃ©dia de treinos baixa devido a trabalho e com muita margem de melhora.", "Arremesso, finta, drible, defesa, inteligÃªncia e obediÃªncia tÃ¡tica."),
-    password: defaultPassword,
-    mustChangePassword: true,
-  },
-];
+const athleteSeeds = [];
 
 const scoutTemplates = {
   line: [
@@ -453,21 +188,23 @@ window.addEventListener("hashchange", renderRoute);
 initApp();
 
 async function initApp() {
-  authDataCache = await fetchBackendAuthData();
+  authDataCache = await fetchBackendAuthData("/api/public-data");
   if (!authDataCache) {
-    const legacy = localStorage.getItem(authStoreKey);
-    authDataCache = legacy ? JSON.parse(legacy) : createInitialAuthData();
-    saveAuthData(authDataCache);
+    authDataCache = createInitialAuthData();
   } else {
-    const data = getAuthData();
-    saveAuthData(data);
+    getAuthData();
   }
   renderRoute();
 }
 
-async function fetchBackendAuthData() {
+function getAuthHeaders() {
+  const session = getSession();
+  return session?.token ? { Authorization: `Bearer ${session.token}` } : {};
+}
+
+async function fetchBackendAuthData(url = "/api/auth") {
   try {
-    const response = await fetch("/api/auth", { cache: "no-store" });
+    const response = await fetch(url, { cache: "no-store", headers: getAuthHeaders() });
     if (!response.ok) return null;
     return await response.json();
   } catch (error) {
@@ -478,7 +215,7 @@ async function fetchBackendAuthData() {
 function persistBackendAuthData(data) {
   fetch("/api/auth", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(data),
   }).catch(() => {
     localStorage.setItem(authStoreKey, JSON.stringify(data));
@@ -1507,8 +1244,8 @@ function getSession() {
   return saved ? JSON.parse(saved) : null;
 }
 
-function setSession(user) {
-  localStorage.setItem(sessionStoreKey, JSON.stringify({ userId: user.id, role: user.role }));
+function setSession(user, token = getSession()?.token || "") {
+  localStorage.setItem(sessionStoreKey, JSON.stringify({ userId: user.id, role: user.role, token }));
 }
 
 function clearSession() {
@@ -2272,27 +2009,30 @@ function bindScoutRangeInputs() {
   });
 }
 
-function handleLogin(event) {
+async function handleLogin(event) {
   event.preventDefault();
   const role = event.currentTarget.dataset.role;
   const login = onlyDigits(document.querySelector("#loginId").value);
   const password = document.querySelector("#loginPassword").value;
-  const data = getAuthData();
   if (login.length !== 11) {
     showPortalMessage("Digite um CPF valido com 11 numeros.", "error");
     return;
   }
-  if (role === "coach" && login !== coachCpf) {
-    showPortalMessage("CPF nao autorizado para a Area Treinador.", "error");
-    return;
+  try {
+    const response = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, cpf: login, password }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Login ou senha invalidos.");
+    authDataCache = payload.data;
+    const user = authDataCache.users.find((item) => item.id === payload.session.userId);
+    setSession(user, payload.token);
+    renderRoute();
+  } catch (error) {
+    showPortalMessage(error.message, "error");
   }
-  const user = data.users.find((item) => item.role === role && item.cpf === login);
-  if (!user || user.password !== password) {
-    showPortalMessage("Login ou senha invalidos. Confira os dados de acesso.", "error");
-    return;
-  }
-  setSession(user);
-  renderRoute();
 }
 
 function handlePositionPreview(event) {
@@ -2307,7 +2047,7 @@ function handleBirthDateAgeUpdate(event) {
   if (ageInput) ageInput.value = calculateAgeFromBirthDate(event.currentTarget.value);
 }
 
-function handlePasswordChange(event) {
+async function handlePasswordChange(event) {
   event.preventDefault();
   const userId = event.currentTarget.dataset.userId;
   const password = document.querySelector("#newPassword").value;
@@ -2320,13 +2060,21 @@ function handlePasswordChange(event) {
     showPortalMessage("As senhas nao conferem.", "error");
     return;
   }
-  const data = getAuthData();
-  const user = data.users.find((item) => item.id === userId);
-  user.password = password;
-  user.mustChangePassword = false;
-  saveAuthData(data);
-  setSession(user);
-  renderRoute();
+  try {
+    const response = await fetch("/api/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify({ password }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Nao foi possivel trocar a senha.");
+    authDataCache = payload.data;
+    const user = authDataCache.users.find((item) => item.id === userId);
+    setSession(user);
+    renderRoute();
+  } catch (error) {
+    showPortalMessage(error.message, "error");
+  }
 }
 
 function openInterestForm(type) {
@@ -2372,9 +2120,15 @@ function handleInterestSubmit(event) {
     if (feedback) feedback.textContent = "Escolha uma duração e valor para a aula particular.";
     return;
   }
-  const data = getAuthData();
-  data.interests.push(item);
-  saveAuthData(data);
+  fetch("/api/interests", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item),
+  }).catch(() => {
+    const data = getAuthData();
+    data.interests.push(item);
+    saveAuthData(data);
+  });
 
   const typeLabel = type === "seletiva" ? "participar da seletiva" : type === "aula" ? "solicitar aula particular" : "tirar dúvidas";
   const whatsappMessage = [
@@ -2629,21 +2383,21 @@ function handleScoutSave(event) {
   if (message) message.textContent = "Scout salvo com sucesso.";
 }
 
-function handleAthleteMessage(event) {
+async function handleAthleteMessage(event) {
   event.preventDefault();
-  const user = getCurrentUser("athlete");
-  const data = getAuthData();
-  data.messages.push({
-    category: "internal",
-    from: user.name,
-    fromId: user.id,
-    recipientId: "coach-main",
-    recipientName: "Treinador",
-    text: document.querySelector("#athleteMessage").value.trim(),
-    createdAt: new Date().toISOString(),
-  });
-  saveAuthData(data);
-  renderRoute();
+  try {
+    const response = await fetch("/api/athlete-message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify({ text: document.querySelector("#athleteMessage").value.trim() }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Nao foi possivel enviar a mensagem.");
+    authDataCache = payload.data;
+    renderRoute();
+  } catch (error) {
+    showPortalMessage(error.message, "error");
+  }
 }
 
 function handleAction(event) {
