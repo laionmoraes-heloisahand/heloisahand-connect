@@ -1037,7 +1037,7 @@ function renderPublicEventItem(event) {
   `;
 }
 
-function renderCalendarMonth(events) {
+function renderCalendarMonth(events, interactive = false) {
   const reference = events[0] ? getEventDate(events[0]) : new Date();
   const year = reference.getFullYear();
   const month = reference.getMonth();
@@ -1051,7 +1051,7 @@ function renderCalendarMonth(events) {
     const key = getDateKey(day);
     const dayEvents = events.filter((event) => event.date === key);
     return `
-      <div class="calendar-cell ${day.getMonth() !== month ? "muted" : ""} ${key === todayKey ? "today" : ""}">
+      <div class="calendar-cell ${day.getMonth() !== month ? "muted" : ""} ${key === todayKey ? "today" : ""} ${interactive ? "clickable" : ""}" ${interactive ? `data-action="select-event-date" data-event-date="${key}" title="Adicionar evento em ${day.toLocaleDateString("pt-BR")}"` : ""}>
         <strong>${day.getDate()}</strong>
         <div class="calendar-event-stack">
           ${dayEvents.map((event) => `<span class="calendar-chip ${event.type}">${event.time} ${escapeHtml(event.title)}</span>`).join("")}
@@ -1201,6 +1201,11 @@ function normalizeAuthData(data) {
     normalized.messages = [];
     changed = true;
   }
+  if (!Array.isArray(normalized.attendance)) {
+    normalized.attendance = [];
+    changed = true;
+  }
+  if (repairObjectText(normalized)) changed = true;
   if (ensureSeedAthletes(normalized)) changed = true;
   if (normalizeSavedAthleteData(normalized)) changed = true;
   if (coachCpf && coach && coach.cpf !== coachCpf) {
@@ -1300,6 +1305,38 @@ function calculateAgeFromBirthDate(date, reference = new Date()) {
     (reference.getMonth() === birth.getMonth() && reference.getDate() >= birth.getDate());
   if (!hadBirthday) age -= 1;
   return String(age);
+}
+
+function repairMojibakeText(value) {
+  if (typeof value !== "string" || !/[ÃÂâ]/.test(value)) return value;
+  let current = value;
+  for (let index = 0; index < 3 && /[ÃÂâ]/.test(current); index += 1) {
+    const bytes = Uint8Array.from(Array.from(current), (char) => char.charCodeAt(0) & 255);
+    const decoded = new TextDecoder("utf-8").decode(bytes);
+    if (!decoded || decoded === current || decoded.includes("�")) break;
+    current = decoded;
+  }
+  return current;
+}
+
+function repairObjectText(value) {
+  let changed = false;
+  const visit = (item) => {
+    if (!item || typeof item !== "object") return;
+    Object.keys(item).forEach((key) => {
+      if (typeof item[key] === "string") {
+        const repaired = repairMojibakeText(item[key]);
+        if (repaired !== item[key]) {
+          item[key] = repaired;
+          changed = true;
+        }
+      } else if (typeof item[key] === "object") {
+        visit(item[key]);
+      }
+    });
+  };
+  visit(value);
+  return changed;
 }
 
 function showPortalMessage(message, type = "ok") {
@@ -1500,7 +1537,7 @@ function renderCoachEvents(data) {
         <div id="portalMessage" class="portal-message"></div>
       </form>
     </div>
-    ${renderCalendarMonth(events)}
+    ${renderCalendarMonth(events, true)}
     <div class="event-list-panel">
       <h3>Proximos eventos publicados</h3>
       <div class="coach-event-list">
@@ -1731,8 +1768,73 @@ function renderNoticeManager(data) {
 }
 
 function renderAttendanceManager(data) {
-  const athletes = data.users.filter((user) => user.role === "athlete");
-  return `<div class="coach-panel-head"><h3>Presencas</h3></div><div class="portal-card"><p>Marque presenca dos atletas cadastrados. Esta versao salva localmente para teste.</p><div class="attendance-list">${athletes.length ? athletes.map((athlete) => `<label class="attendance-row"><input type="checkbox" /> ${athlete.name}</label>`).join("") : "Cadastre atletas primeiro."}</div></div>`;
+  const athletes = data.users.filter((user) => user.role === "athlete").sort((a, b) => a.name.localeCompare(b.name));
+  return `
+    <div class="coach-panel-head">
+      <h3>Presencas</h3>
+      <p class="panel-subtitle">Controle presencas, faltas e acompanhe a frequencia de cada atleta nos treinos.</p>
+    </div>
+    <div class="attendance-table portal-card">
+      <div class="attendance-row attendance-head">
+        <span>Atleta</span>
+        <span>Presencas</span>
+        <span>Faltas</span>
+        <span>Frequencia</span>
+        <span></span>
+      </div>
+      ${
+        athletes.length
+          ? athletes.map((athlete) => renderAttendanceRow(athlete, getAttendanceRecord(data, athlete.id))).join("")
+          : `<div class="empty-state compact"><strong>Nenhum atleta cadastrado.</strong><p>Cadastre atletas primeiro para controlar a frequencia.</p></div>`
+      }
+    </div>
+  `;
+}
+
+function getAttendanceRecord(data, athleteId) {
+  return (data.attendance || []).find((item) => item.athleteId === athleteId) || { athleteId, presences: 0, absences: 0, notes: "" };
+}
+
+function getAttendanceRate(record) {
+  const presences = Number(record.presences || 0);
+  const absences = Number(record.absences || 0);
+  const total = presences + absences;
+  if (!total) return null;
+  return Math.round((presences / total) * 100);
+}
+
+function renderAttendanceRow(athlete, record) {
+  const rate = getAttendanceRate(record);
+  const rateClass = rate === null ? "empty" : rate >= 75 ? "good" : rate >= 50 ? "warn" : "danger";
+  return `
+    <div class="attendance-row">
+      <div class="attendance-athlete">
+        <strong>${escapeHtml(athlete.name)}</strong>
+        <small>${escapeHtml(athlete.position || "Posicao a definir")}</small>
+      </div>
+      <div class="attendance-count present"><strong>${Number(record.presences || 0)}</strong><small>presencas</small></div>
+      <div class="attendance-count absent"><strong>${Number(record.absences || 0)}</strong><small>faltas</small></div>
+      <div class="frequency-cell ${rateClass}">
+        ${
+          rate === null
+            ? `<span>Sem dados</span>`
+            : `<div class="frequency-bar"><i style="width: ${rate}%"></i></div><strong>${rate}%</strong>`
+        }
+      </div>
+      <button class="attendance-edit-button" type="button" data-action="edit-attendance" data-athlete-id="${escapeAttribute(athlete.id)}" aria-label="Editar presenca de ${escapeAttribute(athlete.name)}">Editar</button>
+      <div id="attendance-edit-${escapeAttribute(athlete.id)}" class="attendance-edit-wrap" hidden>
+        <form class="attendance-edit-form" data-athlete-id="${escapeAttribute(athlete.id)}">
+          <label>Presencas<input name="presences" type="number" min="0" value="${Number(record.presences || 0)}" /></label>
+          <label>Faltas<input name="absences" type="number" min="0" value="${Number(record.absences || 0)}" /></label>
+          <label class="attendance-notes">Observacoes<textarea name="notes" placeholder="Ex.: faltou por motivo de saude, justificou ausencia, precisa melhorar frequencia...">${escapeHtml(record.notes || "")}</textarea></label>
+          <div class="edit-actions">
+            <button class="button" type="submit">Salvar frequencia</button>
+            <button type="button" data-action="cancel-attendance-edit" data-athlete-id="${escapeAttribute(athlete.id)}">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
 }
 
 function renderChatManager(data) {
@@ -1964,6 +2066,7 @@ function bindInteractions() {
   document.querySelectorAll("[data-age-target]").forEach((input) => input.addEventListener("change", handleBirthDateAgeUpdate));
   document.querySelector("#noticeForm")?.addEventListener("submit", handleNotice);
   document.querySelector("#teamEventForm")?.addEventListener("submit", handleTeamEvent);
+  document.querySelectorAll(".attendance-edit-form").forEach((form) => form.addEventListener("submit", handleAttendanceSave));
   document.querySelector("#mediaForm")?.addEventListener("submit", handleMediaSubmit);
   document.querySelector("#mediaType")?.addEventListener("change", handleMediaTypeChange);
   document.querySelector("#coachMessageForm")?.addEventListener("submit", handleCoachMessage);
@@ -2272,6 +2375,39 @@ function handleTeamEvent(event) {
   bindInteractions();
 }
 
+function openEventForm(date = "") {
+  const wrap = document.querySelector("#eventFormWrap");
+  if (!wrap) return;
+  wrap.hidden = false;
+  const dateInput = document.querySelector("#eventDate");
+  const timeInput = document.querySelector("#eventTime");
+  if (dateInput && date) dateInput.value = date;
+  if (timeInput && !timeInput.value) timeInput.value = "08:00";
+  document.querySelector("#eventTitle")?.focus();
+  wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function handleAttendanceSave(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const data = getAuthData();
+  if (!Array.isArray(data.attendance)) data.attendance = [];
+  const athleteId = form.dataset.athleteId;
+  const presences = Math.max(0, Number(form.elements.presences.value || 0));
+  const absences = Math.max(0, Number(form.elements.absences.value || 0));
+  const notes = form.elements.notes.value.trim();
+  const existing = data.attendance.find((item) => item.athleteId === athleteId);
+  const record = { athleteId, presences, absences, notes, updatedAt: new Date().toISOString() };
+  if (existing) {
+    Object.assign(existing, record);
+  } else {
+    data.attendance.push(record);
+  }
+  saveAuthData(data);
+  app.innerHTML = renderCoachDashboard("attendance");
+  bindInteractions();
+}
+
 function handleMediaTypeChange(event) {
   const isPhoto = event.currentTarget.value === "photo";
   document.querySelector("#photoFields").hidden = !isPhoto;
@@ -2429,7 +2565,24 @@ function handleAction(event) {
     if (feedback) feedback.textContent = "Pix copia e cola copiado.";
   }
   if (action === "open-event-form") {
-    document.querySelector("#eventFormWrap").hidden = false;
+    openEventForm();
+  }
+  if (action === "select-event-date") {
+    openEventForm(event.currentTarget.dataset.eventDate);
+  }
+  if (action === "edit-attendance") {
+    const wrap = document.querySelector(`#attendance-edit-${event.currentTarget.dataset.athleteId}`);
+    if (wrap) {
+      document.querySelectorAll(".attendance-edit-wrap").forEach((item) => {
+        if (item !== wrap) item.hidden = true;
+      });
+      wrap.hidden = false;
+      wrap.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+  if (action === "cancel-attendance-edit") {
+    const wrap = document.querySelector(`#attendance-edit-${event.currentTarget.dataset.athleteId}`);
+    if (wrap) wrap.hidden = true;
   }
   if (action === "open-interest-form") {
     openInterestForm(event.currentTarget.dataset.interestType || "seletiva");

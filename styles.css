@@ -2132,6 +2132,22 @@ textarea:focus {
   background: #fff;
 }
 
+.calendar-cell.clickable {
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.calendar-cell.clickable:hover {
+  position: relative;
+  z-index: 1;
+  background: #f3fbf6;
+  box-shadow: inset 0 0 0 2px rgba(20, 137, 73, 0.24), 0 12px 24px rgba(9, 32, 24, 0.08);
+  transform: translateY(-1px);
+}
+
 .calendar-cell:nth-child(7n + 1) {
   border-left: 0;
 }
@@ -2600,26 +2616,159 @@ textarea:focus {
   background: var(--primary);
 }
 
-.attendance-list {
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
+.attendance-table {
+  overflow: hidden;
+  padding: 0;
 }
 
 .attendance-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 120px 100px minmax(150px, 190px) 96px;
   align-items: center;
-  gap: 10px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 13px 14px;
-  background: #fbfdfb;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  padding: 15px 22px;
+  background: #fff;
 }
 
-.attendance-row input {
-  min-height: auto;
-  width: 18px;
-  height: 18px;
+.attendance-row:last-child {
+  border-bottom: 0;
+}
+
+.attendance-head {
+  color: #51665c;
+  background: #f8fbf9;
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.attendance-athlete {
+  display: grid;
+  gap: 3px;
+}
+
+.attendance-athlete strong {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.attendance-athlete small,
+.attendance-count small {
+  color: var(--muted);
+}
+
+.attendance-count {
+  display: grid;
+  justify-items: center;
+  line-height: 1.1;
+}
+
+.attendance-count strong {
+  font-size: 23px;
+  font-weight: 1000;
+}
+
+.attendance-count.present strong {
+  color: var(--primary);
+}
+
+.attendance-count.absent strong {
+  color: #ef4444;
+}
+
+.frequency-cell {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.frequency-bar {
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  background: #edf3ef;
+}
+
+.frequency-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+.frequency-cell.warn .frequency-bar i {
+  background: #ffc51a;
+}
+
+.frequency-cell.danger .frequency-bar i {
+  background: #ef4444;
+}
+
+.attendance-edit-button {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  background: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.attendance-edit-button:hover {
+  color: #fff;
+  border-color: var(--primary);
+  background: var(--primary);
+  transform: translateY(-1px);
+}
+
+.attendance-edit-wrap {
+  grid-column: 1 / -1;
+}
+
+.attendance-edit-form {
+  display: grid;
+  grid-template-columns: 150px 150px 1fr;
+  gap: 14px;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  background: #f8fbf9;
+}
+
+.attendance-edit-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.attendance-edit-form input,
+.attendance-edit-form textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 13px;
+  color: var(--text);
+  background: #fff;
+  font: inherit;
+}
+
+.attendance-edit-form textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.attendance-notes {
+  grid-row: span 2;
 }
 
 .footer {
@@ -2804,6 +2953,24 @@ textarea:focus {
     grid-column: 2;
     align-self: start;
     flex-wrap: wrap;
+  }
+
+  .attendance-table {
+    overflow-x: auto;
+  }
+
+  .attendance-row {
+    grid-template-columns: minmax(220px, 1fr) 88px 78px 140px 84px;
+    min-width: 720px;
+    padding: 14px 16px;
+  }
+
+  .attendance-edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-notes {
+    grid-row: auto;
   }
 
   .impact-links {
