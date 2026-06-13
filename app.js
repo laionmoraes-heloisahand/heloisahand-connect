@@ -188,7 +188,14 @@ window.addEventListener("hashchange", renderRoute);
 initApp();
 
 async function initApp() {
-  authDataCache = await fetchBackendAuthData("/api/public-data");
+  const session = getSession();
+  authDataCache = session?.token ? await fetchBackendAuthData("/api/auth") : null;
+  if (!authDataCache && session?.token) {
+    clearSession();
+  }
+  if (!authDataCache) {
+    authDataCache = await fetchBackendAuthData("/api/public-data");
+  }
   if (!authDataCache) {
     authDataCache = createInitialAuthData();
   } else {
@@ -1252,6 +1259,13 @@ function clearSession() {
   localStorage.removeItem(sessionStoreKey);
 }
 
+function handleExpiredSession(message = "Sessao expirada. Entre novamente com CPF e senha.") {
+  clearSession();
+  authDataCache = null;
+  renderRoute();
+  setTimeout(() => showPortalMessage(message, "error"), 0);
+}
+
 function getCurrentUser(role) {
   const session = getSession();
   if (!session || session.role !== role) return null;
@@ -2063,6 +2077,10 @@ async function handlePasswordChange(event) {
       body: JSON.stringify({ password }),
     });
     const payload = await response.json();
+    if (response.status === 401) {
+      handleExpiredSession();
+      return;
+    }
     if (!response.ok) throw new Error(payload.error || "Nao foi possivel trocar a senha.");
     authDataCache = payload.data;
     const user = authDataCache.users.find((item) => item.id === userId);
