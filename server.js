@@ -10,6 +10,7 @@ const uploadsDir = path.join(root, "uploads");
 const mediaFile = path.join(dataDir, "media.json");
 const authFile = path.join(dataDir, "auth.json");
 const maxUploadBytes = 12 * 1024 * 1024;
+const defaultPassword = "1234";
 const sessions = new Map();
 
 const types = {
@@ -49,8 +50,28 @@ function saveMedia(items) {
   saveJsonFile(mediaFile, items);
 }
 
+function normalizeAuthData(data) {
+  if (!data || !Array.isArray(data.users)) return { data, changed: false };
+  let changed = false;
+  data.users.forEach((user) => {
+    if (!user.password) return;
+    if (user.password !== defaultPassword && user.mustChangePassword !== false) {
+      user.mustChangePassword = false;
+      changed = true;
+    }
+    if (user.password === defaultPassword && typeof user.mustChangePassword !== "boolean") {
+      user.mustChangePassword = true;
+      changed = true;
+    }
+  });
+  return { data, changed };
+}
+
 function readAuthData() {
-  return readJsonFile(authFile, null);
+  const data = readJsonFile(authFile, null);
+  const normalized = normalizeAuthData(data);
+  if (normalized.changed) saveJsonFile(authFile, normalized.data);
+  return normalized.data;
 }
 
 function saveAuthData(payload) {
@@ -246,7 +267,11 @@ async function handleApi(req, res, cleanUrl) {
       const currentById = new Map((current.users || []).map((user) => [user.id, user]));
       payload.users = payload.users.map((user) => ({
         ...user,
-        password: user.password || currentById.get(user.id)?.password || "1234",
+        password: user.password || currentById.get(user.id)?.password || defaultPassword,
+        mustChangePassword:
+          currentById.get(user.id)?.mustChangePassword === false && !user.password && user.mustChangePassword === true
+            ? false
+            : user.mustChangePassword,
       }));
       saveAuthData(payload);
       sendJson(res, 200, { ok: true });
