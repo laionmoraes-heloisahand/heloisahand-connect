@@ -2,7 +2,7 @@ const phone = "5527999377026";
 const authStoreKey = "heloisahand_auth_v2";
 const sessionStoreKey = "heloisahand_session_v2";
 const defaultPassword = "1234";
-const coachCpf = "05881244788";
+const coachCpf = "";
 const pixKey = "lalves.unimed@gmail.com";
 const pixPayload = "00020126450014br.gov.bcb.pix0123lalves.unimed@gmail.com5204000053039865802BR5914LAIONEL MORAES6007VITORIA62130509HHCONNECT6304EAA6";
 
@@ -1196,7 +1196,7 @@ function normalizeAuthData(data) {
   }
   if (ensureSeedAthletes(normalized)) changed = true;
   if (normalizeSavedAthleteData(normalized)) changed = true;
-  if (coach && coach.cpf !== coachCpf) {
+  if (coachCpf && coach && coach.cpf !== coachCpf) {
     coach.cpf = coachCpf;
     changed = true;
   }
@@ -1256,10 +1256,6 @@ function getCurrentUser(role) {
   const session = getSession();
   if (!session || session.role !== role) return null;
   const user = getAuthData().users.find((item) => item.id === session.userId && item.role === role) || null;
-  if (user?.role === "coach" && user.cpf !== coachCpf) {
-    clearSession();
-    return null;
-  }
   return user;
 }
 
@@ -1338,7 +1334,7 @@ function renderPasswordChange(user, intro) {
 function renderAthlete() {
   const user = getCurrentUser("athlete");
   if (!user) {
-    return renderAuthGate("athlete", "Acesso do atleta", "Entre usando o CPF cadastrado pelo treinador. No primeiro acesso, use a senha temporaria fornecida pelo instituto e troque por uma senha pessoal.");
+    return renderAuthGate("athlete", "Acesso do atleta", "Entre usando o CPF completo cadastrado pelo treinador. No primeiro acesso, a senha temporaria e 1234; depois voce cria sua senha pessoal. Atletas sem CPF cadastrado ainda precisam falar com o treinador.");
   }
   if (user.mustChangePassword) {
     return renderPasswordChange(user, "Por seguranca, todo atleta precisa trocar a senha temporaria no primeiro acesso.");
@@ -2031,7 +2027,7 @@ async function handleLogin(event) {
     setSession(user, payload.token);
     renderRoute();
   } catch (error) {
-    showPortalMessage(error.message, "error");
+    showPortalMessage(`${error.message} Se for primeiro acesso, confira se o CPF esta cadastrado e use a senha 1234.`, "error");
   }
 }
 
