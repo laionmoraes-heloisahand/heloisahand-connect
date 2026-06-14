@@ -1027,6 +1027,26 @@ textarea:focus {
   box-shadow: 0 0 0 4px rgba(31, 138, 76, 0.12);
 }
 
+.remember-login {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: var(--text);
+  background: #f8fbf9;
+  cursor: pointer;
+}
+
+.remember-login input {
+  min-height: auto;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
 .empty-state {
   border: 1px solid var(--line);
   border-radius: 28px;
@@ -1434,6 +1454,12 @@ textarea:focus {
   margin-top: 18px;
 }
 
+.media-preview-list.full {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 0;
+}
+
 .media-preview-list p {
   margin: 0;
   color: var(--muted);
@@ -1723,6 +1749,47 @@ textarea:focus {
   line-height: 1.45;
 }
 
+.hajm-highlight {
+  display: grid;
+  gap: 10px;
+  margin: -18px 0 28px;
+  border: 1px solid rgba(255, 197, 26, 0.55);
+  border-radius: 22px;
+  padding: 22px;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(255, 197, 26, 0.24), transparent 28%),
+    linear-gradient(135deg, #fff9dd, #eef8f2);
+  box-shadow: 0 18px 36px rgba(9, 32, 24, 0.08);
+}
+
+.hajm-highlight > span {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #7a5200;
+  background: #ffeaa0;
+  font-weight: 1000;
+}
+
+.hajm-highlight > strong {
+  color: var(--text);
+  font-size: clamp(24px, 3vw, 34px);
+}
+
+.hajm-highlight div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hajm-highlight b {
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #fff;
+  background: var(--primary);
+  box-shadow: 0 10px 22px rgba(20, 137, 73, 0.18);
+}
+
 .competition-tabs {
   display: flex;
   justify-content: center;
@@ -1754,6 +1821,11 @@ textarea:focus {
   box-shadow: 0 8px 20px rgba(9, 32, 24, 0.1);
 }
 
+.competition-content-shell {
+  display: grid;
+  gap: 22px;
+}
+
 .public-event-list {
   display: grid;
   gap: 16px;
@@ -1771,6 +1843,19 @@ textarea:focus {
   padding: 28px;
   background: #fff;
   box-shadow: 0 12px 30px rgba(9, 32, 24, 0.05);
+}
+
+.public-event-card.hajm-game {
+  border-color: rgba(255, 197, 26, 0.75);
+  background:
+    linear-gradient(90deg, rgba(255, 197, 26, 0.16), transparent 34%),
+    #fff;
+  box-shadow: 0 18px 38px rgba(20, 137, 73, 0.12);
+}
+
+.public-event-card.hajm-game .event-date-box {
+  color: #102016;
+  background: #ffc51a;
 }
 
 .event-date-box {
@@ -1831,10 +1916,29 @@ textarea:focus {
   background: var(--accent-soft);
 }
 
-.competition-media-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  margin-top: 30px;
+.media-panel {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 26px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(9, 32, 24, 0.05);
+}
+
+.media-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.media-panel-head h3 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 34px);
+}
+
+.media-panel-head p {
+  margin: 5px 0 0;
+  color: var(--muted);
 }
 
 .compact-media-card {
@@ -2874,6 +2978,15 @@ textarea:focus {
   .competition-tabs {
     justify-content: flex-start;
     overflow-x: auto;
+  }
+
+  .hajm-highlight {
+    margin-top: 0;
+  }
+
+  .media-panel-head {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .public-event-card {

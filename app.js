@@ -1,6 +1,8 @@
 const phone = "5527999377026";
 const authStoreKey = "heloisahand_auth_v2";
 const sessionStoreKey = "heloisahand_session_v2";
+const rememberedLoginKey = "heloisahand_remembered_login_v1";
+const pendingRememberKey = "heloisahand_pending_remember_v1";
 const defaultPassword = "1234";
 const coachCpf = "";
 const pixKey = "lalves.unimed@gmail.com";
@@ -41,24 +43,94 @@ const categories = [
 
 const defaultTeamEvents = [
   {
-    id: "event-jemvi-2026-1",
+    id: "event-jemvi-2026-2606-0800-hajm-evs",
     title: "JEMVI 2026",
     type: "competition",
-    date: "2026-06-15",
-    time: "09:30",
+    date: "2026-06-26",
+    time: "08:00",
     location: "Ginasio do Tancredao",
-    opponent: "HAJM x AS",
-    notes: "Jogo oficial da equipe.",
+    opponent: "HAJM x EVS",
+    notes: "Jogo J1. Nossa equipe entra em quadra como HAJM.",
   },
   {
-    id: "event-jemvi-2026-2",
+    id: "event-jemvi-2026-2606-0830-vsp-hajm",
     title: "JEMVI 2026",
     type: "competition",
-    date: "2026-06-15",
+    date: "2026-06-26",
     time: "08:30",
     location: "Ginasio do Tancredao",
     opponent: "VSP x HAJM",
-    notes: "Chegar com antecedencia para aquecimento.",
+    notes: "Jogo J1. Nossa equipe entra em quadra como HAJM.",
+  },
+  {
+    id: "event-jemvi-2026-2606-0930-hajm-as",
+    title: "JEMVI 2026",
+    type: "competition",
+    date: "2026-06-26",
+    time: "09:30",
+    location: "Ginasio do Tancredao",
+    opponent: "HAJM x AS",
+    notes: "Jogo J2. Nossa equipe entra em quadra como HAJM.",
+  },
+  {
+    id: "event-jemvi-2026-2606-0900-as-vsp",
+    title: "JEMVI 2026",
+    type: "competition",
+    date: "2026-06-26",
+    time: "09:00",
+    location: "Ginasio do Tancredao",
+    opponent: "AS x VSP",
+    notes: "Jogo J2 da rodada do JEMVI.",
+  },
+  {
+    id: "event-jemvi-2026-2606-1000-hajm-vsp",
+    title: "JEMVI 2026",
+    type: "competition",
+    date: "2026-06-26",
+    time: "10:00",
+    location: "Ginasio do Tancredao",
+    opponent: "HAJM x VSP",
+    notes: "Jogo J3. Nossa equipe entra em quadra como HAJM.",
+  },
+  {
+    id: "event-jemvi-2026-2606-1030-as-vsp",
+    title: "JEMVI 2026",
+    type: "competition",
+    date: "2026-06-26",
+    time: "10:30",
+    location: "Ginasio do Tancredao",
+    opponent: "AS x VSP",
+    notes: "Jogo da rodada do JEMVI.",
+  },
+  {
+    id: "event-jemvi-2026-3006-0900-hajm-as",
+    title: "JEMVI 2026",
+    type: "competition",
+    date: "2026-06-30",
+    time: "09:00",
+    location: "Ginasio do Tancredao",
+    opponent: "HAJM x AS",
+    notes: "Jogo J5. Nossa equipe entra em quadra como HAJM.",
+  },
+  {
+    id: "event-jemvi-2026-3006-0800-as-evs",
+    title: "JEMVI 2026",
+    type: "competition",
+    date: "2026-06-30",
+    time: "08:00",
+    location: "Ginasio do Tancredao",
+    opponent: "AS x EVS",
+    notes: "Jogo J4 da rodada do JEMVI.",
+  },
+  {
+    id: "event-jemvi-2026-3006-1000-vsp-evs",
+    title: "JEMVI 2026",
+    type: "competition",
+    date: "2026-06-30",
+    time: "10:00",
+    location: "Ginasio do Tancredao",
+    opponent: "VSP x EVS",
+    notes: "Jogo J6 da rodada do JEMVI.",
   },
   {
     id: "event-training-2026-1",
@@ -850,6 +922,7 @@ function renderPrivateLessonFields() {
 
 function renderCompetitions() {
   const events = getTeamEvents();
+  const nextHajmGames = events.filter((event) => isHajmEvent(event)).slice(0, 3);
   return `
     <section class="section competitions-page">
       <div class="competition-hero">
@@ -857,27 +930,38 @@ function renderCompetitions() {
         <h2>Competições e <span>Jogos</span></h2>
         <p>Calendario de jogos, amistosos, treinos importantes e momentos publicados pela equipe.</p>
       </div>
+      ${
+        nextHajmGames.length
+          ? `<div class="hajm-highlight">
+              <span>Agenda HAJM</span>
+              <strong>Próximos jogos da nossa equipe</strong>
+              <div>${nextHajmGames.map((event) => `<b>${formatShortEventDate(event)} - ${escapeHtml(event.opponent)}</b>`).join("")}</div>
+            </div>`
+          : ""
+      }
       <div class="competition-tabs" role="tablist">
         <button class="active" type="button" data-competition-tab="calendar">📅 Calendario</button>
         <button type="button" data-competition-tab="photos">🖼️ Fotos</button>
         <button type="button" data-competition-tab="videos">🎞️ Videos</button>
       </div>
-      <div id="competitionCalendar" class="competition-panel public-event-list" data-competition-panel="calendar">
-        ${events.length ? events.map(renderPublicEventItem).join("") : `<div class="empty-state compact"><strong>Nenhum evento agendado.</strong><p>Quando o treinador cadastrar jogos ou amistosos, eles aparecem aqui.</p></div>`}
-      </div>
-      <div class="competition-media-grid">
-        <article class="card yellow media-preview-card competition-panel" data-competition-panel="photos" hidden>
-          <span class="icon-pill">FT</span>
-          <h3>Fotos</h3>
-          <p>Registros publicados pelo treinador aparecem aqui automaticamente.</p>
-          <div id="competitionPhotos" class="media-preview-list" data-empty="Nenhuma foto publicada ainda."></div>
-        </article>
-        <article class="card media-preview-card competition-panel" data-competition-panel="videos" hidden>
-          <span class="icon-pill">VD</span>
-          <h3>Videos</h3>
-          <p>Videos do YouTube aparecem com miniatura para o usuario reconhecer antes de abrir.</p>
-          <div id="competitionVideos" class="media-preview-list" data-empty="Nenhum video publicado ainda."></div>
-        </article>
+      <div class="competition-content-shell">
+        <div id="competitionCalendar" class="competition-panel public-event-list" data-competition-panel="calendar">
+          ${events.length ? events.map(renderPublicEventItem).join("") : `<div class="empty-state compact"><strong>Nenhum evento agendado.</strong><p>Quando o treinador cadastrar jogos ou amistosos, eles aparecem aqui.</p></div>`}
+        </div>
+        <div class="competition-panel media-panel" data-competition-panel="photos" hidden>
+          <div class="media-panel-head">
+            <span class="icon-pill">FT</span>
+            <div><h3>Fotos das competições</h3><p>Registros publicados pelo treinador ficam separados aqui.</p></div>
+          </div>
+          <div id="competitionPhotos" class="media-preview-list full" data-empty="Nenhuma foto publicada ainda."></div>
+        </div>
+        <div class="competition-panel media-panel" data-competition-panel="videos" hidden>
+          <div class="media-panel-head">
+            <span class="icon-pill">VD</span>
+            <div><h3>Vídeos das competições</h3><p>Vídeos publicados aparecem com miniatura para abrir com contexto.</p></div>
+          </div>
+          <div id="competitionVideos" class="media-preview-list full" data-empty="Nenhum vídeo publicado ainda."></div>
+        </div>
       </div>
     </section>
   `;
@@ -1006,6 +1090,15 @@ function getEventDate(event) {
   return new Date(`${event.date}T${event.time || "00:00"}:00`);
 }
 
+function isHajmEvent(event) {
+  return /HAJM/i.test(`${event.opponent || ""} ${event.notes || ""}`);
+}
+
+function formatShortEventDate(event) {
+  const date = getEventDate(event);
+  return `${date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} às ${event.time || "--:--"}`;
+}
+
 function getMonthLabel(date) {
   return date.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }).replace(/^\w/, (char) => char.toUpperCase());
 }
@@ -1022,7 +1115,7 @@ function renderPublicEventItem(event) {
   const day = date.toLocaleDateString("pt-BR", { day: "2-digit" });
   const month = date.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase();
   return `
-    <article class="public-event-card ${event.type}">
+    <article class="public-event-card ${event.type} ${isHajmEvent(event) ? "hajm-game" : ""}">
       <div class="event-date-box"><strong>${day}</strong><span>${month}</span></div>
       <div class="event-info">
         <h3>${escapeHtml(event.title)}</h3>
@@ -1154,6 +1247,19 @@ function normalizeSavedAthleteData(data) {
   return changed;
 }
 
+function ensureDefaultEvents(data) {
+  if (!Array.isArray(data.events)) data.events = [];
+  let changed = false;
+  const eventById = new Map(data.events.map((event) => [event.id, event]));
+  defaultTeamEvents.forEach((event) => {
+    if (!eventById.has(event.id)) {
+      data.events.push({ ...event });
+      changed = true;
+    }
+  });
+  return changed;
+}
+
 function createInitialAuthData() {
   const initial = {
     users: [
@@ -1189,6 +1295,7 @@ function normalizeAuthData(data) {
     normalized.events = defaultTeamEvents;
     changed = true;
   }
+  if (ensureDefaultEvents(normalized)) changed = true;
   if (!Array.isArray(normalized.interests)) {
     normalized.interests = [];
     changed = true;
@@ -1262,6 +1369,53 @@ function setSession(user, token = getSession()?.token || "") {
 
 function clearSession() {
   localStorage.removeItem(sessionStoreKey);
+}
+
+function getRememberedLogins() {
+  try {
+    return JSON.parse(localStorage.getItem(rememberedLoginKey) || "{}");
+  } catch (error) {
+    return {};
+  }
+}
+
+function getRememberedLogin(role) {
+  return getRememberedLogins()[role] || null;
+}
+
+async function hashLoginPassword(password) {
+  if (!crypto?.subtle) return "";
+  const bytes = new TextEncoder().encode(password);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function saveRememberedLogin(role, cpf, password) {
+  const remembered = getRememberedLogins();
+  remembered[role] = { cpf, passwordHash: await hashLoginPassword(password), savedAt: new Date().toISOString() };
+  localStorage.setItem(rememberedLoginKey, JSON.stringify(remembered));
+}
+
+function clearRememberedLogin(role) {
+  const remembered = getRememberedLogins();
+  delete remembered[role];
+  localStorage.setItem(rememberedLoginKey, JSON.stringify(remembered));
+}
+
+function setPendingRemember(role, cpf, enabled) {
+  if (!enabled) {
+    localStorage.removeItem(pendingRememberKey);
+    return;
+  }
+  localStorage.setItem(pendingRememberKey, JSON.stringify({ role, cpf }));
+}
+
+function getPendingRemember() {
+  try {
+    return JSON.parse(localStorage.getItem(pendingRememberKey) || "null");
+  } catch (error) {
+    return null;
+  }
 }
 
 function handleExpiredSession(message = "Sessao expirada. Entre novamente com CPF e senha.") {
@@ -1347,6 +1501,8 @@ function showPortalMessage(message, type = "ok") {
 }
 
 function renderAuthGate(role, title, subtitle) {
+  const remembered = getRememberedLogin(role);
+  const rememberedCpf = remembered?.cpf ? formatCpf(remembered.cpf) : "";
   return `
     <section class="section portal-section">
       <div class="portal-card auth-card">
@@ -1354,8 +1510,9 @@ function renderAuthGate(role, title, subtitle) {
         <h2>${title}</h2>
         <p>${subtitle}</p>
         <form id="loginForm" class="form-grid" data-role="${role}">
-          <label>CPF<input id="loginId" autocomplete="username" inputmode="numeric" placeholder="000.000.000-00" required /></label>
+          <label>CPF<input id="loginId" autocomplete="username" inputmode="numeric" placeholder="000.000.000-00" value="${escapeAttribute(rememberedCpf)}" required /></label>
           <label>Senha<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Digite sua senha" required /></label>
+          <label class="remember-login"><input id="rememberCpf" type="checkbox" ${rememberedCpf ? "checked" : ""} /> Lembrar CPF neste aparelho</label>
           <button class="button" type="submit">Entrar</button>
           <div id="portalMessage" class="portal-message"></div>
         </form>
@@ -2034,12 +2191,12 @@ function renderPublicMediaGallery(media) {
 }
 
 function renderCompetitionMedia(media) {
-  const photos = media.filter((item) => item.type === "photo").slice(-3).reverse();
-  const videos = media.filter((item) => item.type === "youtube").slice(-3).reverse();
+  const photos = media.filter((item) => item.type === "photo").reverse();
+  const videos = media.filter((item) => item.type === "youtube").reverse();
   const photoTarget = document.querySelector("#competitionPhotos");
   const videoTarget = document.querySelector("#competitionVideos");
-  if (photoTarget) photoTarget.innerHTML = photos.length ? photos.map(renderCompactMediaCard).join("") : `<p>${photoTarget.dataset.empty}</p>`;
-  if (videoTarget) videoTarget.innerHTML = videos.length ? videos.map(renderCompactMediaCard).join("") : `<p>${videoTarget.dataset.empty}</p>`;
+  if (photoTarget) photoTarget.innerHTML = photos.length ? photos.map(renderCompactMediaCard).join("") : `<div class="empty-state compact">${photoTarget.dataset.empty}</div>`;
+  if (videoTarget) videoTarget.innerHTML = videos.length ? videos.map(renderCompactMediaCard).join("") : `<div class="empty-state compact">${videoTarget.dataset.empty}</div>`;
 }
 
 function escapeHtml(value) {
@@ -2127,10 +2284,12 @@ async function handleLogin(event) {
   const role = event.currentTarget.dataset.role;
   const login = onlyDigits(document.querySelector("#loginId").value);
   const password = document.querySelector("#loginPassword").value;
+  const remember = document.querySelector("#rememberCpf")?.checked || false;
   if (login.length !== 11) {
     showPortalMessage("Digite um CPF valido com 11 numeros.", "error");
     return;
   }
+  if (!remember) clearRememberedLogin(role);
   try {
     const response = await fetch("/api/login", {
       method: "POST",
@@ -2142,9 +2301,49 @@ async function handleLogin(event) {
     authDataCache = payload.data;
     const user = authDataCache.users.find((item) => item.id === payload.session.userId);
     setSession(user, payload.token);
+    setPendingRemember(role, login, remember && user?.mustChangePassword);
+    if (remember && password !== defaultPassword && !user?.mustChangePassword) {
+      await saveRememberedLogin(role, login, password);
+    }
     renderRoute();
   } catch (error) {
+    if (await tryRestoreRememberedLogin(role, login, password, remember)) return;
     showPortalMessage(`${error.message} Se for primeiro acesso, confira se o CPF esta cadastrado e use a senha 1234.`, "error");
+  }
+}
+
+async function tryRestoreRememberedLogin(role, cpf, password, remember) {
+  const remembered = getRememberedLogin(role);
+  if (!remembered || remembered.cpf !== cpf || !remembered.passwordHash) return false;
+  const typedHash = await hashLoginPassword(password);
+  if (typedHash !== remembered.passwordHash) return false;
+  try {
+    const loginResponse = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, cpf, password: defaultPassword }),
+    });
+    const loginPayload = await loginResponse.json();
+    if (!loginResponse.ok) return false;
+    authDataCache = loginPayload.data;
+    const user = authDataCache.users.find((item) => item.id === loginPayload.session.userId);
+    setSession(user, loginPayload.token);
+    const changeResponse = await fetch("/api/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify({ password }),
+    });
+    const changePayload = await changeResponse.json();
+    if (!changeResponse.ok) return false;
+    authDataCache = changePayload.data;
+    const restoredUser = authDataCache.users.find((item) => item.id === loginPayload.session.userId);
+    setSession(restoredUser);
+    if (remember) await saveRememberedLogin(role, cpf, password);
+    renderRoute();
+    setTimeout(() => showPortalMessage("Acesso recuperado neste aparelho. Sua senha pessoal foi preservada.", "ok"), 0);
+    return true;
+  } catch (error) {
+    return false;
   }
 }
 
@@ -2188,6 +2387,11 @@ async function handlePasswordChange(event) {
     authDataCache = payload.data;
     const user = authDataCache.users.find((item) => item.id === userId);
     setSession(user);
+    const pendingRemember = getPendingRemember();
+    if (pendingRemember?.role === user?.role && pendingRemember?.cpf === onlyDigits(user?.cpf)) {
+      await saveRememberedLogin(user.role, onlyDigits(user.cpf), password);
+      localStorage.removeItem(pendingRememberKey);
+    }
     renderRoute();
   } catch (error) {
     showPortalMessage(error.message, "error");

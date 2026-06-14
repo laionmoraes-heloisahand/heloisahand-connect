@@ -5,10 +5,13 @@ const crypto = require("crypto");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 5400);
-const dataDir = path.join(root, "data");
-const uploadsDir = path.join(root, "uploads");
+const dataDir = process.env.DATA_DIR || path.join(root, "data");
+const uploadsDir = process.env.UPLOADS_DIR || path.join(root, "uploads");
 const mediaFile = path.join(dataDir, "media.json");
 const authFile = path.join(dataDir, "auth.json");
+const seedDataDir = path.join(root, "data");
+const seedMediaFile = path.join(seedDataDir, "media.json");
+const seedAuthFile = path.join(seedDataDir, "auth.json");
 const maxUploadBytes = 12 * 1024 * 1024;
 const defaultPassword = "1234";
 const sessions = new Map();
@@ -27,7 +30,12 @@ const types = {
 
 fs.mkdirSync(dataDir, { recursive: true });
 fs.mkdirSync(uploadsDir, { recursive: true });
-if (!fs.existsSync(mediaFile)) fs.writeFileSync(mediaFile, "[]");
+if (!fs.existsSync(mediaFile)) {
+  fs.writeFileSync(mediaFile, fs.existsSync(seedMediaFile) ? fs.readFileSync(seedMediaFile, "utf8") : "[]");
+}
+if (!fs.existsSync(authFile) && fs.existsSync(seedAuthFile)) {
+  fs.writeFileSync(authFile, fs.readFileSync(seedAuthFile, "utf8"));
+}
 
 function readJsonFile(file, fallback) {
   try {
