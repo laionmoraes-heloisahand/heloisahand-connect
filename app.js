@@ -174,6 +174,17 @@ const trainingObjectives = ["Aprender fundamentos", "Melhorar arremesso", "Melho
 
 const seedUpdatedAt = "2026-06-12T00:00:00.000Z";
 
+const sponsorSeeds = [
+  { name: "Espaço disponível", tier: "Patrocinador Ouro", text: "Sua empresa pode apoiar transporte, uniformes e competições.", cta: "Quero patrocinar" },
+  { name: "Apoiador local", tier: "Cota Prata", text: "Ajude o instituto a manter materiais e treinos semanais.", cta: "Falar com o instituto" },
+  { name: "Parceiro social", tier: "Cota Bronze", text: "Apoie campanhas pontuais e apareça no mural de parceiros.", cta: "Conhecer cotas" },
+];
+
+const campaignSeeds = [
+  { title: "Bolas novas para os treinos", goal: 1200, raised: 360, text: "Meta para comprar bolas e materiais de treino para todas as categorias." },
+  { title: "Transporte para competições", goal: 2500, raised: 740, text: "Ajude a levar nossos atletas aos jogos fora da comunidade." },
+];
+
 function lineScout(scores, notes, improvements) {
   return {
     type: "line",
@@ -657,7 +668,53 @@ function renderHome() {
         <div class="card"><h3>100%</h3><p>relatam mudanca pessoal dentro e fora das quadras.</p></div>
       </div>
     </section>
+    ${renderSponsorAndCampaigns()}
     ${renderHandballHub()}
+  `;
+}
+
+function renderSponsorAndCampaigns(data = getAuthData()) {
+  const sponsors = data.sponsors || sponsorSeeds;
+  const campaigns = data.campaigns || campaignSeeds;
+  return `
+    <section class="section sponsor-campaigns">
+      <div class="section-head center">
+        <span class="eyebrow">Apoio que vira oportunidade</span>
+        <h2>Patrocinadores e campanhas do instituto</h2>
+        <p>Empresas, parceiros e pessoas podem acompanhar onde o apoio gera impacto direto para os atletas.</p>
+      </div>
+      <div class="campaign-grid">
+        ${campaigns.map(renderCampaignCard).join("")}
+      </div>
+      <div class="sponsor-wall">
+        ${sponsors.map(renderSponsorCard).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderCampaignCard(campaign) {
+  const pct = Math.min(100, Math.round((Number(campaign.raised || 0) / Number(campaign.goal || 1)) * 100));
+  return `
+    <article class="campaign-card">
+      <span>Campanha ativa</span>
+      <h3>${escapeHtml(campaign.title)}</h3>
+      <p>${escapeHtml(campaign.text)}</p>
+      <div class="campaign-progress"><i style="width:${pct}%"></i></div>
+      <strong>R$ ${Number(campaign.raised || 0).toLocaleString("pt-BR")} de R$ ${Number(campaign.goal || 0).toLocaleString("pt-BR")}</strong>
+      ${cta("Apoiar agora", "#/apoiar", "yellow")}
+    </article>
+  `;
+}
+
+function renderSponsorCard(sponsor) {
+  return `
+    <article class="sponsor-card">
+      <span>${escapeHtml(sponsor.tier)}</span>
+      <h3>${escapeHtml(sponsor.name)}</h3>
+      <p>${escapeHtml(sponsor.text)}</p>
+      ${cta(sponsor.cta || "Falar sobre apoio", "#/apoiar")}
+    </article>
   `;
 }
 
@@ -1441,6 +1498,8 @@ function createInitialAuthData() {
     media: [],
     events: defaultTeamEvents,
     interests: [],
+    sponsors: sponsorSeeds,
+    campaigns: campaignSeeds,
   };
   ensureSeedAthletes(initial);
   return initial;
@@ -1476,6 +1535,14 @@ function normalizeAuthData(data) {
     normalized.attendance = [];
     changed = true;
   }
+  if (!Array.isArray(normalized.sponsors)) {
+    normalized.sponsors = sponsorSeeds;
+    changed = true;
+  }
+  if (!Array.isArray(normalized.campaigns)) {
+    normalized.campaigns = campaignSeeds;
+    changed = true;
+  }
   if (repairObjectText(normalized)) changed = true;
   if (ensureSeedAthletes(normalized)) changed = true;
   if (normalizeSavedAthleteData(normalized)) changed = true;
@@ -1492,6 +1559,14 @@ function normalizeAuthData(data) {
       }
       if (!athlete.scout) {
         athlete.scout = createDefaultScout(athlete.position);
+        changed = true;
+      }
+      if (!Array.isArray(athlete.notifications)) {
+        athlete.notifications = [];
+        changed = true;
+      }
+      if (!Array.isArray(athlete.badges)) {
+        athlete.badges = [];
         changed = true;
       }
     });
@@ -1711,16 +1786,25 @@ function renderAthlete() {
   if (user.mustChangePassword) {
     return renderPasswordChange(user, "Por seguranca, todo atleta precisa trocar a senha temporaria no primeiro acesso.");
   }
+  const data = getAuthData();
+  const notifications = getAthleteNotifications(user);
+  const latestEvolution = notifications.find((item) => item.type === "evolution");
   return `
     <section class="section portal-section">
       <div class="portal-header">
         <div>
           <span class="eyebrow">Area do Atleta</span>
           <h2>Bem-vindo, ${user.name}</h2>
-          <p>Consulte comunicados, treinos, presencas e mensagens da comissao tecnica.</p>
+          <p>${latestEvolution ? `Parabens pela evolucao: ${escapeHtml(latestEvolution.title)}.` : "Consulte sua jornada, metas, presencas e mensagens da comissao tecnica."}</p>
         </div>
+        <button class="notification-bell" type="button" data-action="toggle-athlete-notifications">🔔<span>${notifications.length}</span></button>
         <button class="button ghost-dark" data-action="logout">Sair</button>
       </div>
+      <div id="athleteNotificationPanel" class="athlete-notification-panel" hidden>
+        <h3>Notificacoes da sua jornada</h3>
+        ${notifications.length ? notifications.map(renderAthleteNotification).join("") : `<p>Nenhuma notificacao nova por enquanto.</p>`}
+      </div>
+      ${renderAthleteJourney(user, data)}
       <div class="athlete-dashboard">
         <article class="portal-card"><h3>Minha ficha</h3><p><strong>CPF:</strong> ${user.cpf ? formatCpf(user.cpf) : "Pendente"}</p>${user.birthDate ? `<p><strong>Nascimento:</strong> ${formatBirthDate(user.birthDate)}</p>` : ""}<p><strong>Posicao:</strong> ${user.position || "A definir"}</p><p><strong>Idade:</strong> ${user.age || "A definir"}</p><p><strong>Status:</strong> ativo</p></article>
         <article class="portal-card"><h3>Meu scout</h3>${renderAthleteScoutSummary(user)}</article>
@@ -1736,6 +1820,53 @@ function renderAthlete() {
       </div>
     </section>
   `;
+}
+
+function getAthleteNotifications(user) {
+  return [...(user.notifications || [])].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).slice(0, 8);
+}
+
+function renderAthleteNotification(item) {
+  return `
+    <article class="athlete-notification ${item.type || ""}">
+      <strong>${escapeHtml(item.title)}</strong>
+      <span>${escapeHtml(item.text || "")}</span>
+      <small>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("pt-BR") : ""}</small>
+    </article>
+  `;
+}
+
+function renderAthleteJourney(user, data) {
+  const attendance = getAttendanceRecord(data, user.id);
+  const rate = getAttendanceRate(attendance);
+  const scout = getAthleteScout(user);
+  const items = getScoutItems(user.position);
+  const average = items.length ? Math.round((items.reduce((sum, [key]) => sum + Number(scout.scores[key] || 0), 0) / items.length) * 10) / 10 : 0;
+  const badges = user.badges || [];
+  return `
+    <section class="athlete-journey">
+      <div class="journey-hero-card">
+        <span class="eyebrow">Jornada do Atleta</span>
+        <h3>Sua evolucao no Instituto HeloisaHand</h3>
+        <p>Acompanhe frequencia, scout, conquistas e mensagens importantes para crescer dentro e fora da quadra.</p>
+      </div>
+      <div class="journey-metrics">
+        <article><strong>${rate === null ? "--" : `${rate}%`}</strong><span>Frequencia</span><div class="mini-progress"><i style="width:${rate || 0}%"></i></div></article>
+        <article><strong>${average}</strong><span>Media do scout</span><div class="mini-progress"><i style="width:${average * 10}%"></i></div></article>
+        <article><strong>${badges.length}</strong><span>Medalhas</span><div class="mini-progress"><i style="width:${Math.min(100, badges.length * 20)}%"></i></div></article>
+      </div>
+      <div class="badge-board">
+        <h3>Medalhas e conquistas</h3>
+        <div>
+          ${badges.length ? badges.map(renderAthleteBadge).join("") : `<span class="empty-badge">Continue treinando. Sua primeira medalha esta chegando.</span>`}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderAthleteBadge(badge) {
+  return `<span class="athlete-badge ${badge.type || ""}"><b>${badge.icon || "★"}</b>${escapeHtml(badge.title)}</span>`;
 }
 
 function renderAthleteMessages(user) {
@@ -2952,6 +3083,7 @@ function handleScoutSave(event) {
   const data = getAuthData();
   const athlete = data.users.find((user) => user.id === form.dataset.athleteId);
   if (!athlete) return;
+  const previousScout = athlete.scout ? JSON.parse(JSON.stringify(athlete.scout)) : null;
   const scout = createDefaultScout(athlete.position);
   Object.keys(scout.scores).forEach((key) => {
     scout.scores[key] = Number(form.elements[key]?.value || 0);
@@ -2960,9 +3092,48 @@ function handleScoutSave(event) {
   scout.improvements = form.elements.improvements.value.trim();
   scout.updatedAt = new Date().toISOString();
   athlete.scout = scout;
+  registerScoutEvolution(athlete, previousScout, scout);
   saveAuthData(data);
   const message = form.querySelector(".scout-message");
   if (message) message.textContent = "Scout salvo com sucesso.";
+}
+
+function registerScoutEvolution(athlete, previousScout, nextScout) {
+  if (!previousScout?.scores) return;
+  athlete.notifications = Array.isArray(athlete.notifications) ? athlete.notifications : [];
+  athlete.badges = Array.isArray(athlete.badges) ? athlete.badges : [];
+  const improved = Object.entries(nextScout.scores)
+    .filter(([key, value]) => Number(value) > Number(previousScout.scores[key] || 0))
+    .map(([key, value]) => ({ key, value, previous: previousScout.scores[key] || 0 }));
+  if (!improved.length) return;
+  const labels = Object.fromEntries(getScoutItems(athlete.position).map(([key, label]) => [key, label]));
+  athlete.notifications.unshift({
+    id: `note-${Date.now()}`,
+    type: "evolution",
+    title: `Voce evoluiu em ${improved.length} aspecto${improved.length > 1 ? "s" : ""}`,
+    text: `Destaques: ${improved.slice(0, 3).map((item) => labels[item.key] || item.key).join(", ")}.`,
+    createdAt: new Date().toISOString(),
+  });
+  if (improved.length >= 5) {
+    addAthleteBadge(athlete, "destaque", "Atleta destaque", "🏅");
+  }
+  if (Number(nextScout.scores.commitment || 0) >= 9 && Number(nextScout.scores.communication || 0) >= 8) {
+    addAthleteBadge(athlete, "companheiro", "Melhor companheiro de equipe", "🤝");
+  }
+}
+
+function addAthleteBadge(athlete, type, title, icon) {
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const exists = athlete.badges.some((badge) => badge.type === type && badge.monthKey === monthKey);
+  if (exists) return;
+  athlete.badges.unshift({ id: `badge-${type}-${Date.now()}`, type, title, icon, monthKey, createdAt: new Date().toISOString() });
+  athlete.notifications.unshift({
+    id: `note-badge-${Date.now()}`,
+    type: "badge",
+    title: `Nova medalha: ${title}`,
+    text: "Seu empenho foi reconhecido na jornada do atleta.",
+    createdAt: new Date().toISOString(),
+  });
 }
 
 async function handleAthleteMessage(event) {
@@ -2993,6 +3164,10 @@ function handleAction(event) {
   if (action === "close-hub-modal") {
     const modal = document.querySelector("#handballHubModal");
     if (modal) modal.hidden = true;
+  }
+  if (action === "toggle-athlete-notifications") {
+    const panel = document.querySelector("#athleteNotificationPanel");
+    if (panel) panel.hidden = !panel.hidden;
   }
   if (action === "logout") {
     clearSession();

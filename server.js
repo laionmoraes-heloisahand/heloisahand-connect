@@ -125,6 +125,7 @@ function dataForAthlete(data, userId) {
     messages: (data.messages || []).filter((msg) => msg.recipientId === "team" || msg.recipientId === userId || msg.fromId === userId),
     media: [],
     events: data.events || [],
+    attendance: (data.attendance || []).filter((item) => item.athleteId === userId),
     interests: [],
   };
 }
@@ -137,6 +138,8 @@ function publicData(data) {
     media: [],
     events: data?.events || [],
     interests: [],
+    sponsors: data?.sponsors || [],
+    campaigns: data?.campaigns || [],
   };
 }
 

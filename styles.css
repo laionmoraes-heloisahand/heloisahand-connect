@@ -768,6 +768,67 @@ h3 {
     #f8fbf9;
 }
 
+.sponsor-campaigns {
+  background: #fff;
+}
+
+.campaign-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.campaign-card,
+.sponsor-card {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 24px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(9, 32, 24, 0.07);
+}
+
+.campaign-card {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255, 197, 26, 0.22), transparent 14rem),
+    #fff;
+}
+
+.campaign-card > span,
+.sponsor-card > span {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.campaign-card h3,
+.sponsor-card h3 {
+  margin-top: 16px;
+  font-size: 26px;
+}
+
+.campaign-card p,
+.sponsor-card p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.campaign-card strong {
+  display: block;
+  margin: 13px 0 18px;
+  color: var(--text);
+}
+
+.sponsor-wall {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 22px;
+}
+
 .hub-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -933,15 +994,20 @@ h3 {
 }
 
 .hub-rank-card li {
+  position: relative;
   counter-increment: hub-rank;
   display: grid;
   align-content: center;
   gap: 10px;
   border-radius: 14px;
-  padding: 11px 12px;
+  min-height: 132px;
+  padding: 18px 96px 18px 16px;
   color: var(--text);
-  background: #f3f8f5;
+  background:
+    linear-gradient(135deg, #ffffff, #f5faf7);
   font-weight: 900;
+  box-shadow: inset 0 0 0 1px rgba(9, 32, 24, 0.08);
+  overflow: hidden;
 }
 
 .hub-rank-card li::before {
@@ -956,10 +1022,23 @@ h3 {
   font-size: 13px;
 }
 
+.hub-rank-card li::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 16px;
+  width: 64px;
+  height: 42px;
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(9, 32, 24, 0.14);
+}
+
 .hub-rank-card li strong {
   display: flex;
   align-items: center;
   gap: 10px;
+  color: var(--text);
+  font-size: 18px;
 }
 
 .hub-rank-card li small {
@@ -969,57 +1048,83 @@ h3 {
 }
 
 .flag-denmark {
-  background: linear-gradient(90deg, #c8102e 0 42%, #fff 42% 48%, #c8102e 48%) !important;
-  color: #fff !important;
+  border-left: 6px solid #c8102e;
+}
+
+.flag-denmark::after {
+  background: linear-gradient(90deg, #c8102e 0 42%, #fff 42% 50%, #c8102e 50%);
 }
 
 .flag-france {
-  background: linear-gradient(90deg, #0055a4 0 33%, #fff 33% 66%, #ef4135 66%) !important;
+  border-left: 6px solid #0055a4;
+}
+
+.flag-france::after {
+  background: linear-gradient(90deg, #0055a4 0 33%, #fff 33% 66%, #ef4135 66%);
 }
 
 .flag-sweden {
-  background: linear-gradient(90deg, #006aa7 0 35%, #fecc00 35% 47%, #006aa7 47%) !important;
-  color: #fff !important;
+  border-left: 6px solid #006aa7;
+}
+
+.flag-sweden::after {
+  background: linear-gradient(90deg, #006aa7 0 36%, #fecc00 36% 48%, #006aa7 48%);
 }
 
 .flag-spain {
-  background: linear-gradient(#aa151b 0 25%, #f1bf00 25% 75%, #aa151b 75%) !important;
+  border-left: 6px solid #aa151b;
+}
+
+.flag-spain::after {
+  background: linear-gradient(#aa151b 0 25%, #f1bf00 25% 75%, #aa151b 75%);
 }
 
 .flag-germany {
-  background: linear-gradient(#000 0 33%, #dd0000 33% 66%, #ffce00 66%) !important;
-  color: #fff !important;
+  border-left: 6px solid #111;
+}
+
+.flag-germany::after {
+  background: linear-gradient(#000 0 33%, #dd0000 33% 66%, #ffce00 66%);
 }
 
 .flag-norway {
-  background: linear-gradient(90deg, #ba0c2f 0 36%, #fff 36% 44%, #00205b 44% 54%, #fff 54% 62%, #ba0c2f 62%) !important;
-  color: #fff !important;
+  border-left: 6px solid #ba0c2f;
+}
+
+.flag-norway::after {
+  background: linear-gradient(90deg, #ba0c2f 0 36%, #fff 36% 44%, #00205b 44% 54%, #fff 54% 62%, #ba0c2f 62%);
 }
 
 .flag-egypt {
-  background: linear-gradient(#ce1126 0 33%, #fff 33% 66%, #000 66%) !important;
+  border-left: 6px solid #ce1126;
+}
+
+.flag-egypt::after {
+  background: linear-gradient(#ce1126 0 33%, #fff 33% 66%, #000 66%);
 }
 
 .flag-croatia {
-  background: linear-gradient(#f7f7f7 0 33%, #171796 33% 66%, #ff0000 66%) !important;
-  color: #102016 !important;
+  border-left: 6px solid #171796;
+}
+
+.flag-croatia::after {
+  background: linear-gradient(#f7f7f7 0 33%, #171796 33% 66%, #ff0000 66%);
 }
 
 .flag-hungary {
-  background: linear-gradient(#ce2939 0 33%, #fff 33% 66%, #477050 66%) !important;
+  border-left: 6px solid #477050;
+}
+
+.flag-hungary::after {
+  background: linear-gradient(#ce2939 0 33%, #fff 33% 66%, #477050 66%);
 }
 
 .flag-brazil {
-  background: linear-gradient(135deg, #009b3a 0 38%, #ffdf00 38% 62%, #002776 62%) !important;
-  color: #fff !important;
+  border-left: 6px solid #009b3a;
 }
 
-.flag-denmark small,
-.flag-sweden small,
-.flag-germany small,
-.flag-norway small,
-.flag-brazil small {
-  color: rgba(255, 255, 255, 0.86) !important;
+.flag-brazil::after {
+  background: linear-gradient(135deg, #009b3a 0 38%, #ffdf00 38% 62%, #002776 62%);
 }
 
 .position-tips {
@@ -1499,6 +1604,162 @@ textarea:focus {
   border: 1px solid var(--line);
   background: #fff;
   box-shadow: none;
+}
+
+.notification-bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(9, 32, 24, 0.08);
+}
+
+.notification-bell span {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: #102016;
+  background: var(--accent);
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.athlete-notification-panel {
+  display: grid;
+  gap: 10px;
+  margin: -12px 0 24px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  background: #fff;
+  box-shadow: 0 16px 42px rgba(9, 32, 24, 0.08);
+}
+
+.athlete-notification {
+  display: grid;
+  gap: 4px;
+  border-radius: 14px;
+  padding: 13px 14px;
+  background: #f3f8f5;
+}
+
+.athlete-notification.badge {
+  background: #fff6d8;
+}
+
+.athlete-notification span,
+.athlete-notification small {
+  color: var(--muted);
+}
+
+.athlete-journey {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.journey-hero-card {
+  overflow: hidden;
+  border-radius: 28px;
+  padding: clamp(26px, 5vw, 46px);
+  color: #fff;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(255, 197, 26, 0.34), transparent 18rem),
+    linear-gradient(135deg, #0a2a1b, #137946);
+  box-shadow: 0 24px 70px rgba(9, 32, 24, 0.18);
+}
+
+.journey-hero-card .eyebrow {
+  color: #102016;
+  background: var(--accent);
+}
+
+.journey-hero-card h3 {
+  margin-top: 18px;
+  font-size: clamp(32px, 5vw, 56px);
+}
+
+.journey-hero-card p {
+  max-width: 760px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 18px;
+}
+
+.journey-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.journey-metrics article,
+.badge-board {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 20px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(9, 32, 24, 0.06);
+}
+
+.journey-metrics strong {
+  display: block;
+  color: var(--primary);
+  font-size: 36px;
+  font-family: Montserrat, sans-serif;
+}
+
+.journey-metrics span {
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.mini-progress,
+.campaign-progress {
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  margin-top: 14px;
+  background: #edf3ef;
+}
+
+.mini-progress i,
+.campaign-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+
+.badge-board > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.athlete-badge,
+.empty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #102016;
+  background: #fff4c5;
+  font-weight: 1000;
+}
+
+.athlete-badge b {
+  font-size: 18px;
 }
 
 .ghost-dark:hover {
@@ -3344,6 +3605,9 @@ textarea:focus {
   .hub-feature-grid,
   .position-tips,
   .position-tip-grid,
+  .journey-metrics,
+  .campaign-grid,
+  .sponsor-wall,
   .project-values,
   .support-impact-grid,
   .support-donation-grid,
