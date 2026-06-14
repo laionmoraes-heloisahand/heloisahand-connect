@@ -656,6 +656,78 @@ function renderHome() {
         <div class="card"><h3>100%</h3><p>relatam mudanca pessoal dentro e fora das quadras.</p></div>
       </div>
     </section>
+    ${renderHandballHub()}
+  `;
+}
+
+function renderHandballHub() {
+  const insightCards = [
+    ["Você sabia disso?", "O handebol moderno nasceu na Europa, mas hoje é jogado em escolas, clubes e seleções do mundo inteiro.", "Curiosidade"],
+    ["Regra rápida", "O atleta pode dar até 3 passos com a bola na mão antes de passar, arremessar ou quicar.", "Regras"],
+    ["História do jogo", "A modalidade cresceu muito com o formato indoor, quadra 40x20 e equipes de 7 jogadores.", "História"],
+    ["Mentalidade de atleta", "Quem treina tomada de decisão evolui mais rápido do que quem treina só força de arremesso.", "Performance"],
+  ];
+  const teams = ["Dinamarca", "França", "Suécia", "Espanha", "Alemanha", "Noruega", "Egito", "Croácia", "Hungria", "Brasil"];
+  const stars = ["Mathias Gidsel", "Nikola Karabatic", "Mikkel Hansen", "Dika Mem", "Sander Sagosen", "Henny Reistad", "Cristina Neagu", "Stine Oftedal", "Estavana Polman", "Ana Gros"];
+  const positionTips = [
+    ["Goleiro", "Leia o braço de arremesso, não apenas a bola. Trabalhe reação curta e comunicação com a defesa."],
+    ["Ponta", "Treine finalização com pouco ângulo, impulsão lateral e velocidade para contra-ataque."],
+    ["Armador", "Melhore visão de jogo, passe em movimento e decisão entre infiltrar, cruzar ou acionar o pivô."],
+    ["Pivô", "Ganhe posição antes de receber. Use giro curto, bloqueio limpo e proteção da bola."],
+  ];
+  return `
+    <section class="section handball-hub">
+      <div class="section-head center">
+        <span class="eyebrow">Fique por dentro do handebol</span>
+        <h2>Conhecimento também entra em quadra</h2>
+        <p>Curiosidades, regras, história e dicas para atletas acompanharem o esporte com mais inteligência.</p>
+      </div>
+      <div class="hub-grid">
+        ${insightCards
+          .map(
+            ([title, text, tag]) => `
+              <article class="hub-card insight">
+                <span>${tag}</span>
+                <h3>${title}</h3>
+                <p>${text}</p>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+      <div class="hub-feature-grid">
+        <article class="hub-rank-card teams">
+          <span class="eyebrow">Cenário mundial</span>
+          <h3>10 seleções para acompanhar</h3>
+          <ol>${teams.map((team) => `<li>${team}</li>`).join("")}</ol>
+          <p>Lista editorial para apresentar potências e escolas fortes do handebol mundial.</p>
+        </article>
+        <article class="hub-rank-card players">
+          <span class="eyebrow">Referências do esporte</span>
+          <h3>Atletas para conhecer</h3>
+          <ol>${stars.map((player) => `<li>${player}</li>`).join("")}</ol>
+          <p>Nomes importantes do handebol masculino e feminino para pesquisar, assistir e aprender.</p>
+        </article>
+      </div>
+      <div class="position-tips">
+        <div>
+          <span class="eyebrow">Dicas por posição</span>
+          <h3>Escolha sua função e evolua melhor</h3>
+        </div>
+        <div class="position-tip-grid">
+          ${positionTips
+            .map(
+              ([position, tip]) => `
+                <article class="position-tip-card">
+                  <strong>${position}</strong>
+                  <p>${tip}</p>
+                </article>
+              `,
+            )
+            .join("")}
+        </div>
+      </div>
+    </section>
   `;
 }
 

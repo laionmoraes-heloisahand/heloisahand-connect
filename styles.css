@@ -761,6 +761,162 @@ h3 {
   color: #a66b00;
 }
 
+.handball-hub {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255, 197, 26, 0.18), transparent 18rem),
+    radial-gradient(circle at 90% 0%, rgba(20, 137, 73, 0.18), transparent 20rem),
+    #f8fbf9;
+}
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.hub-card,
+.hub-rank-card,
+.position-tips {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(9, 32, 24, 0.07);
+}
+
+.hub-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  padding: 24px;
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.hub-card::before {
+  content: "";
+  position: absolute;
+  inset: -80px auto auto -80px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: rgba(255, 197, 26, 0.2);
+}
+
+.hub-card:hover {
+  border-color: rgba(20, 137, 73, 0.32);
+  box-shadow: 0 24px 56px rgba(9, 32, 24, 0.13);
+  transform: translateY(-6px);
+}
+
+.hub-card span,
+.hub-rank-card > span {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.hub-card h3 {
+  position: relative;
+  margin-top: 48px;
+  font-size: 24px;
+}
+
+.hub-card p,
+.hub-rank-card p,
+.position-tip-card p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.hub-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 24px;
+}
+
+.hub-rank-card {
+  overflow: hidden;
+  padding: 28px;
+}
+
+.hub-rank-card h3 {
+  margin-top: 16px;
+  font-size: clamp(26px, 3vw, 38px);
+}
+
+.hub-rank-card ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 22px 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: hub-rank;
+}
+
+.hub-rank-card li {
+  counter-increment: hub-rank;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 14px;
+  padding: 11px 12px;
+  color: var(--text);
+  background: #f3f8f5;
+  font-weight: 900;
+}
+
+.hub-rank-card li::before {
+  content: counter(hub-rank);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #102016;
+  background: var(--accent);
+  font-size: 13px;
+}
+
+.position-tips {
+  display: grid;
+  grid-template-columns: 0.7fr 1.3fr;
+  gap: 24px;
+  margin-top: 24px;
+  padding: 28px;
+}
+
+.position-tips h3 {
+  margin-top: 14px;
+  font-size: clamp(26px, 3vw, 38px);
+}
+
+.position-tip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.position-tip-card {
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(135deg, #fff, #f0f8f3);
+}
+
+.position-tip-card strong {
+  color: var(--primary);
+  font-size: 20px;
+}
+
 .category-invite {
   position: relative;
   overflow: hidden;
@@ -2951,6 +3107,10 @@ textarea:focus {
   .option-grid,
   .training-choice-grid,
   .lesson-package-grid,
+  .hub-grid,
+  .hub-feature-grid,
+  .position-tips,
+  .position-tip-grid,
   .project-values,
   .support-impact-grid,
   .support-donation-grid,
