@@ -185,6 +185,13 @@ const campaignSeeds = [
   { title: "Transporte para competições", goal: 2500, raised: 740, text: "Ajude a levar nossos atletas aos jogos fora da comunidade." },
 ];
 
+const productSeeds = [
+  { id: "product-camisa-oficial", name: "Camisa oficial HeloisaHand", category: "Uniforme", price: 79.9, emoji: "👕", description: "Camisa para atletas, famílias e apoiadores vestirem o projeto.", active: true },
+  { id: "product-shorts-treino", name: "Shorts de treino", category: "Uniforme", price: 49.9, emoji: "🩳", description: "Shorts confortável para treinos e jogos internos.", active: true },
+  { id: "product-bone", name: "Boné HeloisaHand", category: "Acessório", price: 39.9, emoji: "🧢", description: "Boné do instituto para apoiar dentro e fora da quadra.", active: true },
+  { id: "product-meiao", name: "Meião esportivo", category: "Treino", price: 24.9, emoji: "🧦", description: "Meião para treinos, jogos e uniforme da equipe.", active: true },
+];
+
 function lineScout(scores, notes, improvements) {
   return {
     type: "line",
@@ -259,6 +266,7 @@ const routes = {
   "/projeto": renderProject,
   "/treinar": renderTraining,
   "/apoiar": renderSupport,
+  "/loja": renderStore,
   "/atleta": renderAthlete,
   "/treinador": renderCoach,
   "/categorias": renderCategories,
@@ -1010,6 +1018,40 @@ function renderSupport() {
   `;
 }
 
+function renderStore() {
+  const data = getAuthData();
+  const products = (data.products || productSeeds).filter((item) => item.active !== false);
+  return `
+    <section class="section store-page">
+      <div class="section-head center">
+        <span class="eyebrow">Loja HeloisaHand</span>
+        <h2>Vista o projeto e ajude a manter essa história viva</h2>
+        <p>Produtos oficiais e itens solidários. Cada compra ajuda treinos, transporte, materiais e oportunidades para os atletas.</p>
+      </div>
+      <div class="store-grid">
+        ${products.map(renderProductCard).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderProductCard(product, editable = false) {
+  const price = Number(product.price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const buyMessage = `Olá! Quero comprar: ${product.name} (${price}). Pode me passar os detalhes?`;
+  return `
+    <article class="product-card">
+      <div class="product-visual">${product.image ? `<img src="${escapeAttribute(product.image)}" alt="${escapeAttribute(product.name)}" />` : `<span>${product.emoji || "🛒"}</span>`}</div>
+      <div class="product-body">
+        <small>${escapeHtml(product.category || "Produto")}</small>
+        <h3>${escapeHtml(product.name)}</h3>
+        <p>${escapeHtml(product.description || "")}</p>
+        <strong>${price}</strong>
+        ${editable ? `<button type="button" data-action="delete-product" data-product-id="${escapeAttribute(product.id)}">Remover</button>` : `<a class="button" href="${whatsappLink(buyMessage)}" target="_blank" rel="noreferrer">Comprar pelo WhatsApp</a>`}
+      </div>
+    </article>
+  `;
+}
+
 function supportImpactCard(icon, title, text) {
   return `<article class="support-impact-card"><span>${icon}</span><h3>${title}</h3><p>${text}</p></article>`;
 }
@@ -1500,6 +1542,8 @@ function createInitialAuthData() {
     interests: [],
     sponsors: sponsorSeeds,
     campaigns: campaignSeeds,
+    products: productSeeds,
+    passwordResets: [],
   };
   ensureSeedAthletes(initial);
   return initial;
@@ -1543,6 +1587,14 @@ function normalizeAuthData(data) {
     normalized.campaigns = campaignSeeds;
     changed = true;
   }
+  if (!Array.isArray(normalized.products)) {
+    normalized.products = productSeeds;
+    changed = true;
+  }
+  if (!Array.isArray(normalized.passwordResets)) {
+    normalized.passwordResets = [];
+    changed = true;
+  }
   if (repairObjectText(normalized)) changed = true;
   if (ensureSeedAthletes(normalized)) changed = true;
   if (normalizeSavedAthleteData(normalized)) changed = true;
@@ -1567,6 +1619,10 @@ function normalizeAuthData(data) {
       }
       if (!Array.isArray(athlete.badges)) {
         athlete.badges = [];
+        changed = true;
+      }
+      if (!athlete.profile) {
+        athlete.profile = { phone: "", email: "", address: "", nickname: "", avatar: "" };
         changed = true;
       }
     });
@@ -1755,6 +1811,23 @@ function renderAuthGate(role, title, subtitle) {
           <button class="button" type="submit">Entrar</button>
           <div id="portalMessage" class="portal-message"></div>
         </form>
+        <button class="auth-link-button" type="button" data-action="toggle-password-reset">Esqueci minha senha</button>
+        <div id="passwordResetWrap" class="password-reset-wrap" hidden>
+          <form id="passwordResetForm" class="form-grid" data-role="${role}">
+            <label>CPF<input id="resetCpf" inputmode="numeric" placeholder="000.000.000-00" value="${escapeAttribute(rememberedCpf)}" required /></label>
+            <label>E-mail cadastrado<input id="resetEmail" type="email" placeholder="seuemail@exemplo.com" required /></label>
+            <button class="button ghost-dark" type="submit">Enviar codigo por e-mail</button>
+            <div id="resetMessage" class="portal-message"></div>
+          </form>
+          <form id="passwordResetCompleteForm" class="form-grid reset-complete-form" data-role="${role}">
+            <p class="microcopy">Recebeu o codigo? Digite abaixo para criar uma nova senha.</p>
+            <label>Codigo recebido<input id="resetCode" inputmode="numeric" placeholder="000000" required /></label>
+            <label>Nova senha<input id="resetNewPassword" type="password" minlength="4" placeholder="Digite a nova senha" required /></label>
+            <label>Confirmar nova senha<input id="resetConfirmPassword" type="password" minlength="4" placeholder="Repita a nova senha" required /></label>
+            <button class="button" type="submit">Redefinir senha</button>
+            <div id="resetCompleteMessage" class="portal-message"></div>
+          </form>
+        </div>
       </div>
     </section>
   `;
@@ -1794,7 +1867,7 @@ function renderAthlete() {
       <div class="portal-header">
         <div>
           <span class="eyebrow">Area do Atleta</span>
-          <h2>Bem-vindo, ${user.name}</h2>
+          <h2>Bem-vindo, ${user.profile?.nickname || user.name}</h2>
           <p>${latestEvolution ? `Parabens pela evolucao: ${escapeHtml(latestEvolution.title)}.` : "Consulte sua jornada, metas, presencas e mensagens da comissao tecnica."}</p>
         </div>
         <button class="notification-bell" type="button" data-action="toggle-athlete-notifications">🔔<span>${notifications.length}</span></button>
@@ -1806,7 +1879,7 @@ function renderAthlete() {
       </div>
       ${renderAthleteJourney(user, data)}
       <div class="athlete-dashboard">
-        <article class="portal-card"><h3>Minha ficha</h3><p><strong>CPF:</strong> ${user.cpf ? formatCpf(user.cpf) : "Pendente"}</p>${user.birthDate ? `<p><strong>Nascimento:</strong> ${formatBirthDate(user.birthDate)}</p>` : ""}<p><strong>Posicao:</strong> ${user.position || "A definir"}</p><p><strong>Idade:</strong> ${user.age || "A definir"}</p><p><strong>Status:</strong> ativo</p></article>
+        <article class="portal-card athlete-profile-card">${renderAthleteProfileCard(user)}</article>
         <article class="portal-card"><h3>Meu scout</h3>${renderAthleteScoutSummary(user)}</article>
         <article class="portal-card"><h3>Avisos recentes</h3>${renderAthleteNotices()}</article>
         <article class="portal-card">
@@ -1819,6 +1892,36 @@ function renderAthlete() {
         </article>
       </div>
     </section>
+  `;
+}
+
+function renderAthleteProfileCard(user) {
+  const profile = user.profile || {};
+  return `
+    <div class="athlete-profile-head">
+      <div class="profile-avatar">${profile.avatar ? `<img src="${escapeAttribute(profile.avatar)}" alt="Foto de ${escapeAttribute(user.name)}" />` : `<span>${(profile.nickname || user.name || "A").slice(0, 1).toUpperCase()}</span>`}</div>
+      <div>
+        <h3>Meu perfil</h3>
+        <p>${escapeHtml(profile.nickname || user.name)}</p>
+      </div>
+    </div>
+    <p><strong>CPF:</strong> ${user.cpf ? formatCpf(user.cpf) : "Pendente"}</p>
+    ${user.birthDate ? `<p><strong>Nascimento:</strong> ${formatBirthDate(user.birthDate)}</p>` : ""}
+    <p><strong>Posicao:</strong> ${user.position || "A definir"}</p>
+    <p><strong>Telefone:</strong> ${escapeHtml(profile.phone || "Nao informado")}</p>
+    <p><strong>E-mail:</strong> ${escapeHtml(profile.email || "Nao informado")}</p>
+    <button class="button ghost-dark" type="button" data-action="toggle-athlete-profile">Editar meu perfil</button>
+    <div id="athleteProfileFormWrap" class="athlete-profile-form-wrap" hidden>
+      <form id="athleteProfileForm" class="form-grid">
+        <label>Foto de perfil<input id="profileAvatar" type="file" accept="image/*" /></label>
+        <label>Nickname<input id="profileNickname" value="${escapeAttribute(profile.nickname || "")}" placeholder="Como quer ser chamado na plataforma?" /></label>
+        <label>Telefone<input id="profilePhone" value="${escapeAttribute(profile.phone || "")}" placeholder="(27) 99999-9999" /></label>
+        <label>E-mail<input id="profileEmail" type="email" value="${escapeAttribute(profile.email || "")}" placeholder="seuemail@exemplo.com" /></label>
+        <label>Endereco<textarea id="profileAddress" placeholder="Rua, numero, bairro e cidade">${escapeHtml(profile.address || "")}</textarea></label>
+        <button class="button" type="submit">Salvar perfil</button>
+        <div id="portalMessage" class="portal-message"></div>
+      </form>
+    </div>
   `;
 }
 
@@ -1920,6 +2023,7 @@ function renderCoachDashboard(activeTab = "athletes") {
     ["tryouts", "Seletivas"],
     ["classes", "Aulas"],
     ["supporters", "Apoiadores"],
+    ["store", "Loja"],
     ["media", "Fotos & Videos"],
     ["attendance", "Presencas"],
     ["chat", "Chat"],
@@ -1948,6 +2052,7 @@ function renderCoachTab(tab, data) {
     tryouts: () => renderSimpleManager("Seletivas", "Nova seletiva", "Categoria", "Data, local e criterios"),
     classes: () => renderSimpleManager("Aulas", "Nova aula", "Tema da aula", "Objetivo tecnico"),
     supporters: () => renderSimpleManager("Apoiadores", "Novo apoiador", "Nome do apoiador", "Tipo de apoio"),
+    store: () => renderStoreManager(data),
     media: () => renderMediaManager(data),
     attendance: () => renderAttendanceManager(data),
     chat: () => renderChatManager(data),
@@ -2289,6 +2394,38 @@ function renderAttendanceRow(athlete, record) {
   `;
 }
 
+function renderStoreManager(data) {
+  const products = data.products || [];
+  return `
+    <div class="coach-panel-head">
+      <h3>Loja do instituto</h3>
+      <p class="panel-subtitle">Adicione produtos, valores e itens solidários que serão exibidos na loja pública.</p>
+    </div>
+    <div class="grid two media-manager">
+      <div class="portal-card">
+        <h3>Novo produto</h3>
+        <form id="productForm" class="form-grid">
+          <label>Nome do produto<input id="productName" required placeholder="Ex.: Camisa oficial HeloisaHand" /></label>
+          <div class="form-grid two">
+            <label>Categoria<input id="productCategory" required placeholder="Uniforme, acessório..." /></label>
+            <label>Preço<input id="productPrice" type="number" min="0" step="0.01" required placeholder="79.90" /></label>
+          </div>
+          <label>Emoji ou símbolo<input id="productEmoji" maxlength="4" placeholder="👕" /></label>
+          <label>Descrição<textarea id="productDescription" required placeholder="Explique o produto e como ele ajuda o projeto"></textarea></label>
+          <button class="button" type="submit">Publicar produto</button>
+          <div id="portalMessage" class="portal-message"></div>
+        </form>
+      </div>
+      <div class="portal-card">
+        <h3>Produtos publicados</h3>
+        <div class="store-grid compact">
+          ${products.length ? products.map((item) => renderProductCard(item, true)).join("") : "<p>Nenhum produto cadastrado ainda.</p>"}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderChatManager(data) {
   const athletes = data.users.filter((user) => user.role === "athlete");
   const messages = data.messages.filter((msg) => msg.category !== "external").slice().reverse();
@@ -2510,6 +2647,8 @@ function bindInteractions() {
     });
   });
   document.querySelector("#loginForm")?.addEventListener("submit", handleLogin);
+  document.querySelector("#passwordResetForm")?.addEventListener("submit", handlePasswordResetRequest);
+  document.querySelector("#passwordResetCompleteForm")?.addEventListener("submit", handlePasswordResetComplete);
   document.querySelector("#changePasswordForm")?.addEventListener("submit", handlePasswordChange);
   document.querySelector("#interestForm")?.addEventListener("submit", handleInterestSubmit);
   document.querySelector("#newAthleteForm")?.addEventListener("submit", handleNewAthlete);
@@ -2523,6 +2662,8 @@ function bindInteractions() {
   document.querySelector("#mediaType")?.addEventListener("change", handleMediaTypeChange);
   document.querySelector("#coachMessageForm")?.addEventListener("submit", handleCoachMessage);
   document.querySelector("#athleteMessageForm")?.addEventListener("submit", handleAthleteMessage);
+  document.querySelector("#athleteProfileForm")?.addEventListener("submit", handleAthleteProfileSave);
+  document.querySelector("#productForm")?.addEventListener("submit", handleProductSave);
   document.querySelectorAll(".scout-form").forEach((form) => form.addEventListener("submit", handleScoutSave));
   document.querySelectorAll("[data-competition-tab]").forEach((button) => button.addEventListener("click", handleCompetitionTab));
   document.querySelectorAll("[data-chat-tab]").forEach((button) => button.addEventListener("click", handleChatTab));
@@ -2668,6 +2809,87 @@ async function handleLogin(event) {
   } catch (error) {
     if (await tryRestoreRememberedLogin(role, login, password, remember)) return;
     showPortalMessage(`${error.message} Se for primeiro acesso, confira se o CPF esta cadastrado e use a senha 1234.`, "error");
+  }
+}
+
+async function handlePasswordResetRequest(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const role = form.dataset.role;
+  const cpf = onlyDigits(document.querySelector("#resetCpf").value);
+  const email = document.querySelector("#resetEmail").value.trim();
+  const message = document.querySelector("#resetMessage");
+  if (cpf.length !== 11) {
+    if (message) {
+      message.textContent = "Informe um CPF com 11 numeros.";
+      message.className = "portal-message error";
+    }
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/password-reset-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, cpf, email }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Nao foi possivel solicitar recuperacao.");
+    if (message) {
+      message.textContent = "Se o CPF e o e-mail estiverem cadastrados, um codigo sera enviado para esse e-mail.";
+      message.className = "portal-message ok";
+    }
+  } catch (error) {
+    if (message) {
+      message.textContent = error.message;
+      message.className = "portal-message error";
+    }
+  }
+}
+
+async function handlePasswordResetComplete(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const role = form.dataset.role;
+  const cpf = onlyDigits(document.querySelector("#resetCpf").value);
+  const email = document.querySelector("#resetEmail").value.trim();
+  const code = document.querySelector("#resetCode").value.trim();
+  const password = document.querySelector("#resetNewPassword").value;
+  const confirmation = document.querySelector("#resetConfirmPassword").value;
+  const message = document.querySelector("#resetCompleteMessage");
+  if (password !== confirmation) {
+    if (message) {
+      message.textContent = "As senhas nao conferem.";
+      message.className = "portal-message error";
+    }
+    return;
+  }
+  if (password === defaultPassword) {
+    if (message) {
+      message.textContent = "Escolha uma senha diferente da senha temporaria.";
+      message.className = "portal-message error";
+    }
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/password-reset-complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, cpf, email, code, password }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Nao foi possivel redefinir a senha.");
+    if (message) {
+      message.textContent = "Senha redefinida. Agora voce ja pode entrar com CPF e a nova senha.";
+      message.className = "portal-message ok";
+    }
+    form.reset();
+  } catch (error) {
+    if (message) {
+      message.textContent = error.message;
+      message.className = "portal-message error";
+    }
   }
 }
 
@@ -3153,6 +3375,59 @@ async function handleAthleteMessage(event) {
   }
 }
 
+async function handleAthleteProfileSave(event) {
+  event.preventDefault();
+  const profile = {
+    nickname: document.querySelector("#profileNickname").value.trim(),
+    phone: document.querySelector("#profilePhone").value.trim(),
+    email: document.querySelector("#profileEmail").value.trim(),
+    address: document.querySelector("#profileAddress").value.trim(),
+  };
+  try {
+    const response = await fetch("/api/athlete-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(profile),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Nao foi possivel salvar o perfil.");
+    authDataCache = payload.data;
+    const file = document.querySelector("#profileAvatar").files[0];
+    if (file) await uploadAthleteAvatar(file);
+    renderRoute();
+  } catch (error) {
+    showPortalMessage(error.message, "error");
+  }
+}
+
+async function uploadAthleteAvatar(file) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+  const response = await fetch("/api/athlete-avatar", { method: "POST", headers: getAuthHeaders(), body: formData });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Nao foi possivel salvar a foto.");
+  authDataCache = payload.data;
+}
+
+function handleProductSave(event) {
+  event.preventDefault();
+  const data = getAuthData();
+  data.products = data.products || [];
+  data.products.unshift({
+    id: `product-${Date.now()}`,
+    name: document.querySelector("#productName").value.trim(),
+    category: document.querySelector("#productCategory").value.trim(),
+    price: Number(document.querySelector("#productPrice").value || 0),
+    emoji: document.querySelector("#productEmoji").value.trim() || "🛒",
+    description: document.querySelector("#productDescription").value.trim(),
+    active: true,
+    createdAt: new Date().toISOString(),
+  });
+  saveAuthData(data);
+  app.innerHTML = renderCoachDashboard("store");
+  bindInteractions();
+}
+
 function handleAction(event) {
   const action = event.currentTarget.dataset.action;
   if (action === "open-hub-topic") {
@@ -3168,6 +3443,14 @@ function handleAction(event) {
   if (action === "toggle-athlete-notifications") {
     const panel = document.querySelector("#athleteNotificationPanel");
     if (panel) panel.hidden = !panel.hidden;
+  }
+  if (action === "toggle-athlete-profile") {
+    const wrap = document.querySelector("#athleteProfileFormWrap");
+    if (wrap) wrap.hidden = !wrap.hidden;
+  }
+  if (action === "toggle-password-reset") {
+    const wrap = document.querySelector("#passwordResetWrap");
+    if (wrap) wrap.hidden = !wrap.hidden;
   }
   if (action === "logout") {
     clearSession();
@@ -3281,6 +3564,13 @@ function handleAction(event) {
     data.interests = data.interests.filter((item) => item.id !== event.currentTarget.dataset.interestId);
     saveAuthData(data);
     app.innerHTML = renderCoachDashboard("interests");
+    bindInteractions();
+  }
+  if (action === "delete-product") {
+    const data = getAuthData();
+    data.products = (data.products || []).filter((item) => item.id !== event.currentTarget.dataset.productId);
+    saveAuthData(data);
+    app.innerHTML = renderCoachDashboard("store");
     bindInteractions();
   }
 }

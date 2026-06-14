@@ -15,6 +15,7 @@ const seedAuthFile = path.join(seedDataDir, "auth.json");
 const maxUploadBytes = 12 * 1024 * 1024;
 const defaultPassword = "1234";
 const sessions = new Map();
+const mailFrom = process.env.MAIL_FROM || `Instituto HeloisaHand <${process.env.SMTP_USER || "institutoheloisahand@gmail.com"}>`;
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -102,6 +103,43 @@ function createSession(user) {
   return token;
 }
 
+function hashResetCode(code) {
+  return crypto.createHash("sha256").update(String(code)).digest("hex");
+}
+
+function hasSmtpConfig() {
+  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+}
+
+async function sendPasswordResetEmail(user, email, code) {
+  if (!hasSmtpConfig()) return false;
+  const nodemailer = require("nodemailer");
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 465),
+    secure: String(process.env.SMTP_SECURE || "true") !== "false",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+  await transporter.sendMail({
+    from: mailFrom,
+    to: email,
+    subject: "Recuperacao de senha - HeloisaHand Connect",
+    text: [
+      `Ola, ${user.profile?.nickname || user.name}.`,
+      "",
+      `Seu codigo de recuperacao de senha e: ${code}`,
+      "Esse codigo vale por 30 minutos.",
+      "",
+      "Se voce nao solicitou essa recuperacao, ignore esta mensagem.",
+      "Instituto HeloisaHand",
+    ].join("\n"),
+  });
+  return true;
+}
+
 function sanitizeUser(user, includePrivate = false) {
   if (!user) return null;
   const { password, ...rest } = user;
@@ -126,6 +164,7 @@ function dataForAthlete(data, userId) {
     media: [],
     events: data.events || [],
     attendance: (data.attendance || []).filter((item) => item.athleteId === userId),
+    products: data.products || [],
     interests: [],
   };
 }
@@ -140,6 +179,7 @@ function publicData(data) {
     interests: [],
     sponsors: data?.sponsors || [],
     campaigns: data?.campaigns || [],
+    products: data?.products || [],
   };
 }
 
@@ -342,6 +382,134 @@ async function handleApi(req, res, cleanUrl) {
       sendJson(res, 200, { data: dataForAthlete(data, user.id) });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel enviar a mensagem." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/athlete-profile") {
+    const session = getSession(req);
+    if (!session || session.role !== "athlete") {
+      sendJson(res, 403, { error: "Acesso restrito ao atleta." });
+      return true;
+    }
+    try {
+      const body = await collectBody(req, 1024 * 128);
+      const payload = JSON.parse(body.toString("utf8"));
+      const data = readAuthData();
+      const user = data.users.find((item) => item.id === session.userId);
+      user.profile = {
+        ...(user.profile || {}),
+        nickname: String(payload.nickname || "").trim(),
+        phone: String(payload.phone || "").trim(),
+        email: String(payload.email || "").trim(),
+        address: String(payload.address || "").trim(),
+      };
+      saveAuthData(data);
+      sendJson(res, 200, { data: dataForAthlete(data, user.id) });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel salvar o perfil." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/athlete-avatar") {
+    const session = getSession(req);
+    if (!session || session.role !== "athlete") {
+      sendJson(res, 403, { error: "Acesso restrito ao atleta." });
+      return true;
+    }
+    try {
+      const body = await collectBody(req, maxUploadBytes);
+      const { files } = parseMultipart(body, req.headers["content-type"] || "");
+      const file = files.avatar;
+      if (!file || !file.contentType.startsWith("image/")) {
+        sendJson(res, 400, { error: "Selecione uma imagem valida." });
+        return true;
+      }
+      const ext = path.extname(file.filename).toLowerCase() || ".jpg";
+      const safeName = `avatar-${session.userId}-${Date.now()}${ext}`;
+      fs.writeFileSync(path.join(uploadsDir, safeName), file.data);
+      const data = readAuthData();
+      const user = data.users.find((item) => item.id === session.userId);
+      user.profile = { ...(user.profile || {}), avatar: `/uploads/${safeName}` };
+      saveAuthData(data);
+      sendJson(res, 200, { data: dataForAthlete(data, user.id) });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel salvar a foto." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/password-reset-request") {
+    try {
+      const body = await collectBody(req, 1024 * 64);
+      const payload = JSON.parse(body.toString("utf8"));
+      const role = String(payload.role || "athlete");
+      const cpf = String(payload.cpf || "").replace(/\D/g, "");
+      const email = String(payload.email || "").trim().toLowerCase();
+      const data = readAuthData();
+      const user = data.users.find((item) => item.role === role && item.cpf === cpf && String(item.profile?.email || "").toLowerCase() === email);
+      data.passwordResets = data.passwordResets || [];
+      if (user) {
+        const code = String(crypto.randomInt(100000, 999999));
+        let status = "pending-email-config";
+        try {
+          status = (await sendPasswordResetEmail(user, email, code)) ? "sent" : "pending-email-config";
+        } catch (error) {
+          status = "email-error";
+        }
+        data.passwordResets.push({
+          id: `reset-${Date.now()}`,
+          userId: user.id,
+          email,
+          codeHash: hashResetCode(code),
+          status,
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        });
+        saveAuthData(data);
+      }
+      sendJson(res, 200, { ok: true, message: "Se o e-mail estiver cadastrado, a recuperacao sera processada." });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel solicitar recuperacao." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/password-reset-complete") {
+    try {
+      const body = await collectBody(req, 1024 * 64);
+      const payload = JSON.parse(body.toString("utf8"));
+      const role = String(payload.role || "athlete");
+      const cpf = String(payload.cpf || "").replace(/\D/g, "");
+      const email = String(payload.email || "").trim().toLowerCase();
+      const code = String(payload.code || "").trim();
+      const password = String(payload.password || "");
+      if (cpf.length !== 11 || !email || code.length < 4 || password.length < 4 || password === defaultPassword) {
+        sendJson(res, 400, { error: "Dados de recuperacao invalidos." });
+        return true;
+      }
+      const data = readAuthData();
+      const user = data.users.find((item) => item.role === role && item.cpf === cpf && String(item.profile?.email || "").toLowerCase() === email);
+      const reset = (data.passwordResets || []).slice().reverse().find((item) =>
+        item.userId === user?.id &&
+        item.email === email &&
+        item.status !== "used" &&
+        item.codeHash === hashResetCode(code) &&
+        new Date(item.expiresAt).getTime() > Date.now()
+      );
+      if (!user || !reset) {
+        sendJson(res, 400, { error: "Codigo invalido ou expirado." });
+        return true;
+      }
+      user.password = password;
+      user.mustChangePassword = false;
+      reset.status = "used";
+      reset.usedAt = new Date().toISOString();
+      saveAuthData(data);
+      sendJson(res, 200, { ok: true });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel redefinir a senha." });
     }
     return true;
   }
