@@ -241,6 +241,7 @@ const scoutTemplates = {
 const app = document.querySelector("#app");
 const nav = document.querySelector("#mainNav");
 let authDataCache = null;
+let handballHubTimer = null;
 
 const routes = {
   "/": renderHome,
@@ -661,20 +662,10 @@ function renderHome() {
 }
 
 function renderHandballHub() {
-  const insightCards = [
-    ["Você sabia disso?", "O handebol moderno nasceu na Europa, mas hoje é jogado em escolas, clubes e seleções do mundo inteiro.", "Curiosidade"],
-    ["Regra rápida", "O atleta pode dar até 3 passos com a bola na mão antes de passar, arremessar ou quicar.", "Regras"],
-    ["História do jogo", "A modalidade cresceu muito com o formato indoor, quadra 40x20 e equipes de 7 jogadores.", "História"],
-    ["Mentalidade de atleta", "Quem treina tomada de decisão evolui mais rápido do que quem treina só força de arremesso.", "Performance"],
-  ];
-  const teams = ["Dinamarca", "França", "Suécia", "Espanha", "Alemanha", "Noruega", "Egito", "Croácia", "Hungria", "Brasil"];
-  const stars = ["Mathias Gidsel", "Nikola Karabatic", "Mikkel Hansen", "Dika Mem", "Sander Sagosen", "Henny Reistad", "Cristina Neagu", "Stine Oftedal", "Estavana Polman", "Ana Gros"];
-  const positionTips = [
-    ["Goleiro", "Leia o braço de arremesso, não apenas a bola. Trabalhe reação curta e comunicação com a defesa."],
-    ["Ponta", "Treine finalização com pouco ângulo, impulsão lateral e velocidade para contra-ataque."],
-    ["Armador", "Melhore visão de jogo, passe em movimento e decisão entre infiltrar, cruzar ou acionar o pivô."],
-    ["Pivô", "Ganhe posição antes de receber. Use giro curto, bloqueio limpo e proteção da bola."],
-  ];
+  const topics = getHandballTopics();
+  const teams = getHandballTeams();
+  const stars = getHandballStars();
+  const positionTips = getPositionTips();
   return `
     <section class="section handball-hub">
       <div class="section-head center">
@@ -683,13 +674,15 @@ function renderHandballHub() {
         <p>Curiosidades, regras, história e dicas para atletas acompanharem o esporte com mais inteligência.</p>
       </div>
       <div class="hub-grid">
-        ${insightCards
+        ${topics
           .map(
-            ([title, text, tag]) => `
-              <article class="hub-card insight">
-                <span>${tag}</span>
-                <h3>${title}</h3>
-                <p>${text}</p>
+            (topic, topicIndex) => `
+              <article class="hub-card insight ${topic.tone}" data-action="open-hub-topic" data-topic-index="${topicIndex}" data-current-index="0">
+                <span>${topic.tag}</span>
+                <i>${topic.icon}</i>
+                <h3>${topic.title}</h3>
+                <p data-hub-rotating-text>${topic.items[0].short}</p>
+                <small>Clique para saber mais</small>
               </article>
             `,
           )
@@ -699,13 +692,13 @@ function renderHandballHub() {
         <article class="hub-rank-card teams">
           <span class="eyebrow">Cenário mundial</span>
           <h3>10 seleções para acompanhar</h3>
-          <ol>${teams.map((team) => `<li>${team}</li>`).join("")}</ol>
-          <p>Lista editorial para apresentar potências e escolas fortes do handebol mundial.</p>
+          <ol>${teams.map((team) => `<li class="${team.flag}"><strong>${team.name}</strong><small>${team.reason}</small></li>`).join("")}</ol>
+          <p>Lista editorial baseada em tradição, títulos recentes, força continental e relevância internacional.</p>
         </article>
         <article class="hub-rank-card players">
           <span class="eyebrow">Referências do esporte</span>
           <h3>Atletas para conhecer</h3>
-          <ol>${stars.map((player) => `<li>${player}</li>`).join("")}</ol>
+          <ol>${stars.map((player) => `<li><strong>${player.name}</strong><small>${player.reason}</small></li>`).join("")}</ol>
           <p>Nomes importantes do handebol masculino e feminino para pesquisar, assistir e aprender.</p>
         </article>
       </div>
@@ -717,18 +710,117 @@ function renderHandballHub() {
         <div class="position-tip-grid">
           ${positionTips
             .map(
-              ([position, tip]) => `
-                <article class="position-tip-card">
-                  <strong>${position}</strong>
-                  <p>${tip}</p>
+              (item, index) => `
+                <article class="position-tip-card" data-action="open-position-tip" data-position-index="${index}">
+                  <span>${item.icon}</span>
+                  <strong>${item.position}</strong>
+                  <p>${item.tips[0]}</p>
+                  <small>Ver plano de evolução</small>
                 </article>
               `,
             )
             .join("")}
         </div>
       </div>
+      <div id="handballHubModal" class="hub-modal" hidden></div>
     </section>
   `;
+}
+
+function getHandballTopics() {
+  return [
+    {
+      title: "Você sabia disso?",
+      tag: "Curiosidade",
+      icon: "!",
+      tone: "curiosity",
+      items: [
+        { short: "O handebol indoor usa 7 jogadores por equipe: 6 na linha e 1 goleiro.", detail: "Esse formato deixa o jogo muito rápido, com transições constantes entre ataque e defesa." },
+        { short: "O arremesso de 7 metros é a cobrança mais parecida com um pênalti.", detail: "Ele aparece quando uma chance clara de gol é impedida de forma irregular." },
+        { short: "O goleiro pode virar o primeiro atacante da equipe.", detail: "Uma reposição rápida após defesa pode criar contra-ataque antes da defesa adversária se organizar." },
+        { short: "Ponta boa não depende só de ângulo: depende de tempo de salto.", detail: "O melhor salto abre o corpo, aumenta a visão do goleiro e permite finalizar com mais opções." },
+        { short: "O pivô joga muito sem bola.", detail: "Bloqueio, giro, posicionamento e leitura do defensor são tão importantes quanto receber e finalizar." },
+      ],
+    },
+    {
+      title: "Regras que todo atleta precisa saber",
+      tag: "Regras",
+      icon: "#",
+      tone: "rules",
+      items: [
+        { short: "Com a bola na mão, o atleta pode dar até 3 passos.", detail: "Depois disso, precisa quicar, passar ou arremessar. Essa regra muda toda a tomada de decisão." },
+        { short: "A área de 6 metros pertence ao goleiro.", detail: "Jogadores de linha podem saltar sobre a área, mas precisam soltar a bola antes de tocar o solo dentro dela." },
+        { short: "Dois minutos fora mudam o jogo.", detail: "A exclusão temporária deixa a equipe com um atleta a menos e exige organização defensiva." },
+        { short: "Jogo passivo pune ataque sem objetivo.", detail: "Quando a arbitragem sinaliza passivo, o ataque precisa finalizar rápido e com intenção real." },
+        { short: "Contato existe, mas empurrar por trás não é permitido.", detail: "Defender bem é ocupar espaço, controlar corpo e antecipar, não derrubar o adversário." },
+      ],
+    },
+    {
+      title: "História do handebol",
+      tag: "História",
+      icon: "H",
+      tone: "history",
+      items: [
+        { short: "O handebol moderno cresceu muito na Europa.", detail: "A modalidade se organizou internacionalmente e virou esporte forte em escolas, clubes e seleções." },
+        { short: "O jogo de quadra consolidou o formato 40x20.", detail: "A quadra indoor deixou a modalidade mais veloz, técnica e intensa." },
+        { short: "A IHF organiza os Mundiais da modalidade.", detail: "Os campeonatos mundiais ajudam a revelar seleções, estilos de jogo e grandes atletas." },
+        { short: "O handebol feminino tem enorme tradição competitiva.", detail: "Noruega, França, Dinamarca e outros países ajudaram a elevar o nível técnico mundial." },
+        { short: "No Brasil, o handebol é muito forte no ambiente escolar.", detail: "A escola costuma ser a porta de entrada de muitos atletas para clubes, jogos estudantis e seleções." },
+      ],
+    },
+    {
+      title: "Performance inteligente",
+      tag: "Performance",
+      icon: "+",
+      tone: "performance",
+      items: [
+        { short: "Decisão rápida vale tanto quanto força.", detail: "Saber quando passar, infiltrar ou arremessar costuma separar atletas comuns de atletas decisivos." },
+        { short: "Treino de perna melhora arremesso.", detail: "Impulsão, equilíbrio e transferência de força nascem muito antes do braço acelerar." },
+        { short: "Comunicação organiza a defesa.", detail: "Falar troca, cobertura e lado da bola evita buracos e ajuda o goleiro a ler melhor o chute." },
+        { short: "Recuperação também é treino.", detail: "Sono, hidratação e alimentação influenciam velocidade, concentração e prevenção de lesões." },
+        { short: "Assistir jogos acelera leitura tática.", detail: "Observar atletas de alto nível ajuda a entender movimento sem bola, tempo de passe e variação de finalização." },
+      ],
+    },
+  ];
+}
+
+function getHandballTeams() {
+  return [
+    { name: "Dinamarca", flag: "flag-denmark", reason: "Potência atual: tetracampeã mundial masculina e campeã olímpica em 2024." },
+    { name: "França", flag: "flag-france", reason: "Maior vencedora histórica do Mundial masculino, com seis títulos." },
+    { name: "Suécia", flag: "flag-sweden", reason: "Escola tradicional, quatro vezes campeã mundial masculina." },
+    { name: "Espanha", flag: "flag-spain", reason: "Seleção muito regular, forte taticamente e sempre competitiva em torneios grandes." },
+    { name: "Alemanha", flag: "flag-germany", reason: "Tem liga muito forte e formação que revela atletas de alto nível." },
+    { name: "Noruega", flag: "flag-norway", reason: "Referência enorme no feminino, com jogadoras decisivas e cultura vencedora." },
+    { name: "Egito", flag: "flag-egypt", reason: "Principal força africana recente e cada vez mais perigosa contra europeus." },
+    { name: "Croácia", flag: "flag-croatia", reason: "Vice mundial masculino em 2025 e dona de torcida e tradição muito fortes." },
+    { name: "Hungria", flag: "flag-hungary", reason: "País com clubes fortes, base competitiva e muita tradição no feminino." },
+    { name: "Brasil", flag: "flag-brazil", reason: "Referência nas Américas e campeão mundial feminino em 2013." },
+  ];
+}
+
+function getHandballStars() {
+  return [
+    { name: "Mathias Gidsel", reason: "Eleito melhor do mundo pela IHF em 2023, 2024 e 2025; MVP e artilheiro do Mundial 2025." },
+    { name: "Henny Reistad", reason: "Uma das maiores estrelas atuais; venceu o prêmio de melhor do mundo pela IHF em sequência recente." },
+    { name: "Nikola Karabatic", reason: "Lenda francesa, três vezes eleito melhor do mundo pela IHF." },
+    { name: "Mikkel Hansen", reason: "Craque dinamarquês, também três vezes melhor do mundo pela IHF." },
+    { name: "Cristina Neagu", reason: "Referência histórica do feminino, conhecida por técnica, arremesso e liderança." },
+    { name: "Dika Mem", reason: "Um dos nomes mais explosivos da França, destaque por potência e tomada de decisão." },
+    { name: "Sander Sagosen", reason: "Armador norueguês de elite, famoso por leitura, passe e arremesso de longa distância." },
+    { name: "Stine Oftedal", reason: "Central norueguesa, eleita melhor do mundo pela IHF em 2019." },
+    { name: "Estavana Polman", reason: "Campeã mundial com os Países Baixos e destaque por criatividade ofensiva." },
+    { name: "Bruna de Paula", reason: "Brasileira de alto nível internacional, referência técnica para jovens atletas do Brasil." },
+  ];
+}
+
+function getPositionTips() {
+  return [
+    { position: "Goleiro", icon: "G", tips: ["Leia o braço de arremesso antes da bola sair.", "Treine queda curta e recuperação rápida.", "Converse com a defesa em toda posse.", "Estude os cantos preferidos dos adversários.", "Capriche na reposição para contra-ataque."] },
+    { position: "Ponta", icon: "P", tips: ["Treine finalização com pouco ângulo.", "Melhore impulsão lateral.", "Acelere o contra-ataque antes da defesa voltar.", "Varie alto, baixo, rosca e cavadinha.", "Aprenda a entrar no tempo certo do passe."] },
+    { position: "Armador", icon: "A", tips: ["Leia a segunda linha da defesa.", "Treine passe em movimento.", "Varie cruzamento, finta e arremesso externo.", "Chame jogadas com clareza.", "Aprenda a acelerar e desacelerar o ataque."] },
+    { position: "Pivô", icon: "PV", tips: ["Brigue por espaço antes da bola chegar.", "Use bloqueios sem falta de ataque.", "Treine giro curto para os dois lados.", "Proteja a bola no contato.", "Converse com armadores para combinar entradas."] },
+  ];
 }
 
 function renderCategoryGrid() {
@@ -2303,6 +2395,7 @@ function bindInteractions() {
   document.querySelectorAll(".scout-form").forEach((form) => form.addEventListener("submit", handleScoutSave));
   document.querySelectorAll("[data-competition-tab]").forEach((button) => button.addEventListener("click", handleCompetitionTab));
   document.querySelectorAll("[data-chat-tab]").forEach((button) => button.addEventListener("click", handleChatTab));
+  startHandballHubRotation();
   bindScoutRangeInputs();
   document.querySelectorAll(".demo-panel-form").forEach((form) => {
     form.addEventListener("submit", (event) => {
@@ -2339,6 +2432,69 @@ function handleChatTab(event) {
   document.querySelectorAll("[data-chat-panel]").forEach((panel) => {
     panel.hidden = panel.dataset.chatPanel !== tab;
   });
+}
+
+function startHandballHubRotation() {
+  if (handballHubTimer) {
+    clearInterval(handballHubTimer);
+    handballHubTimer = null;
+  }
+  const cards = [...document.querySelectorAll(".hub-card[data-topic-index]")];
+  if (!cards.length) return;
+  const topics = getHandballTopics();
+  handballHubTimer = setInterval(() => {
+    cards.forEach((card) => {
+      const topic = topics[Number(card.dataset.topicIndex)];
+      if (!topic) return;
+      const nextIndex = (Number(card.dataset.currentIndex || 0) + 1) % topic.items.length;
+      card.dataset.currentIndex = String(nextIndex);
+      const text = card.querySelector("[data-hub-rotating-text]");
+      if (!text) return;
+      text.classList.add("is-changing");
+      setTimeout(() => {
+        text.textContent = topic.items[nextIndex].short;
+        text.classList.remove("is-changing");
+      }, 180);
+    });
+  }, 6500);
+}
+
+function openHubModal(title, eyebrow, content) {
+  const modal = document.querySelector("#handballHubModal");
+  if (!modal) return;
+  modal.hidden = false;
+  modal.innerHTML = `
+    <div class="hub-modal-backdrop" data-action="close-hub-modal"></div>
+    <article class="hub-modal-card">
+      <button type="button" data-action="close-hub-modal" aria-label="Fechar">×</button>
+      <span class="eyebrow">${eyebrow}</span>
+      <h3>${title}</h3>
+      ${content}
+    </article>
+  `;
+  modal.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", handleAction));
+}
+
+function openHubTopic(card) {
+  const topic = getHandballTopics()[Number(card.dataset.topicIndex)];
+  if (!topic) return;
+  const index = Number(card.dataset.currentIndex || 0);
+  const selected = topic.items[index] || topic.items[0];
+  openHubModal(
+    selected.short,
+    topic.tag,
+    `<p>${selected.detail}</p><ul>${topic.items.map((item) => `<li>${item.short}</li>`).join("")}</ul>`,
+  );
+}
+
+function openPositionTip(card) {
+  const item = getPositionTips()[Number(card.dataset.positionIndex)];
+  if (!item) return;
+  openHubModal(
+    `Plano de evolução: ${item.position}`,
+    "Dicas por posição",
+    `<ul>${item.tips.map((tip) => `<li>${tip}</li>`).join("")}</ul>`,
+  );
 }
 
 function bindScoutRangeInputs() {
@@ -2828,6 +2984,16 @@ async function handleAthleteMessage(event) {
 
 function handleAction(event) {
   const action = event.currentTarget.dataset.action;
+  if (action === "open-hub-topic") {
+    openHubTopic(event.currentTarget);
+  }
+  if (action === "open-position-tip") {
+    openPositionTip(event.currentTarget);
+  }
+  if (action === "close-hub-modal") {
+    const modal = document.querySelector("#handballHubModal");
+    if (modal) modal.hidden = true;
+  }
   if (action === "logout") {
     clearSession();
     renderRoute();
