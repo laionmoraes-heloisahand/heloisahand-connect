@@ -652,6 +652,7 @@ function renderHome() {
         </div>
       </div>
     </section>
+    ${renderPublicMonthlyRanking()}
     <section class="section">
       <div class="section-head center">
         <span class="eyebrow">Caminhos do instituto</span>
@@ -698,6 +699,32 @@ function renderHome() {
     </section>
     ${renderSponsorAndCampaigns()}
     ${renderHandballHub()}
+  `;
+}
+
+function renderPublicMonthlyRanking(data = getAuthData()) {
+  const ranking = getActiveRanking(data);
+  if (!ranking?.items?.length) return "";
+  const usersById = new Map((data.users || []).map((user) => [user.id, user]));
+  return `
+    <section class="home-ranking-strip">
+      <div>
+        <span class="eyebrow">Destaques do mes</span>
+        <h2>${escapeHtml(ranking.title || "Top 5 atletas do mes")}</h2>
+      </div>
+      <div class="home-ranking-list">
+        ${ranking.items.slice(0, 5).map((item, index) => {
+          const athlete = usersById.get(item.athleteId);
+          return `
+            <article>
+              <strong>${index + 1}</strong>
+              <div class="ranking-avatar small">${athlete?.profile?.avatar ? `<img src="${escapeAttribute(athlete.profile.avatar)}" alt="${escapeAttribute(athlete.name)}" />` : `<b>${(athlete?.name || "A").slice(0, 1).toUpperCase()}</b>`}</div>
+              <span>${escapeHtml(athlete?.profile?.nickname || athlete?.name || item.name || "Atleta")}</span>
+            </article>
+          `;
+        }).join("")}
+      </div>
+    </section>
   `;
 }
 
@@ -1563,6 +1590,7 @@ function createInitialAuthData() {
     sponsors: sponsorSeeds,
     campaigns: campaignSeeds,
     products: productSeeds,
+    rankings: [],
     passwordResets: [],
   };
   ensureSeedAthletes(initial);
@@ -1629,6 +1657,10 @@ function normalizeAuthData(data) {
   });
   if (!Array.isArray(normalized.products)) {
     normalized.products = productSeeds;
+    changed = true;
+  }
+  if (!Array.isArray(normalized.rankings)) {
+    normalized.rankings = [];
     changed = true;
   }
   if (!Array.isArray(normalized.passwordResets)) {
@@ -1864,9 +1896,25 @@ function repairObjectText(value) {
 
 function showPortalMessage(message, type = "ok") {
   const target = document.querySelector("#portalMessage");
+  showToast(message, type);
   if (!target) return;
   target.textContent = message;
   target.className = `portal-message ${type}`;
+}
+
+function showToast(message, type = "ok") {
+  if (!message) return;
+  let toast = document.querySelector("#appToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "appToast";
+    toast.className = "app-toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.className = `app-toast ${type} show`;
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toast.classList.remove("show"), 2800);
 }
 
 function renderAuthGate(role, title, subtitle) {
@@ -1945,6 +1993,7 @@ function renderAthlete() {
     return renderPasswordChange(user, "Por seguranca, todo atleta precisa trocar a senha temporaria no primeiro acesso.");
   }
   const data = getAuthData();
+  const realNotifications = [...(user.notifications || [])].filter((item) => item.type !== "read").length;
   const notifications = getAthleteNotifications(user);
   const latestEvolution = notifications.find((item) => item.type === "evolution");
   return `
@@ -1955,7 +2004,7 @@ function renderAthlete() {
           <h2>Bem-vindo, ${user.profile?.nickname || user.name}</h2>
           <p>${latestEvolution ? `Parabens pela evolucao: ${escapeHtml(latestEvolution.title)}.` : "Consulte sua jornada, metas, presencas e mensagens da comissao tecnica."}</p>
         </div>
-        <button class="notification-bell" type="button" data-action="toggle-athlete-notifications">🔔<span>${notifications.length}</span></button>
+        <button class="notification-bell" type="button" data-action="toggle-athlete-notifications" aria-expanded="false">🔔<span>${realNotifications}</span></button>
         <button class="button ghost-dark" data-action="logout">Sair</button>
       </div>
       <div id="athleteNotificationPanel" class="athlete-notification-panel" hidden>
@@ -1963,6 +2012,7 @@ function renderAthlete() {
         ${notifications.length ? notifications.map(renderAthleteNotification).join("") : `<p>Nenhuma notificacao nova por enquanto.</p>`}
       </div>
       ${renderAthleteJourney(user, data)}
+      ${renderAthleteMonthlyRanking(data, user.id)}
       <div class="athlete-dashboard">
         <article class="portal-card athlete-profile-card">${renderAthleteProfileCard(user)}</article>
         <article class="portal-card"><h3>Meu scout</h3>${renderAthleteScoutSummary(user)}</article>
@@ -1976,6 +2026,42 @@ function renderAthlete() {
             <button class="button" type="submit">Enviar mensagem</button>
           </form>
         </article>
+      </div>
+    </section>
+  `;
+}
+
+function getActiveRanking(data = getAuthData()) {
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const rankings = data.rankings || [];
+  return rankings.find((item) => item.monthKey === monthKey) || rankings[0] || null;
+}
+
+function renderAthleteMonthlyRanking(data, athleteId = "") {
+  const ranking = getActiveRanking(data);
+  if (!ranking || !Array.isArray(ranking.items) || !ranking.items.length) return "";
+  const usersById = new Map((data.users || []).map((user) => [user.id, user]));
+  return `
+    <section class="athlete-ranking-card">
+      <div>
+        <span class="eyebrow">Ranking do mes</span>
+        <h3>${escapeHtml(ranking.title || "Top 5 atletas do mes")}</h3>
+        <p>${escapeHtml(ranking.description || "Reconhecimento por evolucao, presenca, compromisso e atitude dentro do projeto.")}</p>
+      </div>
+      <div class="ranking-podium">
+        ${ranking.items.slice(0, 5).map((item, index) => {
+          const athlete = usersById.get(item.athleteId);
+          const isCurrent = item.athleteId === athleteId;
+          return `
+            <article class="${isCurrent ? "current" : ""}">
+              <strong>${index + 1}</strong>
+              <div>
+                <b>${escapeHtml(athlete?.name || item.name || "Atleta")}</b>
+                <span>${escapeHtml(item.reason || "Destaque do mes")}</span>
+              </div>
+            </article>
+          `;
+        }).join("")}
       </div>
     </section>
   `;
@@ -2000,6 +2086,7 @@ function renderAthleteProfileCard(user) {
     <div id="athleteProfileFormWrap" class="athlete-profile-form-wrap" hidden>
       <form id="athleteProfileForm" class="form-grid">
         <label>Foto de perfil<input id="profileAvatar" type="file" accept="image/*" /></label>
+        <div id="avatarPreview" class="avatar-preview" hidden></div>
         <label>Nickname<input id="profileNickname" value="${escapeAttribute(profile.nickname || "")}" placeholder="Como quer ser chamado na plataforma?" /></label>
         <label>Telefone<input id="profilePhone" value="${escapeAttribute(profile.phone || "")}" placeholder="(27) 99999-9999" /></label>
         <label>E-mail<input id="profileEmail" type="email" value="${escapeAttribute(profile.email || "")}" placeholder="seuemail@exemplo.com" /></label>
@@ -2012,7 +2099,17 @@ function renderAthleteProfileCard(user) {
 }
 
 function getAthleteNotifications(user) {
-  return [...(user.notifications || [])].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).slice(0, 8);
+  const notifications = [...(user.notifications || [])].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).slice(0, 8);
+  if (notifications.length) return notifications;
+  return [
+    {
+      id: "empty-notification",
+      type: "info",
+      title: "Tudo certo por enquanto",
+      text: "Quando o treinador publicar avisos, mensagens, medalhas ou evolucoes do seu scout, elas aparecem aqui.",
+      createdAt: "",
+    },
+  ];
 }
 
 function renderAthleteNotification(item) {
@@ -2128,6 +2225,7 @@ function renderCoachDashboard(activeTab = "athletes") {
     ["tryouts", "Seletivas"],
     ["classes", "Aulas"],
     ["supporters", "Apoiadores"],
+    ["ranking", "Ranking"],
     ["store", "Loja"],
     ["media", "Fotos & Videos"],
     ["attendance", "Presencas"],
@@ -2157,6 +2255,7 @@ function renderCoachTab(tab, data) {
     tryouts: () => renderSimpleManager("Seletivas", "Nova seletiva", "Categoria", "Data, local e criterios"),
     classes: () => renderSimpleManager("Aulas", "Nova aula", "Tema da aula", "Objetivo tecnico"),
     supporters: () => renderSupportManager(data),
+    ranking: () => renderRankingManager(data),
     store: () => renderStoreManager(data),
     media: () => renderMediaManager(data),
     attendance: () => renderAttendanceManager(data),
@@ -2548,6 +2647,80 @@ function renderSupportManager(data) {
   `;
 }
 
+function renderRankingManager(data) {
+  const athletes = data.users.filter((user) => user.role === "athlete").sort((a, b) => a.name.localeCompare(b.name));
+  const ranking = getActiveRanking(data) || {
+    id: `ranking-${new Date().toISOString().slice(0, 7)}`,
+    monthKey: new Date().toISOString().slice(0, 7),
+    title: "Top 5 atletas do mes",
+    description: "Reconhecimento por evolucao, presenca, compromisso e atitude.",
+    items: [],
+  };
+  return `
+    <div class="coach-panel-head">
+      <div>
+        <h3>Ranking do mes</h3>
+        <p class="panel-subtitle">Escolha os cinco destaques do mes. Esse ranking aparece na Area do Atleta com foto, nome e motivo do reconhecimento.</p>
+      </div>
+    </div>
+    <div class="ranking-manager-grid">
+      <form id="rankingForm" class="portal-card ranking-form">
+        <div class="form-grid two">
+          <label>Mes de referencia<input id="rankingMonth" type="month" value="${escapeAttribute(ranking.monthKey)}" required /></label>
+          <label>Titulo<input id="rankingTitle" value="${escapeAttribute(ranking.title || "Top 5 atletas do mes")}" required /></label>
+        </div>
+        <label>Descricao<textarea id="rankingDescription" required>${escapeHtml(ranking.description || "")}</textarea></label>
+        <div class="ranking-slots">
+          ${[0, 1, 2, 3, 4].map((index) => renderRankingSlot(index, ranking.items?.[index], athletes)).join("")}
+        </div>
+        <button class="button pulse-action" type="submit">Salvar ranking do mes</button>
+        <div id="rankingMessage" class="portal-message"></div>
+      </form>
+      <div class="portal-card ranking-preview-card">
+        <h3>Previa do ranking</h3>
+        ${renderRankingPreview(ranking, data)}
+      </div>
+    </div>
+  `;
+}
+
+function renderRankingSlot(index, item = {}, athletes = []) {
+  return `
+    <div class="ranking-slot">
+      <strong>${index + 1}</strong>
+      <label>Atleta
+        <select name="athleteId-${index}" required>
+          <option value="">Selecione</option>
+          ${athletes.map((athlete) => `<option value="${escapeAttribute(athlete.id)}" ${item.athleteId === athlete.id ? "selected" : ""}>${escapeHtml(athlete.name)}</option>`).join("")}
+        </select>
+      </label>
+      <label>Motivo do destaque<input name="reason-${index}" value="${escapeAttribute(item.reason || "")}" placeholder="Ex.: evolucao no passe, presenca e compromisso" /></label>
+    </div>
+  `;
+}
+
+function renderRankingPreview(ranking, data) {
+  if (!ranking.items?.length) return `<div class="empty-state compact"><strong>Nenhum ranking salvo ainda.</strong><p>Preencha os atletas e salve para publicar.</p></div>`;
+  const usersById = new Map((data.users || []).map((user) => [user.id, user]));
+  return `
+    <div class="ranking-preview-list">
+      ${ranking.items.slice(0, 5).map((item, index) => {
+        const athlete = usersById.get(item.athleteId);
+        return `
+          <article>
+            <span>${index + 1}</span>
+            <div class="ranking-avatar">${athlete?.profile?.avatar ? `<img src="${escapeAttribute(athlete.profile.avatar)}" alt="${escapeAttribute(athlete.name)}" />` : `<b>${(athlete?.name || "A").slice(0, 1).toUpperCase()}</b>`}</div>
+            <div>
+              <strong>${escapeHtml(athlete?.name || item.name || "Atleta")}</strong>
+              <small>${escapeHtml(item.reason || "Destaque do mes")}</small>
+            </div>
+          </article>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
 function renderCampaignEditCard(campaign) {
   return `
     <form class="support-edit-card campaign-edit-form" data-campaign-id="${escapeAttribute(campaign.id)}">
@@ -2862,6 +3035,8 @@ function bindInteractions() {
   document.querySelector("#productForm")?.addEventListener("submit", handleProductSave);
   document.querySelector("#campaignForm")?.addEventListener("submit", handleCampaignSave);
   document.querySelector("#sponsorForm")?.addEventListener("submit", handleSponsorSave);
+  document.querySelector("#rankingForm")?.addEventListener("submit", handleRankingSave);
+  document.querySelector("#profileAvatar")?.addEventListener("change", handleAvatarPreview);
   document.querySelectorAll(".campaign-edit-form").forEach((form) => form.addEventListener("submit", handleCampaignEdit));
   document.querySelectorAll(".sponsor-edit-form").forEach((form) => form.addEventListener("submit", handleSponsorEdit));
   document.querySelectorAll(".scout-form").forEach((form) => form.addEventListener("submit", handleScoutSave));
@@ -3392,7 +3567,7 @@ async function handleAttendanceSave(event) {
     await saveAuthDataConfirmed(data);
     app.innerHTML = renderCoachDashboard("attendance");
     bindInteractions();
-    setTimeout(() => showPortalMessage("Frequencia salva no servidor.", "ok"), 0);
+    setTimeout(() => showToast("Frequencia salva no servidor.", "ok"), 0);
   } catch (error) {
     const message = form.querySelector(".attendance-save-message");
     if (message) {
@@ -3510,7 +3685,7 @@ function handleCoachMessage(event) {
   bindInteractions();
 }
 
-function handleScoutSave(event) {
+async function handleScoutSave(event) {
   event.preventDefault();
   const form = event.currentTarget;
   const data = getAuthData();
@@ -3526,9 +3701,14 @@ function handleScoutSave(event) {
   scout.updatedAt = new Date().toISOString();
   athlete.scout = scout;
   registerScoutEvolution(athlete, previousScout, scout);
-  saveAuthData(data);
-  const message = form.querySelector(".scout-message");
-  if (message) message.textContent = "Scout salvo com sucesso.";
+  try {
+    await saveAuthDataConfirmed(data);
+    const message = form.querySelector(".scout-message");
+    if (message) message.textContent = "Scout salvo com sucesso.";
+    showToast("Scout salvo com sucesso.", "ok");
+  } catch (error) {
+    showToast(error.message, "error");
+  }
 }
 
 function registerScoutEvolution(athlete, previousScout, nextScout) {
@@ -3588,6 +3768,7 @@ async function handleAthleteMessage(event) {
 
 async function handleAthleteProfileSave(event) {
   event.preventDefault();
+  const form = event.currentTarget;
   const profile = {
     nickname: document.querySelector("#profileNickname").value.trim(),
     phone: document.querySelector("#profilePhone").value.trim(),
@@ -3605,19 +3786,46 @@ async function handleAthleteProfileSave(event) {
     authDataCache = payload.data;
     const file = document.querySelector("#profileAvatar").files[0];
     if (file) await uploadAthleteAvatar(file);
+    showToast(file ? "Perfil e foto salvos com sucesso." : "Perfil salvo com sucesso.", "ok");
     renderRoute();
   } catch (error) {
-    showPortalMessage(error.message, "error");
+    const msg = form.querySelector("#portalMessage");
+    if (msg) {
+      msg.textContent = error.message;
+      msg.className = "portal-message error";
+    }
+    showToast(error.message, "error");
   }
 }
 
 async function uploadAthleteAvatar(file) {
+  if (!file.type.startsWith("image/")) throw new Error("Escolha um arquivo de imagem valido.");
+  if (file.size > 12 * 1024 * 1024) throw new Error("Use uma foto com ate 12 MB.");
   const formData = new FormData();
   formData.append("avatar", file);
   const response = await fetch("/api/athlete-avatar", { method: "POST", headers: getAuthHeaders(), body: formData });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "Nao foi possivel salvar a foto.");
   authDataCache = payload.data;
+}
+
+function handleAvatarPreview(event) {
+  const file = event.currentTarget.files?.[0];
+  const preview = document.querySelector("#avatarPreview");
+  if (!preview) return;
+  if (!file) {
+    preview.hidden = true;
+    preview.innerHTML = "";
+    return;
+  }
+  if (!file.type.startsWith("image/")) {
+    preview.hidden = false;
+    preview.innerHTML = `<span>Escolha uma imagem valida.</span>`;
+    return;
+  }
+  const src = URL.createObjectURL(file);
+  preview.hidden = false;
+  preview.innerHTML = `<img src="${src}" alt="Previa da foto de perfil" /><span>Foto selecionada. Clique em salvar perfil para enviar.</span>`;
 }
 
 function handleProductSave(event) {
@@ -3637,6 +3845,7 @@ function handleProductSave(event) {
   saveAuthData(data);
   app.innerHTML = renderCoachDashboard("store");
   bindInteractions();
+  showToast("Produto publicado na loja.", "ok");
 }
 
 async function handleCampaignSave(event) {
@@ -3656,8 +3865,53 @@ async function handleCampaignSave(event) {
     await saveAuthDataConfirmed(data);
     app.innerHTML = renderCoachDashboard("supporters");
     bindInteractions();
+    showToast("Campanha publicada no site.", "ok");
   } catch (error) {
     showSupportFormMessage(error.message, "error");
+  }
+}
+
+async function handleRankingSave(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const data = getAuthData();
+  data.rankings = data.rankings || [];
+  const monthKey = document.querySelector("#rankingMonth").value;
+  const athletesById = new Map((data.users || []).map((user) => [user.id, user]));
+  const items = [0, 1, 2, 3, 4]
+    .map((index) => {
+      const athleteId = form.elements[`athleteId-${index}`]?.value || "";
+      const athlete = athletesById.get(athleteId);
+      return {
+        athleteId,
+        name: athlete?.name || "",
+        reason: form.elements[`reason-${index}`]?.value.trim() || "Destaque do mes",
+      };
+    })
+    .filter((item) => item.athleteId);
+  const ranking = {
+    id: `ranking-${monthKey}`,
+    monthKey,
+    title: document.querySelector("#rankingTitle").value.trim(),
+    description: document.querySelector("#rankingDescription").value.trim(),
+    items: items.slice(0, 5),
+    updatedAt: new Date().toISOString(),
+  };
+  const existing = data.rankings.find((item) => item.monthKey === monthKey);
+  if (existing) Object.assign(existing, ranking);
+  else data.rankings.unshift(ranking);
+  try {
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("ranking");
+    bindInteractions();
+    showToast("Ranking do mes salvo e publicado para os atletas.", "ok");
+  } catch (error) {
+    const msg = document.querySelector("#rankingMessage");
+    if (msg) {
+      msg.textContent = error.message;
+      msg.className = "portal-message error";
+    }
+    showToast(error.message, "error");
   }
 }
 
@@ -3677,6 +3931,7 @@ async function handleCampaignEdit(event) {
     await saveAuthDataConfirmed(data);
     app.innerHTML = renderCoachDashboard("supporters");
     bindInteractions();
+    showToast("Campanha atualizada.", "ok");
   } catch (error) {
     showInlineFormMessage(form, error.message, "error");
   }
@@ -3699,6 +3954,7 @@ async function handleSponsorSave(event) {
     await saveAuthDataConfirmed(data);
     app.innerHTML = renderCoachDashboard("supporters");
     bindInteractions();
+    showToast("Apoiador adicionado ao mural.", "ok");
   } catch (error) {
     showSupportFormMessage(error.message, "error");
   }
@@ -3720,6 +3976,7 @@ async function handleSponsorEdit(event) {
     await saveAuthDataConfirmed(data);
     app.innerHTML = renderCoachDashboard("supporters");
     bindInteractions();
+    showToast("Apoiador atualizado.", "ok");
   } catch (error) {
     showInlineFormMessage(form, error.message, "error");
   }
@@ -3755,7 +4012,11 @@ async function handleAction(event) {
   }
   if (action === "toggle-athlete-notifications") {
     const panel = document.querySelector("#athleteNotificationPanel");
-    if (panel) panel.hidden = !panel.hidden;
+    if (panel) {
+      panel.hidden = !panel.hidden;
+      event.currentTarget.classList.toggle("active", !panel.hidden);
+      event.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+    }
   }
   if (action === "toggle-athlete-profile") {
     const wrap = document.querySelector("#athleteProfileFormWrap");

@@ -166,18 +166,29 @@ function dataForAthlete(data, userId) {
     media: [],
     events: data.events || [],
     attendance: (data.attendance || []).filter((item) => item.athleteId === userId),
+    rankings: data.rankings || [],
     products: data.products || [],
     interests: [],
   };
 }
 
 function publicData(data) {
+  const rankingAthleteIds = new Set((data?.rankings || []).flatMap((ranking) => (ranking.items || []).map((item) => item.athleteId)));
   return {
-    users: [],
+    users: (data?.users || [])
+      .filter((user) => rankingAthleteIds.has(user.id))
+      .map((user) => ({
+        id: user.id,
+        role: user.role,
+        name: user.name,
+        position: user.position,
+        profile: { nickname: user.profile?.nickname || "", avatar: user.profile?.avatar || "" },
+      })),
     notices: [],
     messages: [],
     media: [],
     events: data?.events || [],
+    rankings: data?.rankings || [],
     interests: [],
     sponsors: data?.sponsors || [],
     campaigns: data?.campaigns || [],
@@ -627,9 +638,12 @@ http
     if (cleanUrl.startsWith("/api/") && (await handleApi(req, res, cleanUrl))) return;
 
     const requestPath = cleanUrl === "/" ? "index.html" : decodeURIComponent(cleanUrl.slice(1));
-    const filePath = path.join(root, requestPath);
+    const filePath = requestPath.startsWith("uploads/")
+      ? path.join(uploadsDir, requestPath.replace(/^uploads[\\/]/, ""))
+      : path.join(root, requestPath);
 
-    if (!filePath.startsWith(root)) {
+    const allowedRoot = requestPath.startsWith("uploads/") ? uploadsDir : root;
+    if (!filePath.startsWith(allowedRoot)) {
       res.writeHead(403);
       res.end("Forbidden");
       return;
