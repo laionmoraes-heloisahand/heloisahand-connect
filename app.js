@@ -2,6 +2,7 @@ const phone = "5527999377026";
 const authStoreKey = "heloisahand_auth_v2";
 const sessionStoreKey = "heloisahand_session_v2";
 const rememberedLoginKey = "heloisahand_remembered_login_v1";
+const passwordProofKey = "heloisahand_password_proofs_v1";
 const pendingRememberKey = "heloisahand_pending_remember_v1";
 const defaultPassword = "1234";
 const coachCpf = "";
@@ -317,13 +318,27 @@ async function fetchBackendAuthData(url = "/api/auth") {
 }
 
 function persistBackendAuthData(data) {
-  fetch("/api/auth", {
+  return fetch("/api/auth", {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(data),
   }).catch(() => {
     localStorage.setItem(authStoreKey, JSON.stringify(data));
+    return null;
   });
+}
+
+async function saveAuthDataConfirmed(data) {
+  authDataCache = data;
+  localStorage.setItem(authStoreKey, JSON.stringify(data));
+  const response = await persistBackendAuthData(data);
+  if (response && !response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Sua sessao expirou. Entre novamente para salvar no servidor.");
+    }
+    throw new Error("Nao foi possivel salvar no servidor.");
+  }
+  return true;
 }
 
 function normalizePortugueseText(root = document.body) {
@@ -687,8 +702,8 @@ function renderHome() {
 }
 
 function renderSponsorAndCampaigns(data = getAuthData()) {
-  const sponsors = data.sponsors || sponsorSeeds;
-  const campaigns = data.campaigns || campaignSeeds;
+  const sponsors = (data.sponsors || sponsorSeeds).filter((item) => item.active !== false);
+  const campaigns = (data.campaigns || campaignSeeds).filter((item) => item.active !== false);
   return `
     <section class="section sponsor-campaigns">
       <div class="section-head center">
@@ -1592,6 +1607,26 @@ function normalizeAuthData(data) {
     normalized.campaigns = campaignSeeds;
     changed = true;
   }
+  normalized.campaigns.forEach((campaign, index) => {
+    if (!campaign.id) {
+      campaign.id = `campaign-${index}-${slugify(campaign.title || "campanha")}`;
+      changed = true;
+    }
+    if (typeof campaign.active !== "boolean") {
+      campaign.active = true;
+      changed = true;
+    }
+  });
+  normalized.sponsors.forEach((sponsor, index) => {
+    if (!sponsor.id) {
+      sponsor.id = `sponsor-${index}-${slugify(sponsor.name || "apoiador")}`;
+      changed = true;
+    }
+    if (typeof sponsor.active !== "boolean") {
+      sponsor.active = true;
+      changed = true;
+    }
+  });
   if (!Array.isArray(normalized.products)) {
     normalized.products = productSeeds;
     changed = true;
@@ -1690,10 +1725,34 @@ async function hashLoginPassword(password) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function getPasswordProofs() {
+  try {
+    return JSON.parse(localStorage.getItem(passwordProofKey) || "{}");
+  } catch (error) {
+    return {};
+  }
+}
+
+async function savePasswordProof(role, cpf, password) {
+  if (!cpf || !password || password === defaultPassword) return;
+  const passwordHash = await hashLoginPassword(password);
+  if (!passwordHash) return;
+  const proofs = getPasswordProofs();
+  proofs[`${role}:${onlyDigits(cpf)}`] = { passwordHash, savedAt: new Date().toISOString() };
+  localStorage.setItem(passwordProofKey, JSON.stringify(proofs));
+}
+
+async function hasPasswordProof(role, cpf, password) {
+  const proof = getPasswordProofs()[`${role}:${onlyDigits(cpf)}`];
+  if (!proof?.passwordHash) return false;
+  return proof.passwordHash === await hashLoginPassword(password);
+}
+
 async function saveRememberedLogin(role, cpf, password) {
   const remembered = getRememberedLogins();
   remembered[role] = { cpf, passwordHash: await hashLoginPassword(password), savedAt: new Date().toISOString() };
   localStorage.setItem(rememberedLoginKey, JSON.stringify(remembered));
+  await savePasswordProof(role, cpf, password);
 }
 
 function clearRememberedLogin(role) {
@@ -1734,6 +1793,16 @@ function getCurrentUser(role) {
 
 function onlyDigits(value) {
   return String(value || "").replace(/\D/g, "");
+}
+
+function slugify(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || "item";
 }
 
 function formatCpf(cpf) {
@@ -1811,7 +1880,7 @@ function renderAuthGate(role, title, subtitle) {
         <p>${subtitle}</p>
         <form id="loginForm" class="form-grid" data-role="${role}">
           <label>CPF<input id="loginId" autocomplete="username" inputmode="numeric" placeholder="000.000.000-00" value="${escapeAttribute(rememberedCpf)}" required /></label>
-          <label>Senha<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Digite sua senha" required /></label>
+          ${passwordField("Senha", "loginPassword", "Digite sua senha", "current-password")}
           <label class="remember-login"><input id="rememberCpf" type="checkbox" ${rememberedCpf ? "checked" : ""} /> Lembrar CPF neste aparelho</label>
           <button class="button" type="submit">Entrar</button>
           <div id="portalMessage" class="portal-message"></div>
@@ -1827,14 +1896,25 @@ function renderAuthGate(role, title, subtitle) {
           <form id="passwordResetCompleteForm" class="form-grid reset-complete-form" data-role="${role}">
             <p class="microcopy">Recebeu o codigo? Digite abaixo para criar uma nova senha.</p>
             <label>Codigo recebido<input id="resetCode" inputmode="numeric" placeholder="000000" required /></label>
-            <label>Nova senha<input id="resetNewPassword" type="password" minlength="4" placeholder="Digite a nova senha" required /></label>
-            <label>Confirmar nova senha<input id="resetConfirmPassword" type="password" minlength="4" placeholder="Repita a nova senha" required /></label>
+            ${passwordField("Nova senha", "resetNewPassword", "Digite a nova senha", "new-password")}
+            ${passwordField("Confirmar nova senha", "resetConfirmPassword", "Repita a nova senha", "new-password")}
             <button class="button" type="submit">Redefinir senha</button>
             <div id="resetCompleteMessage" class="portal-message"></div>
           </form>
         </div>
       </div>
     </section>
+  `;
+}
+
+function passwordField(label, id, placeholder, autocomplete = "current-password") {
+  return `
+    <label>${label}
+      <span class="password-field">
+        <input id="${id}" type="password" minlength="4" autocomplete="${autocomplete}" placeholder="${placeholder}" required />
+        <button type="button" data-action="toggle-password-visibility" data-password-target="${id}" aria-label="Mostrar senha">Mostrar</button>
+      </span>
+    </label>
   `;
 }
 
@@ -1846,8 +1926,8 @@ function renderPasswordChange(user, intro) {
         <h2>Crie sua senha pessoal</h2>
         <p>${intro}</p>
         <form id="changePasswordForm" class="form-grid" data-user-id="${user.id}">
-          <label>Nova senha<input id="newPassword" type="password" minlength="4" placeholder="Digite uma nova senha" required /></label>
-          <label>Confirmar nova senha<input id="confirmPassword" type="password" minlength="4" placeholder="Repita a nova senha" required /></label>
+          ${passwordField("Nova senha", "newPassword", "Digite uma nova senha", "new-password")}
+          ${passwordField("Confirmar nova senha", "confirmPassword", "Repita a nova senha", "new-password")}
           <button class="button" type="submit">Salvar nova senha</button>
           <div id="portalMessage" class="portal-message"></div>
         </form>
@@ -1886,6 +1966,7 @@ function renderAthlete() {
       <div class="athlete-dashboard">
         <article class="portal-card athlete-profile-card">${renderAthleteProfileCard(user)}</article>
         <article class="portal-card"><h3>Meu scout</h3>${renderAthleteScoutSummary(user)}</article>
+        <article class="portal-card"><h3>Minha frequencia</h3>${renderAthleteAttendanceSummary(user, data)}</article>
         <article class="portal-card"><h3>Avisos recentes</h3>${renderAthleteNotices()}</article>
         <article class="portal-card">
           <h3>Chat com treinador</h3>
@@ -1991,13 +2072,32 @@ function renderAthleteScoutSummary(athlete) {
   const scout = getAthleteScout(athlete);
   const items = getScoutItems(athlete.position);
   const average = items.length ? Math.round((items.reduce((sum, [key]) => sum + Number(scout.scores[key] || 0), 0) / items.length) * 10) / 10 : 0;
+  const hasScores = items.some(([key]) => Number.isFinite(Number(scout.scores[key])));
   return `
     <p class="score-highlight">${average}</p>
     <p>Media geral da ultima avaliacao.</p>
     ${scout.updatedAt ? `<p><strong>Atualizado:</strong> ${new Date(scout.updatedAt).toLocaleDateString("pt-BR")}</p>` : "<p>Aguardando primeira avaliacao do treinador.</p>"}
-    ${scout.updatedAt ? renderScoutReadOnly(athlete) : ""}
+    ${hasScores ? renderScoutReadOnly(athlete) : ""}
     ${scout.notes ? `<p><strong>Pontos positivos:</strong> ${scout.notes}</p>` : ""}
     ${scout.improvements ? `<p><strong>Pontos a melhorar:</strong> ${scout.improvements}</p>` : ""}
+  `;
+}
+
+function renderAthleteAttendanceSummary(athlete, data) {
+  const record = getAttendanceRecord(data, athlete.id);
+  const rate = getAttendanceRate(record);
+  const rateClass = rate === null ? "empty" : rate >= 75 ? "good" : rate >= 50 ? "warn" : "danger";
+  return `
+    <div class="athlete-frequency-card ${rateClass}">
+      <strong>${rate === null ? "--" : `${rate}%`}</strong>
+      <span>${rate === null ? "Sem dados de frequencia ainda." : "Frequencia nos treinos."}</span>
+      <div class="frequency-bar"><i style="width:${rate || 0}%"></i></div>
+      <div class="attendance-mini-counts">
+        <span><b>${Number(record.presences || 0)}</b> presencas</span>
+        <span><b>${Number(record.absences || 0)}</b> faltas</span>
+      </div>
+      ${record.notes ? `<p><strong>Observacao:</strong> ${escapeHtml(record.notes)}</p>` : ""}
+    </div>
   `;
 }
 
@@ -2056,7 +2156,7 @@ function renderCoachTab(tab, data) {
     news: () => renderSimpleManager("Noticias", "Nova noticia", "Titulo da noticia", "Texto da noticia"),
     tryouts: () => renderSimpleManager("Seletivas", "Nova seletiva", "Categoria", "Data, local e criterios"),
     classes: () => renderSimpleManager("Aulas", "Nova aula", "Tema da aula", "Objetivo tecnico"),
-    supporters: () => renderSimpleManager("Apoiadores", "Novo apoiador", "Nome do apoiador", "Tipo de apoio"),
+    supporters: () => renderSupportManager(data),
     store: () => renderStoreManager(data),
     media: () => renderMediaManager(data),
     attendance: () => renderAttendanceManager(data),
@@ -2393,9 +2493,100 @@ function renderAttendanceRow(athlete, record) {
             <button class="button" type="submit">Salvar frequencia</button>
             <button type="button" data-action="cancel-attendance-edit" data-athlete-id="${escapeAttribute(athlete.id)}">Cancelar</button>
           </div>
+          <div class="portal-message attendance-save-message"></div>
         </form>
       </div>
     </div>
+  `;
+}
+
+function renderSupportManager(data) {
+  const campaigns = data.campaigns || [];
+  const sponsors = data.sponsors || [];
+  return `
+    <div class="coach-panel-head">
+      <h3>Apoiadores e campanhas</h3>
+      <p class="panel-subtitle">Configure metas reais, valores arrecadados e campanhas pontuais do instituto. Tudo que ficar ativo aparece na area publica de apoio.</p>
+    </div>
+    <div class="grid two media-manager">
+      <div class="portal-card">
+        <h3>Nova campanha</h3>
+        <form id="campaignForm" class="form-grid">
+          <label>Titulo<input id="campaignTitle" required placeholder="Ex.: Tenis para atletas da base" /></label>
+          <label>Descricao<textarea id="campaignText" required placeholder="Explique a necessidade e o impacto dessa campanha."></textarea></label>
+          <div class="form-grid two">
+            <label>Meta em R$<input id="campaignGoal" type="number" min="0" step="0.01" required placeholder="1200" /></label>
+            <label>Arrecadado em R$<input id="campaignRaised" type="number" min="0" step="0.01" value="0" /></label>
+          </div>
+          <button class="button" type="submit">Publicar campanha</button>
+          <div id="supportMessage" class="portal-message"></div>
+        </form>
+      </div>
+      <div class="portal-card">
+        <h3>Novo apoiador</h3>
+        <form id="sponsorForm" class="form-grid">
+          <label>Nome<input id="sponsorName" required placeholder="Nome da empresa, parceiro ou familia" /></label>
+          <label>Cota ou tipo de apoio<input id="sponsorTier" required placeholder="Ex.: Patrocinador Ouro, Apoiador social" /></label>
+          <label>Texto<textarea id="sponsorText" required placeholder="Descreva como esse apoiador contribui."></textarea></label>
+          <label>Chamada do botao<input id="sponsorCta" placeholder="Quero patrocinar" /></label>
+          <button class="button" type="submit">Adicionar apoiador</button>
+        </form>
+      </div>
+    </div>
+    <div class="portal-card support-admin-card">
+      <h3>Campanhas publicadas</h3>
+      <div class="support-admin-list">
+        ${campaigns.length ? campaigns.map(renderCampaignEditCard).join("") : "<p>Nenhuma campanha cadastrada.</p>"}
+      </div>
+    </div>
+    <div class="portal-card support-admin-card">
+      <h3>Mural de apoiadores</h3>
+      <div class="support-admin-list">
+        ${sponsors.length ? sponsors.map(renderSponsorEditCard).join("") : "<p>Nenhum apoiador cadastrado.</p>"}
+      </div>
+    </div>
+  `;
+}
+
+function renderCampaignEditCard(campaign) {
+  return `
+    <form class="support-edit-card campaign-edit-form" data-campaign-id="${escapeAttribute(campaign.id)}">
+      <div class="support-edit-title">
+        <strong>${escapeHtml(campaign.title)}</strong>
+        <label><input type="checkbox" name="active" ${campaign.active !== false ? "checked" : ""} /> Ativa</label>
+      </div>
+      <label>Titulo<input name="title" value="${escapeAttribute(campaign.title || "")}" required /></label>
+      <label>Descricao<textarea name="text" required>${escapeHtml(campaign.text || "")}</textarea></label>
+      <div class="form-grid two">
+        <label>Meta em R$<input name="goal" type="number" min="0" step="0.01" value="${Number(campaign.goal || 0)}" required /></label>
+        <label>Arrecadado em R$<input name="raised" type="number" min="0" step="0.01" value="${Number(campaign.raised || 0)}" /></label>
+      </div>
+      <div class="edit-actions">
+        <button class="button" type="submit">Salvar campanha</button>
+        <button type="button" data-action="delete-campaign" data-campaign-id="${escapeAttribute(campaign.id)}">Remover</button>
+      </div>
+      <div class="portal-message support-save-message"></div>
+    </form>
+  `;
+}
+
+function renderSponsorEditCard(sponsor) {
+  return `
+    <form class="support-edit-card sponsor-edit-form" data-sponsor-id="${escapeAttribute(sponsor.id)}">
+      <div class="support-edit-title">
+        <strong>${escapeHtml(sponsor.name)}</strong>
+        <label><input type="checkbox" name="active" ${sponsor.active !== false ? "checked" : ""} /> Ativo</label>
+      </div>
+      <label>Nome<input name="name" value="${escapeAttribute(sponsor.name || "")}" required /></label>
+      <label>Cota ou tipo de apoio<input name="tier" value="${escapeAttribute(sponsor.tier || "")}" required /></label>
+      <label>Texto<textarea name="text" required>${escapeHtml(sponsor.text || "")}</textarea></label>
+      <label>Chamada do botao<input name="cta" value="${escapeAttribute(sponsor.cta || "")}" /></label>
+      <div class="edit-actions">
+        <button class="button" type="submit">Salvar apoiador</button>
+        <button type="button" data-action="delete-sponsor" data-sponsor-id="${escapeAttribute(sponsor.id)}">Remover</button>
+      </div>
+      <div class="portal-message support-save-message"></div>
+    </form>
   `;
 }
 
@@ -2669,6 +2860,10 @@ function bindInteractions() {
   document.querySelector("#athleteMessageForm")?.addEventListener("submit", handleAthleteMessage);
   document.querySelector("#athleteProfileForm")?.addEventListener("submit", handleAthleteProfileSave);
   document.querySelector("#productForm")?.addEventListener("submit", handleProductSave);
+  document.querySelector("#campaignForm")?.addEventListener("submit", handleCampaignSave);
+  document.querySelector("#sponsorForm")?.addEventListener("submit", handleSponsorSave);
+  document.querySelectorAll(".campaign-edit-form").forEach((form) => form.addEventListener("submit", handleCampaignEdit));
+  document.querySelectorAll(".sponsor-edit-form").forEach((form) => form.addEventListener("submit", handleSponsorEdit));
   document.querySelectorAll(".scout-form").forEach((form) => form.addEventListener("submit", handleScoutSave));
   document.querySelectorAll("[data-competition-tab]").forEach((button) => button.addEventListener("click", handleCompetitionTab));
   document.querySelectorAll("[data-chat-tab]").forEach((button) => button.addEventListener("click", handleChatTab));
@@ -2812,7 +3007,7 @@ async function handleLogin(event) {
     }
     renderRoute();
   } catch (error) {
-    if (await tryRestoreRememberedLogin(role, login, password, remember)) return;
+    if (await tryRestorePersonalLogin(role, login, password, remember)) return;
     showPortalMessage(`${error.message} Se for primeiro acesso, confira se o CPF esta cadastrado e use a senha 1234.`, "error");
   }
 }
@@ -2889,6 +3084,7 @@ async function handlePasswordResetComplete(event) {
       message.textContent = "Senha redefinida. Agora voce ja pode entrar com CPF e a nova senha.";
       message.className = "portal-message ok";
     }
+    await savePasswordProof(role, cpf, password);
     form.reset();
   } catch (error) {
     if (message) {
@@ -2898,11 +3094,8 @@ async function handlePasswordResetComplete(event) {
   }
 }
 
-async function tryRestoreRememberedLogin(role, cpf, password, remember) {
-  const remembered = getRememberedLogin(role);
-  if (!remembered || remembered.cpf !== cpf || !remembered.passwordHash) return false;
-  const typedHash = await hashLoginPassword(password);
-  if (typedHash !== remembered.passwordHash) return false;
+async function tryRestorePersonalLogin(role, cpf, password, remember) {
+  if (!await hasPasswordProof(role, cpf, password)) return false;
   try {
     const loginResponse = await fetch("/api/login", {
       method: "POST",
@@ -2924,9 +3117,10 @@ async function tryRestoreRememberedLogin(role, cpf, password, remember) {
     authDataCache = changePayload.data;
     const restoredUser = authDataCache.users.find((item) => item.id === loginPayload.session.userId);
     setSession(restoredUser);
+    await savePasswordProof(role, cpf, password);
     if (remember) await saveRememberedLogin(role, cpf, password);
     renderRoute();
-    setTimeout(() => showPortalMessage("Acesso recuperado neste aparelho. Sua senha pessoal foi preservada.", "ok"), 0);
+    setTimeout(() => showPortalMessage("Acesso recuperado. Sua senha pessoal foi restaurada no servidor.", "ok"), 0);
     return true;
   } catch (error) {
     return false;
@@ -2973,6 +3167,7 @@ async function handlePasswordChange(event) {
     authDataCache = payload.data;
     const user = authDataCache.users.find((item) => item.id === userId);
     setSession(user);
+    await savePasswordProof(user.role, onlyDigits(user.cpf), password);
     const pendingRemember = getPendingRemember();
     if (pendingRemember?.role === user?.role && pendingRemember?.cpf === onlyDigits(user?.cpf)) {
       await saveRememberedLogin(user.role, onlyDigits(user.cpf), password);
@@ -3177,7 +3372,7 @@ function openEventForm(date = "") {
   wrap.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function handleAttendanceSave(event) {
+async function handleAttendanceSave(event) {
   event.preventDefault();
   const form = event.currentTarget;
   const data = getAuthData();
@@ -3193,9 +3388,20 @@ function handleAttendanceSave(event) {
   } else {
     data.attendance.push(record);
   }
-  saveAuthData(data);
-  app.innerHTML = renderCoachDashboard("attendance");
-  bindInteractions();
+  try {
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("attendance");
+    bindInteractions();
+    setTimeout(() => showPortalMessage("Frequencia salva no servidor.", "ok"), 0);
+  } catch (error) {
+    const message = form.querySelector(".attendance-save-message");
+    if (message) {
+      message.textContent = error.message;
+      message.classList.add("error");
+    } else {
+      showPortalMessage(error.message, "error");
+    }
+  }
 }
 
 function handleMediaTypeChange(event) {
@@ -3433,7 +3639,109 @@ function handleProductSave(event) {
   bindInteractions();
 }
 
-function handleAction(event) {
+async function handleCampaignSave(event) {
+  event.preventDefault();
+  const data = getAuthData();
+  data.campaigns = data.campaigns || [];
+  data.campaigns.unshift({
+    id: `campaign-${Date.now()}-${slugify(document.querySelector("#campaignTitle").value)}`,
+    title: document.querySelector("#campaignTitle").value.trim(),
+    text: document.querySelector("#campaignText").value.trim(),
+    goal: Number(document.querySelector("#campaignGoal").value || 0),
+    raised: Number(document.querySelector("#campaignRaised").value || 0),
+    active: true,
+    createdAt: new Date().toISOString(),
+  });
+  try {
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("supporters");
+    bindInteractions();
+  } catch (error) {
+    showSupportFormMessage(error.message, "error");
+  }
+}
+
+async function handleCampaignEdit(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const data = getAuthData();
+  const campaign = (data.campaigns || []).find((item) => item.id === form.dataset.campaignId);
+  if (!campaign) return;
+  campaign.title = form.elements.title.value.trim();
+  campaign.text = form.elements.text.value.trim();
+  campaign.goal = Number(form.elements.goal.value || 0);
+  campaign.raised = Number(form.elements.raised.value || 0);
+  campaign.active = form.elements.active.checked;
+  campaign.updatedAt = new Date().toISOString();
+  try {
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("supporters");
+    bindInteractions();
+  } catch (error) {
+    showInlineFormMessage(form, error.message, "error");
+  }
+}
+
+async function handleSponsorSave(event) {
+  event.preventDefault();
+  const data = getAuthData();
+  data.sponsors = data.sponsors || [];
+  data.sponsors.unshift({
+    id: `sponsor-${Date.now()}-${slugify(document.querySelector("#sponsorName").value)}`,
+    name: document.querySelector("#sponsorName").value.trim(),
+    tier: document.querySelector("#sponsorTier").value.trim(),
+    text: document.querySelector("#sponsorText").value.trim(),
+    cta: document.querySelector("#sponsorCta").value.trim() || "Falar sobre apoio",
+    active: true,
+    createdAt: new Date().toISOString(),
+  });
+  try {
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("supporters");
+    bindInteractions();
+  } catch (error) {
+    showSupportFormMessage(error.message, "error");
+  }
+}
+
+async function handleSponsorEdit(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const data = getAuthData();
+  const sponsor = (data.sponsors || []).find((item) => item.id === form.dataset.sponsorId);
+  if (!sponsor) return;
+  sponsor.name = form.elements.name.value.trim();
+  sponsor.tier = form.elements.tier.value.trim();
+  sponsor.text = form.elements.text.value.trim();
+  sponsor.cta = form.elements.cta.value.trim() || "Falar sobre apoio";
+  sponsor.active = form.elements.active.checked;
+  sponsor.updatedAt = new Date().toISOString();
+  try {
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("supporters");
+    bindInteractions();
+  } catch (error) {
+    showInlineFormMessage(form, error.message, "error");
+  }
+}
+
+function showSupportFormMessage(message, type = "ok") {
+  const target = document.querySelector("#supportMessage");
+  if (target) {
+    target.textContent = message;
+    target.className = `portal-message ${type}`;
+  }
+}
+
+function showInlineFormMessage(form, message, type = "ok") {
+  const target = form.querySelector(".portal-message");
+  if (target) {
+    target.textContent = message;
+    target.className = `portal-message ${type}`;
+  }
+}
+
+async function handleAction(event) {
   const action = event.currentTarget.dataset.action;
   if (action === "open-hub-topic") {
     openHubTopic(event.currentTarget);
@@ -3456,6 +3764,15 @@ function handleAction(event) {
   if (action === "toggle-password-reset") {
     const wrap = document.querySelector("#passwordResetWrap");
     if (wrap) wrap.hidden = !wrap.hidden;
+  }
+  if (action === "toggle-password-visibility") {
+    const input = document.querySelector(`#${event.currentTarget.dataset.passwordTarget}`);
+    if (input) {
+      const shouldShow = input.type === "password";
+      input.type = shouldShow ? "text" : "password";
+      event.currentTarget.textContent = shouldShow ? "Ocultar" : "Mostrar";
+      event.currentTarget.setAttribute("aria-label", shouldShow ? "Ocultar senha" : "Mostrar senha");
+    }
   }
   if (action === "logout") {
     clearSession();
@@ -3574,8 +3891,22 @@ function handleAction(event) {
   if (action === "delete-product") {
     const data = getAuthData();
     data.products = (data.products || []).filter((item) => item.id !== event.currentTarget.dataset.productId);
-    saveAuthData(data);
+    await saveAuthDataConfirmed(data);
     app.innerHTML = renderCoachDashboard("store");
+    bindInteractions();
+  }
+  if (action === "delete-campaign") {
+    const data = getAuthData();
+    data.campaigns = (data.campaigns || []).filter((item) => item.id !== event.currentTarget.dataset.campaignId);
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("supporters");
+    bindInteractions();
+  }
+  if (action === "delete-sponsor") {
+    const data = getAuthData();
+    data.sponsors = (data.sponsors || []).filter((item) => item.id !== event.currentTarget.dataset.sponsorId);
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("supporters");
     bindInteractions();
   }
 }

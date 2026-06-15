@@ -318,14 +318,20 @@ async function handleApi(req, res, cleanUrl) {
       }
       const current = readAuthData() || { users: [] };
       const currentById = new Map((current.users || []).map((user) => [user.id, user]));
-      payload.users = payload.users.map((user) => ({
-        ...user,
-        password: user.password || currentById.get(user.id)?.password || defaultPassword,
-        mustChangePassword:
-          currentById.get(user.id)?.mustChangePassword === false && !user.password && user.mustChangePassword === true
+      payload.users = payload.users.map((user) => {
+        const currentUser = currentById.get(user.id);
+        const incomingHasPassword = Object.prototype.hasOwnProperty.call(user, "password");
+        const password = user.password || currentUser?.password || defaultPassword;
+        const explicitReset = incomingHasPassword && user.password === defaultPassword && user.mustChangePassword === true;
+        const mustChangePassword = explicitReset
+          ? true
+          : password !== defaultPassword
             ? false
-            : user.mustChangePassword,
-      }));
+            : currentUser?.mustChangePassword === false && !incomingHasPassword
+              ? false
+              : user.mustChangePassword;
+        return { ...user, password, mustChangePassword };
+      });
       saveAuthData(payload);
       sendJson(res, 200, { ok: true });
     } catch (error) {

@@ -1814,6 +1814,41 @@ textarea:focus {
   padding-top: 18px;
 }
 
+.athlete-frequency-card {
+  display: grid;
+  gap: 12px;
+}
+
+.athlete-frequency-card > strong {
+  color: var(--primary);
+  font-family: Montserrat, sans-serif;
+  font-size: 52px;
+  line-height: 1;
+}
+
+.athlete-frequency-card > span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.attendance-mini-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.attendance-mini-counts span {
+  border-radius: 999px;
+  padding: 9px 12px;
+  color: var(--text);
+  background: var(--soft);
+  font-weight: 800;
+}
+
+.attendance-mini-counts b {
+  color: var(--primary);
+}
+
 .auth-link-button {
   display: inline-flex;
   margin-top: 16px;
@@ -1833,6 +1868,38 @@ textarea:focus {
   margin-top: 16px;
   border-top: 1px solid var(--line);
   padding-top: 18px;
+}
+
+.password-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.password-field input {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.password-field button {
+  height: calc(100% - 8px);
+  margin-right: 4px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 14px;
+  color: var(--primary);
+  background: var(--soft);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.password-field button:hover {
+  color: #fff;
+  background: var(--primary);
 }
 
 .reset-complete-form {
@@ -1960,6 +2027,70 @@ textarea:focus {
   background: #fff;
   font-weight: 900;
   cursor: pointer;
+}
+
+.support-admin-card {
+  margin-top: 22px;
+}
+
+.support-admin-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.support-edit-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(24, 142, 76, 0.06), rgba(255, 205, 51, 0.08));
+}
+
+.support-edit-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.support-edit-title strong {
+  color: var(--text);
+  font-family: Montserrat, sans-serif;
+  font-size: 18px;
+}
+
+.support-edit-title label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.support-edit-card label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.support-edit-card input,
+.support-edit-card textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 13px;
+  color: var(--text);
+  background: #fff;
+  font: inherit;
+}
+
+.support-edit-card textarea {
+  min-height: 88px;
+  resize: vertical;
 }
 
 .notice-item {
@@ -3789,6 +3920,7 @@ textarea:focus {
   .journey-metrics,
   .campaign-grid,
   .sponsor-wall,
+  .support-admin-list,
   .store-grid,
   .store-grid.compact,
   .project-values,
