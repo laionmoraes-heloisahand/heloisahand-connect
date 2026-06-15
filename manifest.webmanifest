@@ -1,0 +1,53 @@
+{
+  "name": "HeloisaHand Connect",
+  "short_name": "HeloisaHand",
+  "description": "Plataforma do Instituto HeloisaHand para atletas, treinador, famílias e apoiadores.",
+  "start_url": "/#/atleta",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5faf6",
+  "theme_color": "#0b512c",
+  "categories": ["sports", "education", "lifestyle"],
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/assets/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Área do Atleta",
+      "short_name": "Atleta",
+      "url": "/#/atleta",
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Competições e Jogos",
+      "short_name": "Jogos",
+      "url": "/#/competicoes",
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Loja",
+      "short_name": "Loja",
+      "url": "/#/loja",
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

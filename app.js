@@ -277,6 +277,11 @@ const routes = {
 
 document.querySelector("#menuButton").addEventListener("click", () => nav.classList.toggle("open"));
 window.addEventListener("hashchange", renderRoute);
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+  });
+}
 initApp();
 
 async function initApp() {

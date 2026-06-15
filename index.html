@@ -8,13 +8,20 @@
       name="description"
       content="Ecossistema digital do Instituto HeloisaHand, conectando atletas, famílias, treinadores e apoiadores por meio do handebol."
     />
-    <link rel="icon" type="image/png" href="https://media.base44.com/images/public/6a1edf48af234198fe465c04/0634f0412_LogooficialdoprojetoHeloisaHand.png" />
-    <link rel="stylesheet" href="styles.css?v=42" />
+    <meta name="theme-color" content="#0b512c" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="HeloisaHand" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/pwa-icon-192.png" />
+    <link rel="apple-touch-icon" href="/assets/pwa-icon-192.png" />
+    <link rel="stylesheet" href="styles.css?v=43" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="#/">
-        <img src="https://media.base44.com/images/public/6a1edf48af234198fe465c04/0634f0412_LogooficialdoprojetoHeloisaHand.png" alt="Logo Instituto HeloisaHand" />
+        <img src="/assets/pwa-icon-192.png" alt="Logo Instituto HeloisaHand" />
         <span>HeloisaHand Connect</span>
       </a>
       <button class="menu-button" id="menuButton" aria-label="Abrir menu">Menu</button>
@@ -41,6 +48,6 @@
       WhatsApp
     </a>
 
-    <script src="app.js?v=42"></script>
+    <script src="app.js?v=43"></script>
   </body>
 </html>
