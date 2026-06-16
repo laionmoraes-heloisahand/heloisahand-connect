@@ -1739,6 +1739,48 @@ textarea:focus {
   background: #f3f8f5;
 }
 
+.notification-center-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.45fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.notification-summary-card,
+.notification-list {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 22px;
+  background: #fff;
+  box-shadow: 0 16px 42px rgba(9, 32, 24, 0.08);
+}
+
+.notification-summary-card {
+  display: grid;
+  gap: 8px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 205, 51, 0.28), transparent 42%),
+    linear-gradient(145deg, #ffffff, #f4fbf7);
+}
+
+.notification-summary-card strong {
+  color: var(--primary);
+  font-family: Montserrat, sans-serif;
+  font-size: 64px;
+  line-height: 1;
+  font-weight: 1000;
+}
+
+.notification-summary-card span {
+  color: var(--text);
+  font-weight: 1000;
+}
+
+.notification-list {
+  display: grid;
+  gap: 12px;
+}
+
 .athlete-notification.badge {
   background: #fff6d8;
 }
@@ -1940,41 +1982,103 @@ textarea:focus {
   margin: 4px 0 0;
 }
 
-.home-ranking-list,
-.ranking-podium {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.home-ranking-list article,
-.ranking-podium article {
+.ranking-carousel {
   position: relative;
+  min-height: 310px;
+  padding: 8px 0 54px;
+}
+
+.ranking-deck {
+  position: relative;
+  min-height: 258px;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.ranking-card-slide {
+  position: absolute;
+  inset: 0;
   display: grid;
-  justify-items: center;
-  gap: 8px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 12px 8px;
-  text-align: center;
-  background: #fff;
-  box-shadow: 0 12px 28px rgba(9, 32, 24, 0.07);
+  align-content: start;
+  gap: 10px;
+  width: min(100%, 410px);
+  min-height: 244px;
+  border: 1px solid rgba(31, 138, 76, 0.18);
+  border-radius: 28px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 86% 10%, rgba(255, 205, 51, 0.24), transparent 34%),
+    linear-gradient(145deg, #ffffff, #f6fcf8);
+  box-shadow: 0 20px 50px rgba(9, 32, 24, 0.13);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(34%) scale(0.9);
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease,
+    box-shadow 0.28s ease;
 }
 
-.home-ranking-list article:hover,
-.ranking-podium article:hover,
-.ranking-preview-list article:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 40px rgba(9, 32, 24, 0.12);
+.ranking-card-slide::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0), rgba(255, 205, 51, 0.16), rgba(255, 255, 255, 0));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
 }
 
-.home-ranking-list article > strong,
-.ranking-podium article > strong,
+.ranking-card-slide:hover::after,
+.ranking-carousel.dragging .ranking-card-slide.active::after {
+  opacity: 1;
+}
+
+.ranking-card-slide.active {
+  z-index: 4;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0) scale(1);
+}
+
+.ranking-card-slide.next {
+  z-index: 3;
+  opacity: 0.9;
+  transform: translateX(18%) scale(0.94);
+}
+
+.ranking-card-slide.after-next {
+  z-index: 2;
+  opacity: 0.55;
+  transform: translateX(30%) scale(0.88);
+}
+
+.ranking-card-slide.previous {
+  z-index: 1;
+  opacity: 0.18;
+  transform: translateX(-10%) scale(0.86);
+}
+
+.ranking-card-slide.current {
+  border-color: rgba(246, 197, 53, 0.75);
+  background:
+    radial-gradient(circle at 86% 10%, rgba(255, 205, 51, 0.34), transparent 36%),
+    linear-gradient(145deg, #fffdf2, #f4fbf6);
+}
+
+.ranking-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ranking-card-top > strong,
 .ranking-preview-list article > span {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   color: #102016;
   background: var(--accent);
@@ -2008,21 +2112,92 @@ textarea:focus {
   object-fit: cover;
 }
 
-.home-ranking-list span,
-.ranking-podium b {
+.ranking-card-slide h4 {
+  margin: 6px 0 0;
+  color: var(--text);
+  font-family: Montserrat, sans-serif;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.03;
   font-weight: 1000;
 }
 
-.ranking-podium span {
-  display: block;
-  margin-top: 4px;
+.ranking-card-slide small {
   color: var(--muted);
-  font-size: 13px;
+  font-weight: 900;
 }
 
-.ranking-podium article.current {
-  border-color: rgba(246, 197, 53, 0.75);
-  background: #fff8d8;
+.ranking-card-slide p {
+  margin: 0;
+  color: #42574e;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.ranking-current-badge {
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #102016;
+  background: #fff3b8;
+  font-weight: 1000;
+}
+
+.ranking-carousel-controls {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.ranking-carousel-controls > button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(31, 138, 76, 0.18);
+  border-radius: 999px;
+  color: var(--text);
+  background: #fff;
+  font-size: 30px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(9, 32, 24, 0.1);
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.ranking-carousel-controls > button:hover {
+  color: #fff;
+  background: var(--primary);
+  transform: translateY(-2px);
+}
+
+.ranking-dots {
+  display: flex;
+  gap: 7px;
+}
+
+.ranking-dots button {
+  width: 10px;
+  height: 10px;
+  min-height: auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  background: #dbe7df;
+  cursor: pointer;
+}
+
+.ranking-dots button.active {
+  width: 26px;
+  background: var(--accent);
+}
+
+.ranking-preview-list article:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(9, 32, 24, 0.12);
 }
 
 .ranking-manager-grid {
@@ -4199,6 +4374,9 @@ textarea:focus {
   .project-values,
   .support-impact-grid,
   .support-donation-grid,
+  .home-ranking-strip,
+  .athlete-ranking-card,
+  .notification-center-grid,
   .coach-chat-layout,
   .athlete-dashboard,
   .athlete-list,
@@ -4285,6 +4463,35 @@ textarea:focus {
     grid-column: auto;
   }
 
+  .home-ranking-strip,
+  .athlete-ranking-card {
+    margin-top: 18px;
+    padding: 18px;
+  }
+
+  .ranking-carousel {
+    min-height: 332px;
+    overflow: hidden;
+  }
+
+  .ranking-deck {
+    min-height: 270px;
+  }
+
+  .ranking-card-slide {
+    width: calc(100% - 28px);
+    min-height: 258px;
+    padding: 20px;
+  }
+
+  .ranking-card-slide.next {
+    transform: translateX(10%) scale(0.94);
+  }
+
+  .ranking-card-slide.after-next {
+    transform: translateX(18%) scale(0.88);
+  }
+
   .athlete-details {
     padding: 18px;
   }
@@ -4341,6 +4548,50 @@ textarea:focus {
 }
 
 @media (max-width: 560px) {
+  .home-ranking-strip,
+  .athlete-ranking-card {
+    border-radius: 22px;
+  }
+
+  .ranking-carousel {
+    min-height: 350px;
+  }
+
+  .ranking-deck {
+    min-height: 288px;
+  }
+
+  .ranking-card-slide {
+    width: 100%;
+    min-height: 276px;
+    border-radius: 24px;
+    padding: 18px;
+  }
+
+  .ranking-card-slide.next {
+    opacity: 0.7;
+    transform: translateX(7%) scale(0.92);
+  }
+
+  .ranking-card-slide.after-next,
+  .ranking-card-slide.previous {
+    opacity: 0;
+    transform: translateX(0) scale(0.88);
+  }
+
+  .ranking-card-slide h4 {
+    font-size: 26px;
+  }
+
+  .ranking-card-slide p {
+    font-size: 15px;
+  }
+
+  .notification-bell {
+    width: 48px;
+    height: 48px;
+  }
+
   .impact-links {
     grid-template-columns: 1fr;
   }

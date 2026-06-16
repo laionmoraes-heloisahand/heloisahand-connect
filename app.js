@@ -269,6 +269,7 @@ const routes = {
   "/apoiar": renderSupport,
   "/loja": renderStore,
   "/atleta": renderAthlete,
+  "/notificacoes": renderAthleteNotificationsPage,
   "/treinador": renderCoach,
   "/categorias": renderCategories,
   "/competicoes": renderCompetitions,
@@ -705,25 +706,14 @@ function renderHome() {
 function renderPublicMonthlyRanking(data = getAuthData()) {
   const ranking = getActiveRanking(data);
   if (!ranking?.items?.length) return "";
-  const usersById = new Map((data.users || []).map((user) => [user.id, user]));
   return `
     <section class="home-ranking-strip">
       <div>
         <span class="eyebrow">Destaques do mes</span>
         <h2>${escapeHtml(ranking.title || "Top 5 atletas do mes")}</h2>
+        <p>${escapeHtml(ranking.description || "Reconhecimento por evolucao, presenca, compromisso e atitude.")}</p>
       </div>
-      <div class="home-ranking-list">
-        ${ranking.items.slice(0, 5).map((item, index) => {
-          const athlete = usersById.get(item.athleteId);
-          return `
-            <article>
-              <strong>${index + 1}</strong>
-              <div class="ranking-avatar small">${athlete?.profile?.avatar ? `<img src="${escapeAttribute(athlete.profile.avatar)}" alt="${escapeAttribute(athlete.name)}" />` : `<b>${(athlete?.name || "A").slice(0, 1).toUpperCase()}</b>`}</div>
-              <span>${escapeHtml(athlete?.profile?.nickname || athlete?.name || item.name || "Atleta")}</span>
-            </article>
-          `;
-        }).join("")}
-      </div>
+      ${renderRankingCarousel(ranking, data, "", "public")}
     </section>
   `;
 }
@@ -2004,12 +1994,8 @@ function renderAthlete() {
           <h2>Bem-vindo, ${user.profile?.nickname || user.name}</h2>
           <p>${latestEvolution ? `Parabens pela evolucao: ${escapeHtml(latestEvolution.title)}.` : "Consulte sua jornada, metas, presencas e mensagens da comissao tecnica."}</p>
         </div>
-        <button class="notification-bell" type="button" data-action="toggle-athlete-notifications" aria-expanded="false">🔔<span>${realNotifications}</span></button>
+        <button class="notification-bell" type="button" data-action="open-athlete-notifications" aria-label="Abrir notificacoes">🔔<span>${realNotifications}</span></button>
         <button class="button ghost-dark" data-action="logout">Sair</button>
-      </div>
-      <div id="athleteNotificationPanel" class="athlete-notification-panel" hidden>
-        <h3>Notificacoes da sua jornada</h3>
-        ${notifications.length ? notifications.map(renderAthleteNotification).join("") : `<p>Nenhuma notificacao nova por enquanto.</p>`}
       </div>
       ${renderAthleteJourney(user, data)}
       ${renderAthleteMonthlyRanking(data, user.id)}
@@ -2031,6 +2017,40 @@ function renderAthlete() {
   `;
 }
 
+function renderAthleteNotificationsPage() {
+  const user = getCurrentUser("athlete");
+  if (!user) {
+    return renderAuthGate("athlete", "Notificacoes do atleta", "Entre com seu CPF e senha para ver seus avisos, evolucoes e comunicados.");
+  }
+  if (user.mustChangePassword) {
+    return renderPasswordChange(user, "Troque sua senha temporaria para liberar suas notificacoes.");
+  }
+  const notifications = getAthleteNotifications(user);
+  const unreadCount = notifications.filter((item) => item.type !== "read").length;
+  return `
+    <section class="section portal-section notification-center">
+      <div class="portal-header">
+        <div>
+          <span class="eyebrow">Central do atleta</span>
+          <h2>Notificacoes</h2>
+          <p>Todos os avisos da sua jornada no Instituto HeloisaHand ficam reunidos aqui.</p>
+        </div>
+        <button class="button ghost-dark" type="button" data-action="back-athlete-dashboard">Voltar ao painel</button>
+      </div>
+      <div class="notification-center-grid">
+        <article class="notification-summary-card">
+          <strong>${unreadCount}</strong>
+          <span>avisos recentes</span>
+          <p>Entre aqui sempre que o sininho indicar novidade.</p>
+        </article>
+        <div class="notification-list">
+          ${notifications.length ? notifications.map(renderAthleteNotification).join("") : `<article class="athlete-notification"><strong>Tudo certo por enquanto</strong><span>Nenhuma notificacao nova foi publicada.</span></article>`}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function getActiveRanking(data = getAuthData()) {
   const monthKey = new Date().toISOString().slice(0, 7);
   const rankings = data.rankings || [];
@@ -2040,7 +2060,6 @@ function getActiveRanking(data = getAuthData()) {
 function renderAthleteMonthlyRanking(data, athleteId = "") {
   const ranking = getActiveRanking(data);
   if (!ranking || !Array.isArray(ranking.items) || !ranking.items.length) return "";
-  const usersById = new Map((data.users || []).map((user) => [user.id, user]));
   return `
     <section class="athlete-ranking-card">
       <div>
@@ -2048,22 +2067,48 @@ function renderAthleteMonthlyRanking(data, athleteId = "") {
         <h3>${escapeHtml(ranking.title || "Top 5 atletas do mes")}</h3>
         <p>${escapeHtml(ranking.description || "Reconhecimento por evolucao, presenca, compromisso e atitude dentro do projeto.")}</p>
       </div>
-      <div class="ranking-podium">
-        ${ranking.items.slice(0, 5).map((item, index) => {
+      ${renderRankingCarousel(ranking, data, athleteId, "athlete")}
+    </section>
+  `;
+}
+
+function renderRankingCarousel(ranking, data, currentAthleteId = "", variant = "athlete") {
+  const usersById = new Map((data.users || []).map((user) => [user.id, user]));
+  const items = (ranking.items || []).slice(0, 5);
+  if (!items.length) return "";
+  return `
+    <div class="ranking-carousel ${variant === "public" ? "public" : ""}" data-ranking-carousel data-current-index="0">
+      <div class="ranking-deck" data-ranking-deck>
+        ${items.map((item, index) => {
           const athlete = usersById.get(item.athleteId);
-          const isCurrent = item.athleteId === athleteId;
+          const displayName = athlete?.profile?.nickname || athlete?.name || item.name || "Atleta";
+          const fullName = athlete?.name || item.name || "Atleta";
+          const avatar = athlete?.profile?.avatar
+            ? `<img src="${escapeAttribute(athlete.profile.avatar)}" alt="${escapeAttribute(fullName)}" />`
+            : `<b>${displayName.slice(0, 1).toUpperCase()}</b>`;
+          const isCurrent = item.athleteId === currentAthleteId;
           return `
-            <article class="${isCurrent ? "current" : ""}">
-              <strong>${index + 1}</strong>
-              <div>
-                <b>${escapeHtml(athlete?.name || item.name || "Atleta")}</b>
-                <span>${escapeHtml(item.reason || "Destaque do mes")}</span>
+            <article class="ranking-card-slide ${index === 0 ? "active" : ""} ${isCurrent ? "current" : ""}" data-ranking-card data-index="${index}">
+              <div class="ranking-card-top">
+                <strong>${index + 1}</strong>
+                <div class="ranking-avatar">${avatar}</div>
+                ${isCurrent ? `<span class="ranking-current-badge">Voce</span>` : ""}
               </div>
+              <h4>${escapeHtml(displayName)}</h4>
+              <small>${escapeHtml(athlete?.position || "Atleta do instituto")}</small>
+              <p>${escapeHtml(item.reason || "Destaque do mes")}</p>
             </article>
           `;
         }).join("")}
       </div>
-    </section>
+      <div class="ranking-carousel-controls">
+        <button type="button" data-action="ranking-prev" aria-label="Atleta anterior">‹</button>
+        <div class="ranking-dots">
+          ${items.map((_, index) => `<button type="button" class="${index === 0 ? "active" : ""}" data-action="ranking-dot" data-ranking-index="${index}" aria-label="Ver colocado ${index + 1}"></button>`).join("")}
+        </div>
+        <button type="button" data-action="ranking-next" aria-label="Proximo atleta">›</button>
+      </div>
+    </div>
   `;
 }
 
@@ -3044,6 +3089,7 @@ function bindInteractions() {
   document.querySelectorAll("[data-chat-tab]").forEach((button) => button.addEventListener("click", handleChatTab));
   startHandballHubRotation();
   bindScoutRangeInputs();
+  bindRankingCarousels();
   document.querySelectorAll(".demo-panel-form").forEach((form) => {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -3059,6 +3105,66 @@ function bindInteractions() {
   });
   document.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", handleAction));
   normalizePortugueseText(document.body);
+}
+
+function bindRankingCarousels() {
+  document.querySelectorAll("[data-ranking-carousel]").forEach((carousel) => {
+    if (carousel.dataset.bound === "true") return;
+    carousel.dataset.bound = "true";
+    setRankingCarouselIndex(carousel, Number(carousel.dataset.currentIndex || 0));
+    let startX = 0;
+    let startY = 0;
+    let dragging = false;
+    const deck = carousel.querySelector("[data-ranking-deck]");
+    deck?.addEventListener("pointerdown", (event) => {
+      dragging = true;
+      startX = event.clientX;
+      startY = event.clientY;
+      deck.setPointerCapture?.(event.pointerId);
+      carousel.classList.add("dragging");
+    });
+    deck?.addEventListener("pointerup", (event) => {
+      if (!dragging) return;
+      dragging = false;
+      carousel.classList.remove("dragging");
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+        moveRankingCarousel(carousel, dx < 0 ? 1 : -1);
+      }
+    });
+    deck?.addEventListener("pointercancel", () => {
+      dragging = false;
+      carousel.classList.remove("dragging");
+    });
+  });
+}
+
+function moveRankingCarousel(carousel, delta) {
+  const cards = [...carousel.querySelectorAll("[data-ranking-card]")];
+  if (!cards.length) return;
+  const current = Number(carousel.dataset.currentIndex || 0);
+  const next = (current + delta + cards.length) % cards.length;
+  setRankingCarouselIndex(carousel, next);
+}
+
+function setRankingCarouselIndex(carousel, index) {
+  const cards = [...carousel.querySelectorAll("[data-ranking-card]")];
+  if (!cards.length) return;
+  const total = cards.length;
+  const current = ((index % total) + total) % total;
+  carousel.dataset.currentIndex = String(current);
+  cards.forEach((card, cardIndex) => {
+    const distance = (cardIndex - current + total) % total;
+    card.classList.toggle("active", distance === 0);
+    card.classList.toggle("next", distance === 1);
+    card.classList.toggle("after-next", distance === 2);
+    card.classList.toggle("previous", distance === total - 1);
+    card.style.setProperty("--deck-offset", String(Math.min(distance, 3)));
+  });
+  carousel.querySelectorAll(".ranking-dots button").forEach((dot, dotIndex) => {
+    dot.classList.toggle("active", dotIndex === current);
+  });
 }
 
 function handleCompetitionTab(event) {
@@ -4010,12 +4116,22 @@ async function handleAction(event) {
     const modal = document.querySelector("#handballHubModal");
     if (modal) modal.hidden = true;
   }
-  if (action === "toggle-athlete-notifications") {
-    const panel = document.querySelector("#athleteNotificationPanel");
-    if (panel) {
-      panel.hidden = !panel.hidden;
-      event.currentTarget.classList.toggle("active", !panel.hidden);
-      event.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+  if (action === "open-athlete-notifications") {
+    location.hash = "#/notificacoes";
+  }
+  if (action === "back-athlete-dashboard") {
+    location.hash = "#/atleta";
+  }
+  if (action === "ranking-prev" || action === "ranking-next") {
+    const carousel = event.currentTarget.closest("[data-ranking-carousel]");
+    if (carousel) {
+      moveRankingCarousel(carousel, action === "ranking-next" ? 1 : -1);
+    }
+  }
+  if (action === "ranking-dot") {
+    const carousel = event.currentTarget.closest("[data-ranking-carousel]");
+    if (carousel) {
+      setRankingCarouselIndex(carousel, Number(event.currentTarget.dataset.rankingIndex || 0));
     }
   }
   if (action === "toggle-athlete-profile") {

@@ -33,6 +33,9 @@ const types = {
 
 fs.mkdirSync(dataDir, { recursive: true });
 fs.mkdirSync(uploadsDir, { recursive: true });
+if (!process.env.DATA_DIR || !process.env.UPLOADS_DIR) {
+  console.warn("[HeloisaHand] Configure DATA_DIR e UPLOADS_DIR em um disco persistente no Render para nao perder cadastros, presencas, ranking, campanhas e fotos em novos deploys.");
+}
 if (!fs.existsSync(mediaFile)) {
   fs.writeFileSync(mediaFile, fs.existsSync(seedMediaFile) ? fs.readFileSync(seedMediaFile, "utf8") : "[]");
 }

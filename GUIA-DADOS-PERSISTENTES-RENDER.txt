@@ -1,0 +1,29 @@
+GUIA RAPIDO: COMO NAO PERDER DADOS NO RENDER
+
+O site salva atletas, senhas, presencas, ranking, campanhas, loja, fotos e videos em arquivos JSON e uploads.
+Se esses arquivos ficarem dentro do pacote enviado ao Render, um novo deploy pode substituir tudo pelo pacote inicial.
+
+Para o site se comportar como uma plataforma de verdade, configure armazenamento persistente:
+
+1. Abra o Render.
+2. Entre no servico heloisahand-connect.
+3. Va em Disks.
+4. Crie um disco persistente, se o seu plano permitir.
+5. Use este caminho de montagem:
+   /var/data
+6. Va em Environment.
+7. Crie/ajuste estas variaveis:
+   DATA_DIR=/var/data
+   UPLOADS_DIR=/var/data/uploads
+8. Clique em Save, rebuild, and deploy.
+
+Depois disso, os dados salvos pelo site passam a ficar no disco persistente, e nao no pacote de codigo.
+
+IMPORTANTE:
+- Se o plano gratuito do Render nao permitir disco persistente, a solucao definitiva e conectar um banco de dados real, como Supabase, Neon/Postgres ou Firebase.
+- Antes de subir um pacote novo, evite substituir manualmente a pasta data com dados antigos caso ainda nao exista disco persistente.
+- Fotos de perfil tambem dependem de UPLOADS_DIR persistente.
+
+Resumo:
+Codigo novo atualiza o site.
+DATA_DIR e UPLOADS_DIR guardam os dados vivos do projeto.
