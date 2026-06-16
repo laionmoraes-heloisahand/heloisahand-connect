@@ -247,6 +247,7 @@ function mergeQuizScores(scores = []) {
       current.score += score;
       current.total += total;
       current.attempts += Number(item.attempts || 1);
+      current.seenQuestionIds = [...new Set([...(current.seenQuestionIds || []), ...(item.seenQuestionIds || [])])];
       current.lastPlayedAt = item.lastPlayedAt || item.createdAt || current.lastPlayedAt;
     } else {
       map.set(key, {
@@ -257,6 +258,7 @@ function mergeQuizScores(scores = []) {
         score,
         total,
         attempts: Number(item.attempts || 1),
+        seenQuestionIds: item.seenQuestionIds || [],
         lastPlayedAt: item.lastPlayedAt || item.createdAt || "",
       });
     }
@@ -273,6 +275,7 @@ function upsertQuizScore(scores = [], entry) {
     current.total = Number(current.total || 0) + Number(entry.total || 0);
     current.attempts = Number(current.attempts || 0) + 1;
     current.lastScore = Number(entry.score || 0);
+    current.seenQuestionIds = [...new Set([...(current.seenQuestionIds || []), ...(entry.seenQuestionIds || [])])];
     current.lastPlayedAt = entry.createdAt;
   } else {
     merged.unshift({ ...entry, attempts: 1, lastScore: Number(entry.score || 0), lastPlayedAt: entry.createdAt });
@@ -402,6 +405,7 @@ async function handleApi(req, res, cleanUrl) {
         score: Math.max(0, Math.min(100, Number(payload.score || 0))),
         total: Math.max(1, Math.min(100, Number(payload.total || 1))),
         percent: Math.max(0, Math.min(100, Number(payload.percent || 0))),
+        seenQuestionIds: Array.isArray(payload.seenQuestionIds) ? payload.seenQuestionIds.map((id) => String(id).slice(0, 80)).slice(0, 20) : [],
         createdAt: new Date().toISOString(),
       };
       data.quizScores = upsertQuizScore(data.quizScores, entry);
