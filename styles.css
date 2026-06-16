@@ -765,6 +765,223 @@ h3 {
   }
 }
 
+.feature-grid .feature-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 390px;
+  border: 2px solid rgba(31, 138, 76, 0.55);
+  border-radius: 28px;
+  padding: 22px;
+  color: #fff;
+  background-image: var(--poster-image);
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 22px 54px rgba(9, 32, 24, 0.2);
+}
+
+.feature-grid .feature-card::before {
+  z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(2, 18, 13, 0.06) 0%, rgba(2, 18, 13, 0.48) 48%, rgba(2, 18, 13, 0.92) 100%),
+    linear-gradient(135deg, rgba(31, 138, 76, 0.32), rgba(246, 197, 53, 0.08));
+  opacity: 1;
+  transform: none;
+}
+
+.feature-grid .feature-card:hover::before {
+  opacity: 1;
+  transform: none;
+}
+
+.feature-grid .feature-card::after {
+  z-index: 1;
+  inset: -80%;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.24), transparent 58%);
+}
+
+.feature-grid .feature-card:hover {
+  border-color: rgba(84, 228, 141, 0.95);
+  transform: translateY(-8px) scale(1.015);
+  box-shadow: 0 30px 68px rgba(9, 32, 24, 0.28);
+}
+
+.feature-grid .feature-card h3 {
+  margin-top: 0;
+  color: #fff;
+  font-size: clamp(24px, 2vw, 32px);
+  text-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+}
+
+.feature-grid .feature-card p {
+  max-width: 280px;
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 15px;
+  line-height: 1.55;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  transition: color 0.22s ease, transform 0.22s ease;
+}
+
+.feature-grid .feature-card:hover h3 {
+  color: #fff;
+  text-shadow: 0 0 18px rgba(246, 197, 53, 0.45), 0 8px 28px rgba(0, 0, 0, 0.65);
+}
+
+.feature-grid .feature-card:hover p {
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.feature-grid .icon-pill {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  z-index: 3;
+  width: 54px;
+  min-width: 54px;
+  height: 54px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
+}
+
+.feature-grid .feature-bg-mark {
+  right: 50%;
+  bottom: 42%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
+  border-radius: 34px;
+  color: #fff;
+  font-size: 80px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(4px);
+  transform: translate(50%, 50%) rotate(-6deg);
+}
+
+.feature-grid .feature-card:hover .feature-bg-mark {
+  color: #fff;
+  transform: translate(50%, 44%) rotate(3deg) scale(1.06);
+}
+
+.feature-grid .feature-spark {
+  z-index: 2;
+  right: 24px;
+  top: 92px;
+  width: 90px;
+  height: 90px;
+  opacity: 0.7;
+  background:
+    radial-gradient(circle, rgba(246, 197, 53, 0.42), transparent 58%),
+    conic-gradient(from 0deg, transparent, rgba(84, 228, 141, 0.44), transparent);
+  animation: posterGlow 4s linear infinite;
+}
+
+.quiz-card {
+  --poster-image: url("assets/feature-quiz.svg");
+}
+
+.training-card {
+  --poster-image: url("assets/feature-training.svg");
+}
+
+.project-card {
+  --poster-image: url("assets/feature-project.svg");
+}
+
+.support-card {
+  --poster-image: url("assets/feature-support.svg");
+  border-color: rgba(246, 197, 53, 0.72);
+}
+
+.support-card:hover {
+  border-color: rgba(255, 225, 118, 0.98);
+}
+
+.feature-grid .quiz-card .feature-bg-mark::before {
+  content: "👟";
+}
+
+.feature-grid .training-card .feature-bg-mark::before {
+  content: "🏐";
+}
+
+.feature-grid .project-card .feature-bg-mark::before {
+  content: "🗺";
+}
+
+.feature-grid .support-card .feature-bg-mark::before {
+  content: "💰";
+}
+
+.feature-grid .quiz-card:hover .feature-bg-mark {
+  animation: shoeBounce 0.9s ease;
+}
+
+.feature-grid .training-card:hover .feature-bg-mark {
+  animation: ballLaunch 0.85s ease;
+}
+
+.feature-grid .project-card:hover .feature-bg-mark {
+  animation: mapOpen 0.85s ease;
+}
+
+.feature-grid .support-card:hover .feature-bg-mark {
+  animation: coinShake 0.9s ease;
+}
+
+@keyframes posterGlow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shoeBounce {
+  0%, 100% {
+    transform: translate(50%, 44%) rotate(3deg) scale(1.06);
+  }
+  40% {
+    transform: translate(50%, 30%) rotate(-9deg) scale(1.1);
+  }
+  70% {
+    transform: translate(50%, 48%) rotate(8deg) scale(1.04);
+  }
+}
+
+@keyframes ballLaunch {
+  0%, 100% {
+    transform: translate(50%, 44%) rotate(3deg) scale(1.06);
+  }
+  45% {
+    transform: translate(70%, 16%) rotate(18deg) scale(1.14);
+  }
+}
+
+@keyframes mapOpen {
+  0%, 100% {
+    transform: translate(50%, 44%) rotate(3deg) scale(1.06);
+  }
+  50% {
+    transform: translate(50%, 42%) rotate(0) scaleX(1.18) scaleY(0.96);
+  }
+}
+
+@keyframes coinShake {
+  0%, 100% {
+    transform: translate(50%, 44%) rotate(3deg) scale(1.06);
+  }
+  20%, 60% {
+    transform: translate(50%, 39%) rotate(-7deg) scale(1.11);
+  }
+  40%, 80% {
+    transform: translate(50%, 47%) rotate(7deg) scale(1.08);
+  }
+}
+
 .options-section {
   padding-top: 56px;
 }
@@ -5137,6 +5354,16 @@ textarea:focus {
 
   .ranking-card-slide p {
     font-size: 15px;
+  }
+
+  .feature-grid .feature-card {
+    min-height: 360px;
+  }
+
+  .feature-grid .feature-bg-mark {
+    width: 112px;
+    height: 112px;
+    font-size: 68px;
   }
 
   .notification-bell {

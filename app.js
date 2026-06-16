@@ -680,10 +680,10 @@ function renderHome() {
         <p>Por aqui nós organizamos a formação esportiva dos atletas, damos suporte e apoio social, reunimos informações de competições e histórias incríveis de transformação, além de acessos exclusivos na plataforma para atletas e apoiadores.</p>
       </div>
       <div class="grid three feature-grid">
-        ${featureCard("Conhecer o Projeto", "Quem somos, nossa missao e por que o handebol transforma.", "#/projeto", "CP", false, "project-card")}
-        ${featureCard("Quero Treinar", "Seletivas, aulas particulares e informacoes para novos atletas.", "#/treinar", "TR", false, "training-card")}
-        ${featureCard("Apoie o Projeto", "Apoio financeiro, materiais, voluntariado e parcerias.", "#/apoiar", "AP", true, "support-card")}
         ${featureCard("Quiz HeloisaHand", "Teste seus conhecimentos sobre handebol e sobre nossa equipe.", "#/quiz", "QZ", false, "quiz-card")}
+        ${featureCard("Quero Treinar", "Seletivas, aulas particulares e informacoes para novos atletas.", "#/treinar", "TR", false, "training-card")}
+        ${featureCard("Conhecer o Projeto", "Quem somos, nossa missao e por que o handebol transforma.", "#/projeto", "CP", false, "project-card")}
+        ${featureCard("Apoie o Projeto", "Apoio financeiro, materiais, voluntariado e parcerias.", "#/apoiar", "AP", true, "support-card")}
       </div>
     </section>
     <section class="section options-section">
