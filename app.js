@@ -761,7 +761,7 @@ function renderQuiz() {
         <label>Seu nome ou apelido para o ranking
           <input id="quizPlayerName" value="${escapeAttribute(getCurrentQuizPlayerName())}" placeholder="Ex.: Alexander, Bia, Kayllan..." />
         </label>
-        <span>Ao finalizar, sua pontuacao pode aparecer no Top 3.</span>
+        <span>Ao finalizar, sua pontuacao pode aparecer no Top 7.</span>
       </div>
       <div class="quiz-choice-grid">
         ${renderQuizChoice("handball", "Quiz do Handebol", "Regras, historia, fundamentos, curiosidades e leitura de jogo.", handballCount, "facil")}
