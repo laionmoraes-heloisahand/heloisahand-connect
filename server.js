@@ -172,6 +172,8 @@ function dataForAthlete(data, userId) {
     attendance: (data.attendance || []).filter((item) => item.athleteId === userId),
     rankings,
     products: data.products || [],
+    quizQuestions: publicQuizQuestions(data),
+    quizScores: data.quizScores || [],
     interests: [],
   };
 }
@@ -206,6 +208,21 @@ function createAutoRanking(data) {
   };
 }
 
+function publicQuizQuestions(data) {
+  return (data?.quizQuestions || [])
+    .filter((item) => item.active !== false)
+    .map((item) => ({
+      id: item.id,
+      scope: item.scope,
+      level: item.level,
+      question: item.question,
+      options: item.options || [],
+      answerIndex: Number(item.answerIndex || 0),
+      explanation: item.explanation || "",
+      active: item.active !== false,
+    }));
+}
+
 function publicData(data) {
   const rankings = (data?.rankings || []).length ? data.rankings : [createAutoRanking(data)].filter(Boolean);
   const rankingAthleteIds = new Set(rankings.flatMap((ranking) => (ranking.items || []).map((item) => item.athleteId)));
@@ -228,6 +245,8 @@ function publicData(data) {
     sponsors: data?.sponsors || [],
     campaigns: data?.campaigns || [],
     products: data?.products || [],
+    quizQuestions: publicQuizQuestions(data),
+    quizScores: data?.quizScores || [],
   };
 }
 
@@ -308,6 +327,32 @@ function getYoutubeVideoId(url) {
 async function handleApi(req, res, cleanUrl) {
   if (req.method === "GET" && cleanUrl === "/api/public-data") {
     sendJson(res, 200, publicData(readAuthData() || { events: [] }));
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/quiz-score") {
+    try {
+      const body = await collectBody(req, 1024 * 64);
+      const payload = JSON.parse(body.toString("utf8"));
+      const data = readAuthData() || { users: [] };
+      data.quizScores = data.quizScores || [];
+      const entry = {
+        id: `quiz-score-${Date.now()}`,
+        scope: String(payload.scope || "handball").slice(0, 20),
+        level: String(payload.level || "facil").slice(0, 20),
+        playerName: String(payload.playerName || "Visitante").replace(/[<>]/g, "").slice(0, 40),
+        score: Math.max(0, Math.min(100, Number(payload.score || 0))),
+        total: Math.max(1, Math.min(100, Number(payload.total || 1))),
+        percent: Math.max(0, Math.min(100, Number(payload.percent || 0))),
+        createdAt: new Date().toISOString(),
+      };
+      data.quizScores.unshift(entry);
+      data.quizScores = data.quizScores.slice(0, 120);
+      saveAuthData(data);
+      sendJson(res, 200, { ok: true, data: publicData(data) });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel salvar a pontuacao." });
+    }
     return true;
   }
 

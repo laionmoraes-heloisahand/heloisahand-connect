@@ -8,6 +8,7 @@ const defaultPassword = "1234";
 const coachCpf = "";
 const pixKey = "lalves.unimed@gmail.com";
 const pixPayload = "00020126450014br.gov.bcb.pix0123lalves.unimed@gmail.com5204000053039865802BR5914LAIONEL MORAES6007VITORIA62130509HHCONNECT6304EAA6";
+let quizState = null;
 
 const categories = [
   {
@@ -193,6 +194,21 @@ const productSeeds = [
   { id: "product-meiao", name: "Meião esportivo", category: "Treino", price: 24.9, emoji: "🧦", description: "Meião para treinos, jogos e uniforme da equipe.", active: true },
 ];
 
+const quizQuestionSeeds = [
+  { id: "quiz-handball-1", scope: "handball", level: "facil", question: "Quantos jogadores de cada equipe ficam em quadra no handebol?", options: ["5", "6", "7", "8"], answerIndex: 2, explanation: "Uma equipe joga com 7 atletas em quadra: 6 jogadores de linha e 1 goleiro.", active: true },
+  { id: "quiz-handball-2", scope: "handball", level: "facil", question: "Qual e o tempo oficial de uma partida adulta de handebol?", options: ["2 tempos de 20 minutos", "2 tempos de 25 minutos", "2 tempos de 30 minutos", "4 tempos de 10 minutos"], answerIndex: 2, explanation: "No adulto, o jogo tem dois tempos de 30 minutos.", active: true },
+  { id: "quiz-handball-3", scope: "handball", level: "facil", question: "Qual jogador pode defender dentro da area do gol?", options: ["Pivo", "Armador central", "Goleiro", "Ponta"], answerIndex: 2, explanation: "O goleiro e o unico que atua dentro da area do gol para defender.", active: true },
+  { id: "quiz-handball-4", scope: "handball", level: "medio", question: "Depois de receber a bola parado, quantos passos o atleta pode dar sem quicar?", options: ["1 passo", "2 passos", "3 passos", "4 passos"], answerIndex: 2, explanation: "A regra permite ate 3 passos com a bola sem driblar.", active: true },
+  { id: "quiz-handball-5", scope: "handball", level: "medio", question: "Qual posicao costuma jogar infiltrado perto da area adversaria?", options: ["Pivo", "Goleiro", "Ponta", "Armador direito"], answerIndex: 0, explanation: "O pivo atua entre a defesa adversaria, abrindo espacos e finalizando perto da area.", active: true },
+  { id: "quiz-handball-6", scope: "handball", level: "medio", question: "O que e um tiro de 7 metros?", options: ["Cobranca lateral", "Penalidade cobrada da marca de 7 metros", "Reposicao do goleiro", "Inicio de jogo"], answerIndex: 1, explanation: "O tiro de 7 metros e uma penalidade parecida com o penalti no futebol.", active: true },
+  { id: "quiz-handball-7", scope: "handball", level: "dificil", question: "Qual sistema defensivo usa uma linha com seis jogadores proxima a area?", options: ["3:3", "5:1", "6:0", "4:2"], answerIndex: 2, explanation: "No 6:0, os seis defensores formam uma linha proxima a area.", active: true },
+  { id: "quiz-handball-8", scope: "handball", level: "dificil", question: "Em uma exclusao temporaria, por quanto tempo o atleta fica fora?", options: ["30 segundos", "1 minuto", "2 minutos", "5 minutos"], answerIndex: 2, explanation: "A punicao de exclusao temporaria dura 2 minutos.", active: true },
+  { id: "quiz-handball-9", scope: "handball", level: "dificil", question: "O que significa jogo passivo?", options: ["Ataque sem tentativa clara de finalizar", "Defesa muito agressiva", "Goleiro fora da area", "Troca obrigatoria"], answerIndex: 0, explanation: "Jogo passivo acontece quando o ataque demora sem demonstrar intencao real de finalizar.", active: true },
+  { id: "quiz-team-1", scope: "team", level: "facil", question: "Qual e a sigla usada pela nossa equipe nas competicoes?", options: ["HH", "HAJM", "IHH", "HLC"], answerIndex: 1, explanation: "Nas tabelas, nossa equipe aparece como HAJM.", active: true },
+  { id: "quiz-team-2", scope: "team", level: "facil", question: "Qual esporte move o Instituto HeloisaHand?", options: ["Volei", "Basquete", "Handebol", "Futsal"], answerIndex: 2, explanation: "O instituto usa o handebol como ferramenta de educacao, disciplina e oportunidade.", active: true },
+  { id: "quiz-team-3", scope: "team", level: "medio", question: "Qual faixa etaria principal o projeto atende?", options: ["7 a 10 anos", "11 a 17 anos", "18 a 25 anos", "Todas as idades"], answerIndex: 1, explanation: "O projeto e voltado principalmente para adolescentes de 11 a 17 anos.", active: true },
+];
+
 function lineScout(scores, notes, improvements) {
   return {
     type: "line",
@@ -268,6 +284,7 @@ const routes = {
   "/treinar": renderTraining,
   "/apoiar": renderSupport,
   "/loja": renderStore,
+  "/quiz": renderQuiz,
   "/atleta": renderAthlete,
   "/notificacoes": renderAthleteNotificationsPage,
   "/treinador": renderCoach,
@@ -664,6 +681,7 @@ function renderHome() {
         ${featureCard("Conhecer o Projeto", "Quem somos, nossa missao e por que o handebol transforma.", "#/projeto", "CP")}
         ${featureCard("Quero Treinar", "Seletivas, aulas particulares e informacoes para novos atletas.", "#/treinar", "TR")}
         ${featureCard("Apoie o Projeto", "Apoio financeiro, materiais, voluntariado e parcerias.", "#/apoiar", "AP", true)}
+        ${featureCard("Quiz HeloisaHand", "Teste seus conhecimentos sobre handebol e sobre nossa equipe.", "#/quiz", "QZ")}
       </div>
     </section>
     <section class="section options-section">
@@ -676,6 +694,7 @@ function renderHome() {
         ${optionCard("Quero Treinar Handebol", "Seletivas e aulas particulares", "#/treinar", "TR")}
         ${optionCard("Ja Sou Atleta", "Area restrita para atletas", "#/atleta", "AT")}
         ${optionCard("Quero Apoiar o Instituto", "Doe, patrocine ou seja parceiro", "#/apoiar", "♥")}
+        ${optionCard("Jogar Quiz", "Regras, historia, curiosidades e perguntas do time", "#/quiz", "?")}
       </div>
     </section>
     <section class="section band">
@@ -716,6 +735,214 @@ function renderPublicMonthlyRanking(data = getAuthData()) {
       ${renderRankingCarousel(ranking, data, "", "public")}
     </section>
   `;
+}
+
+function getQuizQuestions(data = getAuthData(), scope = "", level = "") {
+  const questions = Array.isArray(data.quizQuestions) && data.quizQuestions.length ? data.quizQuestions : quizQuestionSeeds;
+  return questions
+    .filter((item) => item.active !== false)
+    .filter((item) => !scope || item.scope === scope)
+    .filter((item) => !level || item.level === level);
+}
+
+function renderQuiz() {
+  if (quizState) return renderQuizPlay();
+  const data = getAuthData();
+  const handballCount = getQuizQuestions(data, "handball").length;
+  const teamCount = getQuizQuestions(data, "team").length;
+  return `
+    <section class="section quiz-hero">
+      <div class="section-head center">
+        <span class="eyebrow">Fique por dentro do handebol</span>
+        <h2>Quiz HeloisaHand</h2>
+        <p>Aprenda regras, historia, jogadas e curiosidades competindo com voce mesmo. Tambem tem quiz da equipe para fortalecer a nossa identidade.</p>
+      </div>
+      <div class="quiz-player-card">
+        <label>Seu nome ou apelido para o ranking
+          <input id="quizPlayerName" value="${escapeAttribute(getCurrentQuizPlayerName())}" placeholder="Ex.: Alexander, Bia, Kayllan..." />
+        </label>
+        <span>Ao finalizar, sua pontuacao pode aparecer no Top 3.</span>
+      </div>
+      <div class="quiz-choice-grid">
+        ${renderQuizChoice("handball", "Quiz do Handebol", "Regras, historia, fundamentos, curiosidades e leitura de jogo.", handballCount, "facil")}
+        ${renderQuizChoice("team", "Quiz da Equipe", "Perguntas sobre o Instituto HeloisaHand, nossa rotina, competicoes e historia.", teamCount, "facil")}
+      </div>
+      <div class="quiz-level-board">
+        <h3>Escolha seu nivel</h3>
+        <div>
+          ${["facil", "medio", "dificil"].map((level) => `
+            <button class="quiz-level-card" type="button" data-action="start-quiz" data-quiz-scope="handball" data-quiz-level="${level}">
+              <strong>${quizLevelLabel(level)}</strong>
+              <span>${getQuizQuestions(data, "handball", level).length} perguntas</span>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+      ${renderQuizLeaderboard(data)}
+    </section>
+  `;
+}
+
+function getCurrentQuizPlayerName() {
+  const athlete = getCurrentUser("athlete");
+  if (athlete) return athlete.profile?.nickname || athlete.name || "";
+  return localStorage.getItem("heloisahand_quiz_player_name") || "";
+}
+
+function renderQuizLeaderboard(data = getAuthData()) {
+  const scores = data.quizScores || [];
+  return `
+    <div class="quiz-leaderboard-grid">
+      ${["handball", "team"].map((scope) => {
+        const top = scores
+          .filter((item) => item.scope === scope)
+          .sort((a, b) => Number(b.score || 0) - Number(a.score || 0) || Number(b.percent || 0) - Number(a.percent || 0))
+          .slice(0, 7);
+        return `
+          <article class="quiz-leaderboard">
+            <span class="eyebrow">${scope === "team" ? "Quiz da equipe" : "Quiz do handebol"}</span>
+            <h3>Top 7 melhores</h3>
+            ${top.length ? top.map((item, index) => `
+              <div class="quiz-rank-row">
+                <strong>${index + 1}</strong>
+                <span>${escapeHtml(item.playerName || "Atleta")}</span>
+                <b>${Number(item.score || 0)}/${Number(item.total || 0)}</b>
+              </div>
+            `).join("") : `<p class="helper-text">Nenhuma pontuacao registrada ainda. Seja o primeiro.</p>`}
+          </article>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderQuizChoice(scope, title, text, count, level) {
+  return `
+    <article class="quiz-choice-card ${scope}">
+      <span>${scope === "team" ? "Nossa historia" : "Handebol"}</span>
+      <h3>${title}</h3>
+      <p>${text}</p>
+      <small>${count} perguntas disponiveis</small>
+      <button class="button pulse-action" type="button" data-action="start-quiz" data-quiz-scope="${scope}" data-quiz-level="${level}">Comecar agora</button>
+    </article>
+  `;
+}
+
+function quizLevelLabel(level) {
+  return ({ facil: "Nivel facil", medio: "Nivel medio", dificil: "Nivel dificil" })[level] || "Nivel livre";
+}
+
+function renderQuizPlay() {
+  const current = quizState.questions[quizState.index];
+  const selected = quizState.answers[quizState.index];
+  const answered = typeof selected === "number";
+  if (!current) return renderQuizResult();
+  return `
+    <section class="section quiz-play-section">
+      <div class="quiz-play-card">
+        <div class="quiz-progress-row">
+          <span>${quizState.scope === "team" ? "Quiz da equipe" : "Quiz do handebol"}</span>
+          <strong>${quizState.index + 1}/${quizState.questions.length}</strong>
+        </div>
+        <div class="quiz-progress"><i style="width:${((quizState.index + 1) / quizState.questions.length) * 100}%"></i></div>
+        <h2>${escapeHtml(current.question)}</h2>
+        <div class="quiz-options">
+          ${current.options.map((option, index) => {
+            const isCorrect = answered && index === Number(current.answerIndex);
+            const isWrong = answered && selected === index && selected !== Number(current.answerIndex);
+            return `<button class="${isCorrect ? "correct" : ""} ${isWrong ? "wrong" : ""}" type="button" data-action="answer-quiz" data-answer-index="${index}" ${answered ? "disabled" : ""}>${escapeHtml(option)}</button>`;
+          }).join("")}
+        </div>
+        ${answered ? `<div class="quiz-explanation"><strong>${selected === Number(current.answerIndex) ? "Resposta certa!" : "Boa tentativa."}</strong><p>${escapeHtml(current.explanation || "")}</p></div>` : ""}
+        <div class="quiz-actions">
+          <button class="button ghost-dark" type="button" data-action="cancel-quiz">Sair do quiz</button>
+          ${answered ? `<button class="button" type="button" data-action="next-quiz">${quizState.index + 1 >= quizState.questions.length ? "Ver resultado" : "Proxima pergunta"}</button>` : ""}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderQuizResult() {
+  const total = quizState.questions.length;
+  const score = quizState.answers.reduce((sum, answer, index) => sum + (Number(answer) === Number(quizState.questions[index].answerIndex) ? 1 : 0), 0);
+  const percent = Math.round((score / Math.max(1, total)) * 100);
+  if (!quizState.saved) {
+    quizState.saved = true;
+    submitQuizScore({ scope: quizState.scope, level: quizState.level, playerName: quizState.playerName, score, total, percent });
+  }
+  return `
+    <section class="section quiz-play-section">
+      <div class="quiz-result-card">
+        <span class="eyebrow">Resultado do quiz</span>
+        <h2>${score} de ${total}</h2>
+        <p>${percent >= 80 ? "Mandou muito bem. Conhecimento de quem vive o jogo." : percent >= 50 ? "Bom resultado. Da para subir de nivel com mais algumas partidas." : "Comecou a jornada. Bora estudar mais e tentar de novo."}</p>
+        <div class="quiz-score-ring"><strong>${percent}%</strong></div>
+        <div class="quiz-actions">
+          <button class="button" type="button" data-action="restart-quiz">Jogar de novo</button>
+          <button class="button ghost-dark" type="button" data-action="cancel-quiz">Voltar aos quizzes</button>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+async function submitQuizScore(score) {
+  const entry = {
+    id: `quiz-score-${Date.now()}`,
+    ...score,
+    createdAt: new Date().toISOString(),
+  };
+  const data = getAuthData();
+  data.quizScores = [entry, ...(data.quizScores || [])].slice(0, 80);
+  authDataCache = data;
+  localStorage.setItem(authStoreKey, JSON.stringify(data));
+  try {
+    const response = await fetch("/api/quiz-score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry),
+    });
+    if (!response.ok) throw new Error("Nao foi possivel salvar no servidor.");
+    const payload = await response.json();
+    if (payload?.data?.quizScores) {
+      authDataCache = { ...getAuthData(), quizScores: payload.data.quizScores };
+    }
+  } catch (error) {
+    showToast("Pontuacao salva neste aparelho. Para ranking global, confira a conexao do servidor.", "error");
+  }
+}
+
+function startQuizSession(scope = "handball", level = "facil") {
+  const data = getAuthData();
+  const nameInput = document.querySelector("#quizPlayerName");
+  const playerName = (nameInput?.value || getCurrentQuizPlayerName() || "Visitante").trim().slice(0, 40);
+  localStorage.setItem("heloisahand_quiz_player_name", playerName);
+  let questions = getQuizQuestions(data, scope, level);
+  if (!questions.length && scope === "team") questions = getQuizQuestions(data, scope);
+  if (!questions.length) {
+    showToast("Ainda nao existem perguntas nesse quiz.", "error");
+    return;
+  }
+  quizState = {
+    scope,
+    level,
+    playerName,
+    questions: questions.sort(() => Math.random() - 0.5).slice(0, Math.min(10, questions.length)),
+    answers: [],
+    index: 0,
+    saved: false,
+  };
+  app.innerHTML = renderQuizPlay();
+  bindInteractions();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function answerQuizQuestion(answerIndex) {
+  if (!quizState) return;
+  quizState.answers[quizState.index] = answerIndex;
+  app.innerHTML = renderQuizPlay();
+  bindInteractions();
 }
 
 function renderSponsorAndCampaigns(data = getAuthData()) {
@@ -1581,6 +1808,8 @@ function createInitialAuthData() {
     campaigns: campaignSeeds,
     products: productSeeds,
     rankings: [],
+    quizQuestions: quizQuestionSeeds,
+    quizScores: [],
     passwordResets: [],
   };
   ensureSeedAthletes(initial);
@@ -1651,6 +1880,14 @@ function normalizeAuthData(data) {
   }
   if (!Array.isArray(normalized.rankings)) {
     normalized.rankings = [];
+    changed = true;
+  }
+  if (!Array.isArray(normalized.quizQuestions)) {
+    normalized.quizQuestions = quizQuestionSeeds;
+    changed = true;
+  }
+  if (!Array.isArray(normalized.quizScores)) {
+    normalized.quizScores = [];
     changed = true;
   }
   if (!Array.isArray(normalized.passwordResets)) {
@@ -2301,6 +2538,7 @@ function renderCoachDashboard(activeTab = "athletes") {
     ["classes", "Aulas"],
     ["supporters", "Apoiadores"],
     ["ranking", "Ranking"],
+    ["quiz", "Quiz"],
     ["store", "Loja"],
     ["media", "Fotos & Videos"],
     ["attendance", "Presencas"],
@@ -2331,6 +2569,7 @@ function renderCoachTab(tab, data) {
     classes: () => renderSimpleManager("Aulas", "Nova aula", "Tema da aula", "Objetivo tecnico"),
     supporters: () => renderSupportManager(data),
     ranking: () => renderRankingManager(data),
+    quiz: () => renderQuizManager(data),
     store: () => renderStoreManager(data),
     media: () => renderMediaManager(data),
     attendance: () => renderAttendanceManager(data),
@@ -2796,6 +3035,72 @@ function renderRankingPreview(ranking, data) {
   `;
 }
 
+function renderQuizManager(data) {
+  const questions = data.quizQuestions || quizQuestionSeeds;
+  const scores = data.quizScores || [];
+  return `
+    <div class="coach-panel-head">
+      <div>
+        <h3>Quiz da plataforma</h3>
+        <p class="panel-subtitle">Crie perguntas para o quiz geral de handebol e para o quiz exclusivo da equipe.</p>
+      </div>
+    </div>
+    <div class="quiz-manager-grid">
+      <form id="quizQuestionForm" class="portal-card quiz-question-form">
+        <div class="form-grid two">
+          <label>Tipo de quiz
+            <select id="quizQuestionScope">
+              <option value="team">Quiz da equipe</option>
+              <option value="handball">Quiz geral do handebol</option>
+            </select>
+          </label>
+          <label>Nivel
+            <select id="quizQuestionLevel">
+              <option value="facil">Facil</option>
+              <option value="medio">Medio</option>
+              <option value="dificil">Dificil</option>
+            </select>
+          </label>
+        </div>
+        <label>Pergunta<textarea id="quizQuestionText" required placeholder="Ex.: Qual foi nossa primeira competicao?"></textarea></label>
+        <div class="form-grid two">
+          <label>Opcao A<input id="quizOption0" required /></label>
+          <label>Opcao B<input id="quizOption1" required /></label>
+          <label>Opcao C<input id="quizOption2" required /></label>
+          <label>Opcao D<input id="quizOption3" required /></label>
+        </div>
+        <label>Resposta correta
+          <select id="quizAnswerIndex">
+            <option value="0">Opcao A</option>
+            <option value="1">Opcao B</option>
+            <option value="2">Opcao C</option>
+            <option value="3">Opcao D</option>
+          </select>
+        </label>
+        <label>Explicacao da resposta<textarea id="quizExplanation" placeholder="Explique rapidamente por que essa e a resposta correta."></textarea></label>
+        <button class="button pulse-action" type="submit">Publicar pergunta</button>
+        <div class="portal-message"></div>
+      </form>
+      <div class="portal-card">
+        <h3>Ranking dos quizzes</h3>
+        ${renderQuizLeaderboard({ quizScores: scores })}
+      </div>
+    </div>
+    <div class="quiz-question-list">
+      ${questions.map((item) => `
+        <article>
+          <div>
+            <span>${item.scope === "team" ? "Equipe" : "Handebol"} - ${quizLevelLabel(item.level).replace("Nivel ", "")}</span>
+            <strong>${escapeHtml(item.question)}</strong>
+            <small>Correta: ${escapeHtml(item.options?.[item.answerIndex] || "")}</small>
+          </div>
+          <button type="button" data-action="delete-quiz-question" data-question-id="${escapeAttribute(item.id)}">Remover</button>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderCampaignEditCard(campaign) {
   return `
     <form class="support-edit-card campaign-edit-form" data-campaign-id="${escapeAttribute(campaign.id)}">
@@ -3111,6 +3416,7 @@ function bindInteractions() {
   document.querySelector("#campaignForm")?.addEventListener("submit", handleCampaignSave);
   document.querySelector("#sponsorForm")?.addEventListener("submit", handleSponsorSave);
   document.querySelector("#rankingForm")?.addEventListener("submit", handleRankingSave);
+  document.querySelector("#quizQuestionForm")?.addEventListener("submit", handleQuizQuestionSave);
   document.querySelector("#profileAvatar")?.addEventListener("change", handleAvatarPreview);
   document.querySelectorAll(".campaign-edit-form").forEach((form) => form.addEventListener("submit", handleCampaignEdit));
   document.querySelectorAll(".sponsor-edit-form").forEach((form) => form.addEventListener("submit", handleSponsorEdit));
@@ -4051,6 +4357,32 @@ async function handleRankingSave(event) {
   }
 }
 
+async function handleQuizQuestionSave(event) {
+  event.preventDefault();
+  const data = getAuthData();
+  data.quizQuestions = data.quizQuestions || [];
+  const question = {
+    id: `quiz-${Date.now()}`,
+    scope: document.querySelector("#quizQuestionScope").value,
+    level: document.querySelector("#quizQuestionLevel").value,
+    question: document.querySelector("#quizQuestionText").value.trim(),
+    options: [0, 1, 2, 3].map((index) => document.querySelector(`#quizOption${index}`).value.trim()),
+    answerIndex: Number(document.querySelector("#quizAnswerIndex").value),
+    explanation: document.querySelector("#quizExplanation").value.trim(),
+    active: true,
+    createdAt: new Date().toISOString(),
+  };
+  data.quizQuestions.unshift(question);
+  try {
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("quiz");
+    bindInteractions();
+    showToast("Pergunta publicada no quiz.", "ok");
+  } catch (error) {
+    showInlineFormMessage(event.currentTarget, error.message, "error");
+  }
+}
+
 async function handleCampaignEdit(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -4136,6 +4468,29 @@ function showInlineFormMessage(form, message, type = "ok") {
 
 async function handleAction(event) {
   const action = event.currentTarget.dataset.action;
+  if (action === "start-quiz") {
+    startQuizSession(event.currentTarget.dataset.quizScope, event.currentTarget.dataset.quizLevel);
+  }
+  if (action === "answer-quiz") {
+    answerQuizQuestion(Number(event.currentTarget.dataset.answerIndex));
+  }
+  if (action === "next-quiz") {
+    quizState.index += 1;
+    app.innerHTML = renderQuizPlay();
+    bindInteractions();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  if (action === "cancel-quiz") {
+    quizState = null;
+    app.innerHTML = renderQuiz();
+    bindInteractions();
+  }
+  if (action === "restart-quiz") {
+    const scope = quizState?.scope || "handball";
+    const level = quizState?.level || "facil";
+    quizState = null;
+    startQuizSession(scope, level);
+  }
   if (action === "open-hub-topic") {
     openHubTopic(event.currentTarget);
   }
@@ -4301,6 +4656,14 @@ async function handleAction(event) {
     await saveAuthDataConfirmed(data);
     app.innerHTML = renderCoachDashboard("store");
     bindInteractions();
+  }
+  if (action === "delete-quiz-question") {
+    const data = getAuthData();
+    data.quizQuestions = (data.quizQuestions || []).filter((item) => item.id !== event.currentTarget.dataset.questionId);
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("quiz");
+    bindInteractions();
+    showToast("Pergunta removida do quiz.", "ok");
   }
   if (action === "delete-campaign") {
     const data = getAuthData();
