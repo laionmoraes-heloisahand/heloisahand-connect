@@ -173,7 +173,7 @@ function dataForAthlete(data, userId) {
     rankings,
     products: data.products || [],
     quizQuestions: publicQuizQuestions(data),
-    quizScores: data.quizScores || [],
+    quizScores: mergeQuizScores(data.quizScores || []),
     interests: [],
   };
 }
@@ -223,6 +223,63 @@ function publicQuizQuestions(data) {
     }));
 }
 
+function slugifyValue(value) {
+  return String(value || "visitante")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || "visitante";
+}
+
+function mergeQuizScores(scores = []) {
+  const map = new Map();
+  scores.forEach((item) => {
+    const playerName = String(item.playerName || "Visitante").slice(0, 40);
+    const playerKey = item.playerKey || `visitor:${slugifyValue(playerName)}`;
+    const scope = item.scope || "handball";
+    const key = `${scope}:${playerKey}`;
+    const current = map.get(key);
+    const score = Number(item.score || 0);
+    const total = Number(item.total || item.questionsAnswered || 0);
+    if (current) {
+      current.score += score;
+      current.total += total;
+      current.attempts += Number(item.attempts || 1);
+      current.lastPlayedAt = item.lastPlayedAt || item.createdAt || current.lastPlayedAt;
+    } else {
+      map.set(key, {
+        ...item,
+        scope,
+        playerName,
+        playerKey,
+        score,
+        total,
+        attempts: Number(item.attempts || 1),
+        lastPlayedAt: item.lastPlayedAt || item.createdAt || "",
+      });
+    }
+  });
+  return [...map.values()];
+}
+
+function upsertQuizScore(scores = [], entry) {
+  const merged = mergeQuizScores(scores);
+  const key = `${entry.scope}:${entry.playerKey}`;
+  const current = merged.find((item) => `${item.scope}:${item.playerKey}` === key);
+  if (current) {
+    current.score = Number(current.score || 0) + Number(entry.score || 0);
+    current.total = Number(current.total || 0) + Number(entry.total || 0);
+    current.attempts = Number(current.attempts || 0) + 1;
+    current.lastScore = Number(entry.score || 0);
+    current.lastPlayedAt = entry.createdAt;
+  } else {
+    merged.unshift({ ...entry, attempts: 1, lastScore: Number(entry.score || 0), lastPlayedAt: entry.createdAt });
+  }
+  return merged.slice(0, 160);
+}
+
 function publicData(data) {
   const rankings = (data?.rankings || []).length ? data.rankings : [createAutoRanking(data)].filter(Boolean);
   const rankingAthleteIds = new Set(rankings.flatMap((ranking) => (ranking.items || []).map((item) => item.athleteId)));
@@ -246,7 +303,7 @@ function publicData(data) {
     campaigns: data?.campaigns || [],
     products: data?.products || [],
     quizQuestions: publicQuizQuestions(data),
-    quizScores: data?.quizScores || [],
+    quizScores: mergeQuizScores(data?.quizScores || []),
   };
 }
 
@@ -341,13 +398,13 @@ async function handleApi(req, res, cleanUrl) {
         scope: String(payload.scope || "handball").slice(0, 20),
         level: String(payload.level || "facil").slice(0, 20),
         playerName: String(payload.playerName || "Visitante").replace(/[<>]/g, "").slice(0, 40),
+        playerKey: String(payload.playerKey || `visitor:${slugifyValue(payload.playerName || "Visitante")}`).replace(/[<>]/g, "").slice(0, 80),
         score: Math.max(0, Math.min(100, Number(payload.score || 0))),
         total: Math.max(1, Math.min(100, Number(payload.total || 1))),
         percent: Math.max(0, Math.min(100, Number(payload.percent || 0))),
         createdAt: new Date().toISOString(),
       };
-      data.quizScores.unshift(entry);
-      data.quizScores = data.quizScores.slice(0, 120);
+      data.quizScores = upsertQuizScore(data.quizScores, entry);
       saveAuthData(data);
       sendJson(res, 200, { ok: true, data: publicData(data) });
     } catch (error) {

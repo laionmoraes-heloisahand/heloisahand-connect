@@ -209,6 +209,37 @@ const quizQuestionSeeds = [
   { id: "quiz-team-3", scope: "team", level: "medio", question: "Qual faixa etaria principal o projeto atende?", options: ["7 a 10 anos", "11 a 17 anos", "18 a 25 anos", "Todas as idades"], answerIndex: 1, explanation: "O projeto e voltado principalmente para adolescentes de 11 a 17 anos.", active: true },
 ];
 
+quizQuestionSeeds.push(
+  { id: "quiz-handball-facil-4", scope: "handball", level: "facil", question: "Qual objeto e usado para marcar gols no handebol?", options: ["Raquete", "Bola", "Taco", "Disco"], answerIndex: 1, explanation: "O handebol e jogado com bola, usando passes, dribles e arremessos.", active: true },
+  { id: "quiz-handball-facil-5", scope: "handball", level: "facil", question: "Qual e o principal objetivo de uma equipe no handebol?", options: ["Fazer gols", "Manter posse para sempre", "Derrubar o adversario", "Chutar para fora"], answerIndex: 0, explanation: "O objetivo e marcar mais gols que o adversario.", active: true },
+  { id: "quiz-handball-facil-6", scope: "handball", level: "facil", question: "Onde o goleiro costuma atuar?", options: ["No banco", "Na area do gol", "Na lateral", "No meio da torcida"], answerIndex: 1, explanation: "O goleiro atua principalmente dentro da area do gol.", active: true },
+  { id: "quiz-handball-facil-7", scope: "handball", level: "facil", question: "Qual fundamento ajuda a levar a bola pelo chao?", options: ["Drible", "Bloqueio", "Saida de bola", "Defesa baixa"], answerIndex: 0, explanation: "O drible e o quique da bola usado para progredir em quadra.", active: true },
+  { id: "quiz-handball-facil-8", scope: "handball", level: "facil", question: "Qual posicao joga nas laterais da quadra e costuma finalizar de angulos fechados?", options: ["Ponta", "Goleiro", "Tecnico", "Arbitro"], answerIndex: 0, explanation: "Os pontas jogam abertos e precisam finalizar mesmo com pouco angulo.", active: true },
+  { id: "quiz-handball-facil-9", scope: "handball", level: "facil", question: "O handebol e um esporte coletivo ou individual?", options: ["Individual", "Coletivo", "Somente de dupla", "Sem equipe"], answerIndex: 1, explanation: "Handebol e coletivo: depende de cooperacao, passes, defesa e estrategia.", active: true },
+  { id: "quiz-handball-facil-10", scope: "handball", level: "facil", question: "Curiosidade: o handebol moderno ficou famoso principalmente em qual tipo de quadra?", options: ["Quadra coberta", "Campo de areia apenas", "Piscina", "Pista de corrida"], answerIndex: 0, explanation: "O handebol moderno se consolidou como esporte de quadra coberta.", active: true },
+  { id: "quiz-handball-medio-7", scope: "handball", level: "medio", question: "Qual linha marca a area onde jogadores de linha nao podem pisar para atacar?", options: ["Linha dos 6 metros", "Linha central", "Linha lateral", "Linha de 9 metros"], answerIndex: 0, explanation: "A area do goleiro e delimitada pela linha dos 6 metros.", active: true },
+  { id: "quiz-handball-medio-8", scope: "handball", level: "medio", question: "Em qual continente o handebol moderno se desenvolveu com mais forca?", options: ["Europa", "Oceania", "Antartida", "America do Norte"], answerIndex: 0, explanation: "O handebol moderno ganhou estrutura e popularidade na Europa.", active: true },
+  { id: "quiz-handball-medio-9", scope: "handball", level: "medio", question: "Qual pais e muito conhecido por sua forca historica no handebol masculino e feminino?", options: ["Dinamarca", "Canada", "Japao no beisebol", "India no crquete"], answerIndex: 0, explanation: "A Dinamarca e uma das grandes potencias atuais e historicas do handebol.", active: true },
+  { id: "quiz-handball-medio-10", scope: "handball", level: "medio", question: "O que um armador central costuma fazer?", options: ["Organizar jogadas", "Ficar so no gol", "Apitar o jogo", "Nao tocar na bola"], answerIndex: 0, explanation: "O armador central e um dos principais organizadores do ataque.", active: true },
+  { id: "quiz-handball-medio-11", scope: "handball", level: "medio", question: "Curiosidade: o handebol tambem tem uma versao praticada na areia. Como ela e chamada?", options: ["Beach handball", "Handebol aquatico", "Handebol de gelo", "Mini handebol"], answerIndex: 0, explanation: "Beach handball e a versao de areia, com regras e pontuacoes proprias.", active: true },
+  { id: "quiz-handball-medio-12", scope: "handball", level: "medio", question: "Qual fundamento e essencial para criar oportunidade para o companheiro finalizar?", options: ["Passe", "Reclamacao", "Falta tecnica", "Chute sem olhar"], answerIndex: 0, explanation: "O passe bem feito acelera o jogo e cria boas chances de arremesso.", active: true },
+  { id: "quiz-handball-medio-13", scope: "handball", level: "medio", question: "O que significa contra-ataque?", options: ["Ataque rapido apos recuperar a bola", "Pedido de tempo", "Troca de uniforme", "Punicao do goleiro"], answerIndex: 0, explanation: "Contra-ataque e a transicao rapida para surpreender a defesa adversaria.", active: true },
+  { id: "quiz-handball-dificil-10", scope: "handball", level: "dificil", question: "Qual entidade internacional organiza grandes competicoes mundiais de handebol?", options: ["IHF", "FIFA", "NBA", "ATP"], answerIndex: 0, explanation: "A IHF e a Federacao Internacional de Handebol.", active: true },
+  { id: "quiz-handball-dificil-11", scope: "handball", level: "dificil", question: "No ataque, qual linha costuma ser referencia para cobranca de tiro livre?", options: ["9 metros", "3 metros", "Meio metro", "Linha de fundo apenas"], answerIndex: 0, explanation: "A linha tracejada dos 9 metros e referencia para muitas cobrancas de tiro livre.", active: true },
+  { id: "quiz-handball-dificil-12", scope: "handball", level: "dificil", question: "Qual acao defensiva busca impedir o arremesso levantando bracos e fechando espaco?", options: ["Bloqueio", "Drible duplo", "Saida lateral", "Passe picado"], answerIndex: 0, explanation: "O bloqueio dificulta o arremesso e protege o goleiro.", active: true },
+  { id: "quiz-handball-dificil-13", scope: "handball", level: "dificil", question: "Curiosidade: antes do formato de quadra atual, o handebol ja foi praticado com mais jogadores em campo aberto?", options: ["Sim", "Nao, sempre foi igual", "Apenas no gelo", "So em piscina"], answerIndex: 0, explanation: "Versoes antigas do handebol eram praticadas em campo aberto com mais jogadores.", active: true },
+  { id: "quiz-handball-dificil-14", scope: "handball", level: "dificil", question: "Qual sistema defensivo deixa um jogador mais avancado pressionando a primeira linha?", options: ["5:1", "6:0", "0:6", "Todos no ataque"], answerIndex: 0, explanation: "No 5:1, cinco ficam mais recuados e um defensor atua mais avancado.", active: true },
+  { id: "quiz-handball-dificil-15", scope: "handball", level: "dificil", question: "O que caracteriza uma boa leitura de jogo?", options: ["Antecipar espacos e decisoes", "Olhar so para a torcida", "Nao passar a bola", "Correr sem objetivo"], answerIndex: 0, explanation: "Ler o jogo e perceber espacos, tempo certo e melhor decisao.", active: true },
+  { id: "quiz-handball-dificil-16", scope: "handball", level: "dificil", question: "Em alto nivel, por que o jogo sem bola e importante?", options: ["Cria espacos e opcoes de passe", "Nao tem importancia", "Serve para sair da quadra", "Substitui o goleiro"], answerIndex: 0, explanation: "Movimentacao sem bola abre espacos e melhora a organizacao ofensiva.", active: true },
+  { id: "quiz-team-4", scope: "team", level: "facil", question: "Qual valor o instituto busca desenvolver junto com o esporte?", options: ["Disciplina", "Desinteresse", "Individualismo", "Bagunca"], answerIndex: 0, explanation: "Disciplina e um dos pilares do projeto.", active: true },
+  { id: "quiz-team-5", scope: "team", level: "facil", question: "O que aparece na agenda do site para os atletas acompanharem?", options: ["Treinos e jogos", "Receitas de bolo", "Boletos de luz", "Previsao da bolsa"], answerIndex: 0, explanation: "A agenda comunica treinos, amistosos, competicoes e avisos da equipe.", active: true },
+  { id: "quiz-team-6", scope: "team", level: "medio", question: "Qual e uma missao do Instituto HeloisaHand?", options: ["Abrir oportunidades de vida", "Formar apenas campeoes profissionais", "Impedir estudos", "Treinar sem valores"], answerIndex: 0, explanation: "O projeto usa o esporte para criar oportunidades, cidadania e desenvolvimento.", active: true },
+  { id: "quiz-team-7", scope: "team", level: "medio", question: "No site, onde o atleta acompanha scout, frequencia e avisos?", options: ["Area do Atleta", "Loja", "Pix", "Rodape"], answerIndex: 0, explanation: "A Area do Atleta centraliza a jornada individual.", active: true },
+  { id: "quiz-team-8", scope: "team", level: "dificil", question: "Qual atitude combina mais com a cultura da equipe?", options: ["Compromisso com o grupo", "Faltar sem avisar", "Nao ouvir o treinador", "Desistir no primeiro erro"], answerIndex: 0, explanation: "Compromisso, respeito e evolucao diaria fortalecem a equipe.", active: true },
+  { id: "quiz-team-9", scope: "team", level: "dificil", question: "Por que conhecer a historia do projeto importa?", options: ["Cria identidade e pertencimento", "Nao muda nada", "Serve so para decorar", "Impede treinos"], answerIndex: 0, explanation: "Quanto mais o atleta entende a historia, mais se sente parte da equipe.", active: true },
+  { id: "quiz-team-10", scope: "team", level: "facil", question: "Qual canal do site ajuda a aproximar treinador e atletas?", options: ["Chat e avisos", "Carrinho abandonado", "Tela sem botao", "Pagina vazia"], answerIndex: 0, explanation: "Chat, avisos e notificacoes fortalecem a comunicacao da equipe.", active: true },
+);
+
 function lineScout(scores, notes, improvements) {
   return {
     type: "line",
@@ -792,13 +823,13 @@ function getCurrentQuizPlayerName() {
 }
 
 function renderQuizLeaderboard(data = getAuthData()) {
-  const scores = data.quizScores || [];
+  const scores = mergeQuizScores(data.quizScores || []);
   return `
     <div class="quiz-leaderboard-grid">
       ${["handball", "team"].map((scope) => {
         const top = scores
           .filter((item) => item.scope === scope)
-          .sort((a, b) => Number(b.score || 0) - Number(a.score || 0) || Number(b.percent || 0) - Number(a.percent || 0))
+          .sort((a, b) => Number(b.score || 0) - Number(a.score || 0) || Number(b.attempts || 0) - Number(a.attempts || 0))
           .slice(0, 7);
         return `
           <article class="quiz-leaderboard">
@@ -808,7 +839,7 @@ function renderQuizLeaderboard(data = getAuthData()) {
               <div class="quiz-rank-row">
                 <strong>${index + 1}</strong>
                 <span>${escapeHtml(item.playerName || "Atleta")}</span>
-                <b>${Number(item.score || 0)}/${Number(item.total || 0)}</b>
+                <b>${Number(item.score || 0)} pts</b>
               </div>
             `).join("") : `<p class="helper-text">Nenhuma pontuacao registrada ainda. Seja o primeiro.</p>`}
           </article>
@@ -816,6 +847,65 @@ function renderQuizLeaderboard(data = getAuthData()) {
       }).join("")}
     </div>
   `;
+}
+
+function getQuizPlayerIdentity(playerName = "") {
+  const athlete = getCurrentUser("athlete");
+  if (athlete) {
+    return {
+      playerName: athlete.profile?.nickname || athlete.name || playerName || "Atleta",
+      playerKey: `athlete:${athlete.id}`,
+    };
+  }
+  const cleanName = (playerName || "Visitante").trim().replace(/\s+/g, " ").slice(0, 40) || "Visitante";
+  return {
+    playerName: cleanName,
+    playerKey: `visitor:${slugify(cleanName.toLowerCase())}`,
+  };
+}
+
+function mergeQuizScores(scores = []) {
+  const map = new Map();
+  scores.forEach((item) => {
+    const playerName = item.playerName || "Visitante";
+    const key = `${item.scope || "handball"}:${item.playerKey || `visitor:${slugify(playerName.toLowerCase())}`}`;
+    const current = map.get(key);
+    const score = Number(item.score || 0);
+    const total = Number(item.total || item.questionsAnswered || 0);
+    if (current) {
+      current.score += score;
+      current.total += total;
+      current.attempts += Number(item.attempts || 1);
+      current.lastPlayedAt = item.lastPlayedAt || item.createdAt || current.lastPlayedAt;
+    } else {
+      map.set(key, {
+        ...item,
+        playerName,
+        playerKey: item.playerKey || `visitor:${slugify(playerName.toLowerCase())}`,
+        score,
+        total,
+        attempts: Number(item.attempts || 1),
+        lastPlayedAt: item.lastPlayedAt || item.createdAt || "",
+      });
+    }
+  });
+  return [...map.values()];
+}
+
+function upsertQuizScore(scores = [], entry) {
+  const merged = mergeQuizScores(scores);
+  const key = `${entry.scope}:${entry.playerKey}`;
+  const current = merged.find((item) => `${item.scope}:${item.playerKey}` === key);
+  if (current) {
+    current.score = Number(current.score || 0) + Number(entry.score || 0);
+    current.total = Number(current.total || 0) + Number(entry.total || 0);
+    current.attempts = Number(current.attempts || 0) + 1;
+    current.lastScore = Number(entry.score || 0);
+    current.lastPlayedAt = entry.createdAt;
+  } else {
+    merged.unshift({ ...entry, attempts: 1, lastScore: Number(entry.score || 0), lastPlayedAt: entry.createdAt });
+  }
+  return merged.slice(0, 160);
 }
 
 function renderQuizChoice(scope, title, text, count, level) {
@@ -871,14 +961,14 @@ function renderQuizResult() {
   const percent = Math.round((score / Math.max(1, total)) * 100);
   if (!quizState.saved) {
     quizState.saved = true;
-    submitQuizScore({ scope: quizState.scope, level: quizState.level, playerName: quizState.playerName, score, total, percent });
+    submitQuizScore({ scope: quizState.scope, level: quizState.level, playerName: quizState.playerName, playerKey: quizState.playerKey, score, total, percent });
   }
   return `
     <section class="section quiz-play-section">
       <div class="quiz-result-card">
         <span class="eyebrow">Resultado do quiz</span>
         <h2>${score} de ${total}</h2>
-        <p>${percent >= 80 ? "Mandou muito bem. Conhecimento de quem vive o jogo." : percent >= 50 ? "Bom resultado. Da para subir de nivel com mais algumas partidas." : "Comecou a jornada. Bora estudar mais e tentar de novo."}</p>
+        <p>${percent >= 80 ? "Mandou muito bem. Esses pontos foram somados ao seu ranking acumulado." : percent >= 50 ? "Bom resultado. Seus acertos entraram na sua pontuacao geral." : "Comecou a jornada. Cada acerto soma ponto para voce tentar subir no ranking."}</p>
         <div class="quiz-score-ring"><strong>${percent}%</strong></div>
         <div class="quiz-actions">
           <button class="button" type="button" data-action="restart-quiz">Jogar de novo</button>
@@ -896,7 +986,7 @@ async function submitQuizScore(score) {
     createdAt: new Date().toISOString(),
   };
   const data = getAuthData();
-  data.quizScores = [entry, ...(data.quizScores || [])].slice(0, 80);
+  data.quizScores = upsertQuizScore(data.quizScores || [], entry);
   authDataCache = data;
   localStorage.setItem(authStoreKey, JSON.stringify(data));
   try {
@@ -909,6 +999,7 @@ async function submitQuizScore(score) {
     const payload = await response.json();
     if (payload?.data?.quizScores) {
       authDataCache = { ...getAuthData(), quizScores: payload.data.quizScores };
+      localStorage.setItem(authStoreKey, JSON.stringify(authDataCache));
     }
   } catch (error) {
     showToast("Pontuacao salva neste aparelho. Para ranking global, confira a conexao do servidor.", "error");
@@ -918,8 +1009,8 @@ async function submitQuizScore(score) {
 function startQuizSession(scope = "handball", level = "facil") {
   const data = getAuthData();
   const nameInput = document.querySelector("#quizPlayerName");
-  const playerName = (nameInput?.value || getCurrentQuizPlayerName() || "Visitante").trim().slice(0, 40);
-  localStorage.setItem("heloisahand_quiz_player_name", playerName);
+  const identity = getQuizPlayerIdentity(nameInput?.value || getCurrentQuizPlayerName() || "Visitante");
+  localStorage.setItem("heloisahand_quiz_player_name", identity.playerName);
   let questions = getQuizQuestions(data, scope, level);
   if (!questions.length && scope === "team") questions = getQuizQuestions(data, scope);
   if (!questions.length) {
@@ -929,7 +1020,8 @@ function startQuizSession(scope = "handball", level = "facil") {
   quizState = {
     scope,
     level,
-    playerName,
+    playerName: identity.playerName,
+    playerKey: identity.playerKey,
     questions: questions.sort(() => Math.random() - 0.5).slice(0, Math.min(10, questions.length)),
     answers: [],
     index: 0,
@@ -1887,10 +1979,24 @@ function normalizeAuthData(data) {
   if (!Array.isArray(normalized.quizQuestions)) {
     normalized.quizQuestions = quizQuestionSeeds;
     changed = true;
+  } else {
+    const existingQuizIds = new Set(normalized.quizQuestions.map((item) => item.id));
+    quizQuestionSeeds.forEach((item) => {
+      if (!existingQuizIds.has(item.id)) {
+        normalized.quizQuestions.push(item);
+        changed = true;
+      }
+    });
   }
   if (!Array.isArray(normalized.quizScores)) {
     normalized.quizScores = [];
     changed = true;
+  } else {
+    const mergedScores = mergeQuizScores(normalized.quizScores);
+    if (mergedScores.length !== normalized.quizScores.length) {
+      normalized.quizScores = mergedScores;
+      changed = true;
+    }
   }
   if (!Array.isArray(normalized.passwordResets)) {
     normalized.passwordResets = [];
