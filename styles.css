@@ -489,6 +489,10 @@ h3 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.feature-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .card {
   border: 1px solid var(--line);
   border-radius: 28px;
@@ -534,6 +538,231 @@ h3 {
 .card ul {
   margin: 18px 0 0;
   padding-left: 18px;
+}
+
+.feature-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 260px;
+  isolation: isolate;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.93), rgba(255, 255, 255, 0.78)),
+    radial-gradient(circle at 86% 18%, rgba(31, 138, 76, 0.2), transparent 34%);
+}
+
+.feature-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    linear-gradient(135deg, rgba(5, 48, 31, 0.82), rgba(31, 138, 76, 0.45)),
+    var(--feature-scene, radial-gradient(circle at 70% 30%, rgba(255, 205, 51, 0.26), transparent 35%));
+  opacity: 0.08;
+  transition: opacity 0.24s ease, transform 0.32s ease;
+}
+
+.feature-card::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  z-index: -1;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.55), transparent 62%);
+  opacity: 0;
+  transform: translateX(-28%) rotate(8deg);
+  transition: opacity 0.24s ease, transform 0.55s ease;
+}
+
+.feature-card:hover::before {
+  opacity: 0.18;
+  transform: scale(1.04);
+}
+
+.feature-card:hover::after {
+  opacity: 1;
+  transform: translateX(28%) rotate(8deg);
+}
+
+.feature-card h3,
+.feature-card p,
+.feature-card .icon-pill,
+.feature-card .feature-spark {
+  position: relative;
+  z-index: 2;
+}
+
+.feature-card h3 {
+  transition: color 0.22s ease, text-shadow 0.22s ease;
+}
+
+.feature-card:hover h3 {
+  color: #063c24;
+  text-shadow: 0 0 22px rgba(255, 205, 51, 0.22);
+}
+
+.feature-card .icon-pill {
+  overflow: hidden;
+  width: 62px;
+  height: 62px;
+  border-radius: 22px;
+  box-shadow: 0 16px 32px rgba(31, 138, 76, 0.22);
+  transition: transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.feature-card .icon-pill b {
+  position: relative;
+  z-index: 2;
+}
+
+.feature-card .icon-pill i {
+  position: absolute;
+  inset: auto -8px -9px auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(246, 197, 53, 0.95);
+  transform: translate(12px, 12px);
+  transition: transform 0.28s ease;
+}
+
+.feature-card:hover .icon-pill {
+  transform: translateY(-4px) rotate(-2deg) scale(1.04);
+  box-shadow: 0 22px 42px rgba(31, 138, 76, 0.28);
+}
+
+.feature-card:hover .icon-pill i {
+  transform: translate(-2px, -2px);
+}
+
+.feature-bg-mark {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  z-index: 1;
+  color: rgba(31, 138, 76, 0.1);
+  font-size: 112px;
+  line-height: 1;
+  transform: rotate(-10deg);
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.feature-card:hover .feature-bg-mark {
+  color: rgba(31, 138, 76, 0.16);
+  transform: rotate(-4deg) scale(1.05);
+}
+
+.feature-spark {
+  position: absolute;
+  right: 34px;
+  top: 34px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(246, 197, 53, 0.32), transparent 68%);
+  opacity: 0;
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+.feature-card:hover .feature-spark {
+  opacity: 1;
+  transform: scale(1.18);
+}
+
+.project-card {
+  --feature-scene:
+    radial-gradient(circle at 72% 22%, rgba(255, 205, 51, 0.22), transparent 22%),
+    linear-gradient(90deg, transparent 18%, rgba(255, 255, 255, 0.16) 18% 20%, transparent 20% 38%, rgba(255, 255, 255, 0.16) 38% 40%, transparent 40%),
+    linear-gradient(135deg, #0f5f35, #1f8a4c);
+}
+
+.project-card .feature-bg-mark::before {
+  content: "📖";
+}
+
+.training-card .feature-bg-mark::before {
+  content: "⚡";
+}
+
+.support-card .feature-bg-mark::before {
+  content: "♥";
+}
+
+.quiz-card .feature-bg-mark::before {
+  content: "⏱";
+}
+
+.training-card {
+  --feature-scene:
+    radial-gradient(circle at 74% 30%, rgba(246, 197, 53, 0.32), transparent 20%),
+    linear-gradient(140deg, rgba(31, 138, 76, 0.9), rgba(9, 32, 24, 0.5));
+}
+
+.training-card .icon-pill i {
+  width: 24px;
+  height: 24px;
+  box-shadow: -16px -8px 0 -8px rgba(255, 255, 255, 0.8);
+}
+
+.training-card:hover .icon-pill {
+  animation: ballLift 0.64s ease;
+}
+
+.support-card {
+  --feature-scene:
+    radial-gradient(circle at 74% 28%, rgba(255, 255, 255, 0.4), transparent 20%),
+    radial-gradient(circle at 80% 70%, rgba(246, 197, 53, 0.42), transparent 28%),
+    linear-gradient(135deg, #fff3b8, #f6c535);
+}
+
+.support-card .icon-pill {
+  color: #102016;
+  background: linear-gradient(135deg, var(--accent), #ffe176);
+}
+
+.support-card:hover .icon-pill {
+  animation: coinDrop 0.72s ease;
+}
+
+.quiz-card {
+  --feature-scene:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.16) 0 2px, transparent 2px 62px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.13) 0 2px, transparent 2px 62px),
+    radial-gradient(circle at 75% 30%, rgba(246, 197, 53, 0.28), transparent 26%),
+    linear-gradient(135deg, #0b2a1e, #1f8a4c);
+}
+
+.quiz-card:hover .icon-pill {
+  animation: quizPulse 0.72s ease;
+}
+
+@keyframes ballLift {
+  0%, 100% {
+    transform: translateY(-4px) rotate(-2deg) scale(1.04);
+  }
+  45% {
+    transform: translateY(-12px) rotate(7deg) scale(1.08);
+  }
+}
+
+@keyframes coinDrop {
+  0%, 100% {
+    transform: translateY(-4px) scale(1.04);
+  }
+  45% {
+    transform: translateY(2px) scale(1.1);
+  }
+}
+
+@keyframes quizPulse {
+  0%, 100% {
+    transform: translateY(-4px) rotate(-2deg) scale(1.04);
+  }
+  30% {
+    transform: translateY(-4px) rotate(4deg) scale(1.1);
+  }
+  60% {
+    transform: translateY(-4px) rotate(-4deg) scale(1.08);
+  }
 }
 
 .options-section {
@@ -4861,6 +5090,12 @@ textarea:focus {
 
   .footer-inner {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 1080px) and (min-width: 861px) {
+  .feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

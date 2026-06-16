@@ -606,10 +606,12 @@ function pageIntro(kicker, title, text) {
   `;
 }
 
-function featureCard(title, text, href, icon, yellow = false) {
+function featureCard(title, text, href, icon, yellow = false, visual = "") {
   return `
-    <a class="card ${yellow ? "yellow" : ""}" href="${href}">
-      <span class="icon-pill">${icon}</span>
+    <a class="card feature-card ${yellow ? "yellow" : ""} ${visual}" href="${href}">
+      <span class="feature-bg-mark" aria-hidden="true"></span>
+      <span class="icon-pill"><b>${icon}</b><i aria-hidden="true"></i></span>
+      <span class="feature-spark" aria-hidden="true"></span>
       <h3>${title}</h3>
       <p>${text}</p>
     </a>
@@ -677,11 +679,11 @@ function renderHome() {
         <h2>Treinar, evoluir, competir e transformar</h2>
         <p>Por aqui nós organizamos a formação esportiva dos atletas, damos suporte e apoio social, reunimos informações de competições e histórias incríveis de transformação, além de acessos exclusivos na plataforma para atletas e apoiadores.</p>
       </div>
-      <div class="grid three">
-        ${featureCard("Conhecer o Projeto", "Quem somos, nossa missao e por que o handebol transforma.", "#/projeto", "CP")}
-        ${featureCard("Quero Treinar", "Seletivas, aulas particulares e informacoes para novos atletas.", "#/treinar", "TR")}
-        ${featureCard("Apoie o Projeto", "Apoio financeiro, materiais, voluntariado e parcerias.", "#/apoiar", "AP", true)}
-        ${featureCard("Quiz HeloisaHand", "Teste seus conhecimentos sobre handebol e sobre nossa equipe.", "#/quiz", "QZ")}
+      <div class="grid three feature-grid">
+        ${featureCard("Conhecer o Projeto", "Quem somos, nossa missao e por que o handebol transforma.", "#/projeto", "CP", false, "project-card")}
+        ${featureCard("Quero Treinar", "Seletivas, aulas particulares e informacoes para novos atletas.", "#/treinar", "TR", false, "training-card")}
+        ${featureCard("Apoie o Projeto", "Apoio financeiro, materiais, voluntariado e parcerias.", "#/apoiar", "AP", true, "support-card")}
+        ${featureCard("Quiz HeloisaHand", "Teste seus conhecimentos sobre handebol e sobre nossa equipe.", "#/quiz", "QZ", false, "quiz-card")}
       </div>
     </section>
     <section class="section options-section">
