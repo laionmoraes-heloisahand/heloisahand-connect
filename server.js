@@ -64,17 +64,21 @@ function saveJsonFile(file, payload) {
 
 async function supabaseFetch(pathname, options = {}) {
   if (!hasSupabase) return null;
+  const headers = {
+    apikey: supabaseKey,
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+  if (!supabaseKey.startsWith("sb_secret_") && !supabaseKey.startsWith("sb_publishable_")) {
+    headers.Authorization = `Bearer ${supabaseKey}`;
+  }
   const response = await fetch(`${supabaseUrl}/rest/v1/${pathname}`, {
     ...options,
-    headers: {
-      apikey: supabaseKey,
-      Authorization: `Bearer ${supabaseKey}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
+    headers,
   });
   if (!response.ok) {
     const details = await response.text().catch(() => "");
+    console.error(`[HeloisaHand] Erro Supabase em ${pathname}: ${response.status} ${details}`);
     throw new Error(`Supabase ${response.status}: ${details}`);
   }
   if (response.status === 204) return null;
