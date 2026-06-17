@@ -493,6 +493,104 @@ h3 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.home-access-section {
+  padding-bottom: 34px;
+}
+
+.home-card-carousel {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px max(24px, calc((100vw - 1180px) / 2)) 22px;
+  margin-inline: min(-24px, calc((1180px - 100vw) / 2));
+  cursor: grab;
+}
+
+.home-card-carousel.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+}
+
+.home-card-carousel::-webkit-scrollbar {
+  height: 10px;
+}
+
+.home-card-carousel::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(20, 137, 73, 0.22);
+}
+
+.home-card-carousel > * {
+  flex: 0 0 min(360px, 84vw);
+  scroll-snap-align: start;
+}
+
+.home-card-carousel.compact > * {
+  flex-basis: min(420px, 86vw);
+}
+
+.section-head.split {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.section-head.split p {
+  max-width: 640px;
+}
+
+.home-preview-section {
+  padding-top: 44px;
+  padding-bottom: 44px;
+}
+
+.home-preview-section.soft {
+  background: linear-gradient(180deg, #fff, #f8fbf9);
+}
+
+.home-final-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-radius: 28px;
+  margin-block: 28px 56px;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(246, 197, 53, 0.28), transparent 24rem),
+    linear-gradient(135deg, #0b512c, #0f7a42);
+  color: #fff;
+}
+
+.home-final-cta h2,
+.home-final-cta p {
+  color: inherit;
+}
+
+.home-final-cta p {
+  max-width: 720px;
+  opacity: 0.9;
+}
+
+.home-final-cta .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.explore-card {
+  --feature-scene:
+    radial-gradient(circle at 70% 24%, rgba(246, 197, 53, 0.28), transparent 22%),
+    linear-gradient(135deg, #092018, #15783e);
+}
+
+.explore-card .feature-bg-mark::before {
+  content: "?";
+}
+
 .card {
   border: 1px solid var(--line);
   border-radius: 28px;
@@ -5150,6 +5248,17 @@ textarea:focus {
 
   .main-nav.open {
     display: flex;
+  }
+
+  .section-head.split,
+  .home-final-cta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .home-card-carousel {
+    padding-inline: 18px;
+    margin-inline: -18px;
   }
 
   .hero-inner {

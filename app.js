@@ -417,6 +417,7 @@ const routes = {
   "/apoiar": renderSupport,
   "/loja": renderStore,
   "/quiz": renderQuiz,
+  "/explorar": renderExplore,
   "/atleta": renderAthlete,
   "/notificacoes": renderAthleteNotificationsPage,
   "/treinador": renderCoach,
@@ -608,6 +609,30 @@ function normalizePortugueseText(root = document.body) {
     ["horario", "horário"],
     ["Midia", "Mídia"],
     ["midia", "mídia"],
+    ["Destaques do mes", "Destaques do mês"],
+    ["Atleta do mes", "Atleta do mês"],
+    ["atleta do mes", "atleta do mês"],
+    ["Top 5 atletas do mes", "Top 5 atletas do mês"],
+    ["Ranking do mes", "Ranking do mês"],
+    ["Destaque do mes", "Destaque do mês"],
+    ["atletas do mes", "atletas do mês"],
+    ["do mes", "do mês"],
+    ["conteudos", "conteúdos"],
+    ["Conteudos", "Conteúdos"],
+    ["pagina", "página"],
+    ["Pagina", "Página"],
+    ["area", "área"],
+    ["Area", "Área"],
+    ["areas", "áreas"],
+    ["Areas", "Áreas"],
+    ["historia", "história"],
+    ["Historia", "História"],
+    ["informacoes", "informações"],
+    ["Informacoes", "Informações"],
+    ["Doacao", "Doação"],
+    ["doacao", "doação"],
+    ["solidaria", "solidária"],
+    ["Solidaria", "Solidária"],
     ["Videos", "Vídeos"],
     ["videos", "vídeos"],
     ["possivel", "possível"],
@@ -768,6 +793,107 @@ function optionCard(title, text, href, icon) {
 }
 
 function renderHome() {
+  return renderHomeVitrine();
+}
+
+function renderHomeVitrine() {
+  return `
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <span class="eyebrow">Instituto de Handebol</span>
+          <h1 class="hero-brand-title">
+            <span class="hero-name-prefix">Instituto</span>
+            <span class="hero-name-heloisa">Heloísa</span><span class="hero-name-hand">Hand</span>
+          </h1>
+          <p class="hero-subtitle">Transformando vidas atraves do handebol</p>
+          <p>Uma plataforma para conectar atletas, familias, treinador e apoiadores em uma jornada de esporte, disciplina e oportunidade.</p>
+          <div class="hero-actions">
+            ${cta("Quero Treinar", "#/treinar", "yellow")}
+            ${cta("Sou Atleta", "#/atleta", "ghost")}
+            ${cta("Explorar Handebol", "#/explorar", "ghost")}
+          </div>
+          <div class="impact-links" aria-label="Acessos rapidos do instituto">
+            <a class="impact-link" href="#/atletas-em-acao"><strong>50+</strong><span>Atletas atendidos</span><small>Ver trajetorias</small></a>
+            <a class="impact-link" href="#/categorias"><strong>3</strong><span>Categorias de base</span><small>Conhecer fases</small></a>
+            <a class="impact-link" href="#/competicoes"><strong>+</strong><span>Treinos e competicoes</span><small>Acompanhar agenda</small></a>
+            <a class="impact-link" href="#/apoiar"><strong>Pix</strong><span>Apoio ao projeto</span><small>Doar ou patrocinar</small></a>
+          </div>
+        </div>
+      </div>
+    </section>
+    ${renderPublicMonthlyRanking()}
+    <section class="section home-access-section">
+      <div class="section-head center">
+        <span class="eyebrow">Acessos principais</span>
+        <h2>Escolha por onde quer comecar</h2>
+        <p>Organizamos a home para mostrar os caminhos principais sem apagar nada do que ja criamos.</p>
+      </div>
+      <div class="home-card-carousel feature-grid" data-drag-scroll>
+        ${featureCard("Conhecer o Projeto", "Quem somos, nossa missao e por que o handebol transforma.", "#/projeto", "CP", false, "project-card")}
+        ${featureCard("Quero Treinar", "Seletivas, aulas particulares e informacoes para novos atletas.", "#/treinar", "TR", false, "training-card")}
+        ${featureCard("Competições e Jogos", "Calendario, proximos jogos, fotos e videos da equipe.", "#/competicoes", "CJ", false, "quiz-card")}
+        ${featureCard("Explorar Handebol", "Curiosidades, regras, historia, dicas e quiz para evoluir.", "#/explorar", "EX", false, "explore-card")}
+        ${featureCard("Apoie o Projeto", "Doacao, campanhas, patrocinadores e loja solidaria.", "#/apoiar", "AP", true, "support-card")}
+      </div>
+    </section>
+    ${renderHomeEventsPreview()}
+    ${renderHomeSupportPreview()}
+    <section class="section home-final-cta">
+      <div>
+        <span class="eyebrow">HeloisaHand Connect</span>
+        <h2>Menos rolagem, mais caminho claro.</h2>
+        <p>As areas completas continuam no menu. A pagina inicial agora funciona como uma entrada rapida para tudo que importa.</p>
+      </div>
+      <div class="actions">
+        ${cta("Area do Atleta", "#/atleta", "yellow")}
+        ${cta("Conhecer o Projeto", "#/projeto")}
+      </div>
+    </section>
+  `;
+}
+
+function renderHomeEventsPreview(data = getAuthData()) {
+  const events = getTeamEvents(data).slice(0, 4);
+  if (!events.length) return "";
+  return `
+    <section class="section home-preview-section">
+      <div class="section-head split">
+        <div>
+          <span class="eyebrow">Agenda da equipe</span>
+          <h2>Proximos compromissos</h2>
+          <p>Treinos, amistosos e jogos aparecem completos na area de competicoes.</p>
+        </div>
+        ${cta("Ver agenda completa", "#/competicoes")}
+      </div>
+      <div class="home-card-carousel compact" data-drag-scroll>
+        ${events.map(renderPublicEventItem).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderHomeSupportPreview(data = getAuthData()) {
+  const campaigns = (data.campaigns || campaignSeeds).filter((item) => item.active !== false).slice(0, 3);
+  return `
+    <section class="section home-preview-section soft">
+      <div class="section-head split">
+        <div>
+          <span class="eyebrow">Apoio que vira oportunidade</span>
+          <h2>Campanhas em destaque</h2>
+          <p>As campanhas completas e o Pix ficam organizados na area Apoie o Projeto.</p>
+        </div>
+        ${cta("Apoiar agora", "#/apoiar", "yellow")}
+      </div>
+      <div class="home-card-carousel compact" data-drag-scroll>
+        ${campaigns.map(renderCampaignCard).join("")}
+        ${featureCard("Loja HeloisaHand", "Produtos do instituto para vestir o projeto e fortalecer a equipe.", "#/loja", "LJ", false, "support-card")}
+      </div>
+    </section>
+  `;
+}
+
+function renderHomeCompact() {
   return `
     <section class="hero">
       <div class="hero-inner">
@@ -1492,6 +1618,25 @@ function renderProject() {
   `;
 }
 
+function renderExplore() {
+  return `
+    <section class="section explore-page">
+      <div class="section-head center">
+        <span class="eyebrow">Explorar Handebol</span>
+        <h2>Conteúdo para aprender, jogar melhor e se conectar com o esporte</h2>
+        <p>Reunimos curiosidades, regras, história, dicas por posição, seleções, atletas e o Quiz HeloisaHand em uma área própria.</p>
+      </div>
+      <div class="home-card-carousel compact explore-actions" data-drag-scroll>
+        ${featureCard("Jogar Quiz", "Teste seus conhecimentos e suba no ranking.", "#/quiz", "QZ", false, "quiz-card")}
+        ${featureCard("Categorias de Base", "Entenda Mirim, Infantil e Cadete.", "#/categorias", "CB", false, "project-card")}
+        ${featureCard("Atletas em Ação", "Fotos, vídeos e momentos do instituto.", "#/atletas-em-acao", "FT", false, "training-card")}
+        ${featureCard("Inclusão e Desenvolvimento", "Histórias reais de transformação.", "#/inclusao", "ID", true, "support-card")}
+      </div>
+    </section>
+    ${renderHandballHub()}
+  `;
+}
+
 function renderSupport() {
   return `
     <section class="section support-page">
@@ -1531,6 +1676,7 @@ function renderSupport() {
           ${cta("Conversar no WhatsApp", whatsappLink("Ola! Quero apoiar o Instituto HeloisaHand."))}
         </article>
       </div>
+      ${renderSponsorAndCampaigns()}
     </section>
   `;
 }
@@ -3693,6 +3839,7 @@ function bindInteractions() {
   startHandballHubRotation();
   bindScoutRangeInputs();
   bindRankingCarousels();
+  bindDragScrollCarousels();
   document.querySelectorAll(".demo-panel-form").forEach((form) => {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -3708,6 +3855,33 @@ function bindInteractions() {
   });
   document.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", handleAction));
   normalizePortugueseText(document.body);
+}
+
+function bindDragScrollCarousels() {
+  document.querySelectorAll("[data-drag-scroll]").forEach((track) => {
+    if (track.dataset.dragBound === "true") return;
+    track.dataset.dragBound = "true";
+    let startX = 0;
+    let scrollLeft = 0;
+    let dragging = false;
+    track.addEventListener("pointerdown", (event) => {
+      dragging = true;
+      startX = event.clientX;
+      scrollLeft = track.scrollLeft;
+      track.classList.add("dragging");
+      track.setPointerCapture?.(event.pointerId);
+    });
+    track.addEventListener("pointermove", (event) => {
+      if (!dragging) return;
+      track.scrollLeft = scrollLeft - (event.clientX - startX);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((type) => {
+      track.addEventListener(type, () => {
+        dragging = false;
+        track.classList.remove("dragging");
+      });
+    });
+  });
 }
 
 function bindRankingCarousels() {
