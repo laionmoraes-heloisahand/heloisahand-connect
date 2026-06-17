@@ -238,6 +238,7 @@ quizQuestionSeeds.push(
   { id: "quiz-team-8", scope: "team", level: "dificil", question: "Qual atitude combina mais com a cultura da equipe?", options: ["Compromisso com o grupo", "Faltar sem avisar", "Nao ouvir o treinador", "Desistir no primeiro erro"], answerIndex: 0, explanation: "Compromisso, respeito e evolucao diaria fortalecem a equipe.", active: true },
   { id: "quiz-team-9", scope: "team", level: "dificil", question: "Por que conhecer a historia do projeto importa?", options: ["Cria identidade e pertencimento", "Nao muda nada", "Serve so para decorar", "Impede treinos"], answerIndex: 0, explanation: "Quanto mais o atleta entende a historia, mais se sente parte da equipe.", active: true },
   { id: "quiz-team-10", scope: "team", level: "facil", question: "Qual canal do site ajuda a aproximar treinador e atletas?", options: ["Chat e avisos", "Carrinho abandonado", "Tela sem botao", "Pagina vazia"], answerIndex: 0, explanation: "Chat, avisos e notificacoes fortalecem a comunicacao da equipe.", active: true },
+  { id: "quiz-team-joees-2025-sub15-feminino", scope: "team", level: "facil", question: "Qual foi o adversario que o time sub 15 feminino venceu no JOEES 2025?", options: ["America", "Tancredo Neves", "Teofilo", "Marista"], answerIndex: 2, explanation: "Certa a resposta, o jogo que vencemos foi exatamente contra a escola Teofilo da regiao de Domingos Martins.", active: true },
 );
 
 [
@@ -4625,27 +4626,43 @@ async function handleRankingSave(event) {
 
 async function handleQuizQuestionSave(event) {
   event.preventDefault();
-  const data = getAuthData();
-  data.quizQuestions = data.quizQuestions || [];
-  const question = {
-    id: `quiz-${Date.now()}`,
-    scope: document.querySelector("#quizQuestionScope").value,
-    level: document.querySelector("#quizQuestionLevel").value,
-    question: document.querySelector("#quizQuestionText").value.trim(),
-    options: [0, 1, 2, 3].map((index) => document.querySelector(`#quizOption${index}`).value.trim()),
-    answerIndex: Number(document.querySelector("#quizAnswerIndex").value),
-    explanation: document.querySelector("#quizExplanation").value.trim(),
-    active: true,
-    createdAt: new Date().toISOString(),
-  };
-  data.quizQuestions.unshift(question);
+  const form = event.currentTarget;
+  const button = form.querySelector("button[type='submit']");
   try {
+    const data = getAuthData();
+    data.quizQuestions = Array.isArray(data.quizQuestions) ? data.quizQuestions : [];
+    const questionText = form.querySelector("#quizQuestionText")?.value.trim() || "";
+    const options = [0, 1, 2, 3].map((index) => form.querySelector(`#quizOption${index}`)?.value.trim() || "");
+    if (!questionText || options.some((option) => !option)) {
+      throw new Error("Preencha a pergunta e as quatro opcoes antes de publicar.");
+    }
+    const question = {
+      id: `quiz-${Date.now()}`,
+      scope: form.querySelector("#quizQuestionScope")?.value || "team",
+      level: form.querySelector("#quizQuestionLevel")?.value || "facil",
+      question: questionText,
+      options,
+      answerIndex: Number(form.querySelector("#quizAnswerIndex")?.value || 0),
+      explanation: form.querySelector("#quizExplanation")?.value.trim() || "",
+      active: true,
+      createdAt: new Date().toISOString(),
+    };
+    data.quizQuestions.unshift(question);
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Publicando...";
+    }
     await saveAuthDataConfirmed(data);
     app.innerHTML = renderCoachDashboard("quiz");
     bindInteractions();
     showToast("Pergunta publicada no quiz.", "ok");
   } catch (error) {
-    showInlineFormMessage(event.currentTarget, error.message, "error");
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Publicar pergunta";
+    }
+    showInlineFormMessage(form, error.message, "error");
+    showToast(error.message, "error");
   }
 }
 
