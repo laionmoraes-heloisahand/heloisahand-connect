@@ -471,22 +471,26 @@ function persistBackendAuthData(data) {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(data),
-  }).catch(() => {
-    localStorage.setItem(authStoreKey, JSON.stringify(data));
-    return null;
   });
 }
 
 async function saveAuthDataConfirmed(data) {
-  authDataCache = data;
-  localStorage.setItem(authStoreKey, JSON.stringify(data));
   const response = await persistBackendAuthData(data);
-  if (response && !response.ok) {
+  if (!response.ok) {
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch (error) {
+      payload = {};
+    }
     if (response.status === 401 || response.status === 403) {
       throw new Error("Sua sessao expirou. Entre novamente para salvar no servidor.");
     }
-    throw new Error("Nao foi possivel salvar no servidor.");
+    const details = payload.details ? ` Detalhe: ${payload.details}` : "";
+    throw new Error(`${payload.error || "Nao foi possivel salvar no servidor."}${details}`);
   }
+  authDataCache = data;
+  localStorage.setItem(authStoreKey, JSON.stringify(data));
   return true;
 }
 
