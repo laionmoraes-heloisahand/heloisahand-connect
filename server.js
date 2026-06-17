@@ -9,6 +9,9 @@ const dataDir = process.env.DATA_DIR || path.join(root, "data");
 const uploadsDir = process.env.UPLOADS_DIR || path.join(root, "uploads");
 const mediaFile = path.join(dataDir, "media.json");
 const authFile = path.join(dataDir, "auth.json");
+const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
+const hasSupabase = Boolean(supabaseUrl && supabaseKey);
 const seedDataDir = path.join(root, "data");
 const seedMediaFile = path.join(seedDataDir, "media.json");
 const seedAuthFile = path.join(seedDataDir, "auth.json");
@@ -36,6 +39,9 @@ fs.mkdirSync(uploadsDir, { recursive: true });
 if (!process.env.DATA_DIR || !process.env.UPLOADS_DIR) {
   console.warn("[HeloisaHand] Configure DATA_DIR e UPLOADS_DIR em um disco persistente no Render para nao perder cadastros, presencas, ranking, campanhas e fotos em novos deploys.");
 }
+if (hasSupabase) {
+  console.info("[HeloisaHand] Supabase ativo para dados persistentes.");
+}
 if (!fs.existsSync(mediaFile)) {
   fs.writeFileSync(mediaFile, fs.existsSync(seedMediaFile) ? fs.readFileSync(seedMediaFile, "utf8") : "[]");
 }
@@ -56,11 +62,50 @@ function saveJsonFile(file, payload) {
   fs.writeFileSync(file, JSON.stringify(payload, null, 2));
 }
 
-function readMedia() {
+async function supabaseFetch(pathname, options = {}) {
+  if (!hasSupabase) return null;
+  const response = await fetch(`${supabaseUrl}/rest/v1/${pathname}`, {
+    ...options,
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`Supabase ${response.status}: ${details}`);
+  }
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+async function readStateFromSupabase(key, fallback) {
+  if (!hasSupabase) return fallback;
+  const rows = await supabaseFetch(`app_state?key=eq.${encodeURIComponent(key)}&select=payload&limit=1`);
+  if (Array.isArray(rows) && rows[0]) return rows[0].payload;
+  await saveStateToSupabase(key, fallback);
+  return fallback;
+}
+
+async function saveStateToSupabase(key, payload) {
+  if (!hasSupabase) return;
+  await supabaseFetch("app_state?on_conflict=key", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates" },
+    body: JSON.stringify([{ key, payload, updated_at: new Date().toISOString() }]),
+  });
+}
+
+async function readMedia() {
+  const fallback = readJsonFile(mediaFile, []);
+  if (hasSupabase) return readStateFromSupabase("media", fallback);
   return readJsonFile(mediaFile, []);
 }
 
-function saveMedia(items) {
+async function saveMedia(items) {
+  if (hasSupabase) await saveStateToSupabase("media", items);
   saveJsonFile(mediaFile, items);
 }
 
@@ -81,14 +126,17 @@ function normalizeAuthData(data) {
   return { data, changed };
 }
 
-function readAuthData() {
+async function readAuthData() {
   const data = readJsonFile(authFile, null);
-  const normalized = normalizeAuthData(data);
-  if (normalized.changed) saveJsonFile(authFile, normalized.data);
+  const remoteData = hasSupabase ? await readStateFromSupabase("auth", data) : data;
+  if (!remoteData) return remoteData;
+  const normalized = normalizeAuthData(remoteData);
+  if (normalized.changed) await saveAuthData(normalized.data);
   return normalized.data;
 }
 
-function saveAuthData(payload) {
+async function saveAuthData(payload) {
+  if (hasSupabase) await saveStateToSupabase("auth", payload);
   saveJsonFile(authFile, payload);
 }
 
@@ -386,7 +434,7 @@ function getYoutubeVideoId(url) {
 
 async function handleApi(req, res, cleanUrl) {
   if (req.method === "GET" && cleanUrl === "/api/public-data") {
-    sendJson(res, 200, publicData(readAuthData() || { events: [] }));
+    sendJson(res, 200, publicData((await readAuthData()) || { events: [] }));
     return true;
   }
 
@@ -394,7 +442,7 @@ async function handleApi(req, res, cleanUrl) {
     try {
       const body = await collectBody(req, 1024 * 64);
       const payload = JSON.parse(body.toString("utf8"));
-      const data = readAuthData() || { users: [] };
+      const data = (await readAuthData()) || { users: [] };
       data.quizScores = data.quizScores || [];
       const entry = {
         id: `quiz-score-${Date.now()}`,
@@ -409,7 +457,7 @@ async function handleApi(req, res, cleanUrl) {
         createdAt: new Date().toISOString(),
       };
       data.quizScores = upsertQuizScore(data.quizScores, entry);
-      saveAuthData(data);
+      await saveAuthData(data);
       sendJson(res, 200, { ok: true, data: publicData(data) });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel salvar a pontuacao." });
@@ -422,7 +470,7 @@ async function handleApi(req, res, cleanUrl) {
       const body = await collectBody(req, 1024 * 64);
       const payload = JSON.parse(body.toString("utf8"));
       const cpf = String(payload.cpf || "").replace(/\D/g, "");
-      const data = readAuthData();
+      const data = await readAuthData();
       if (!data) {
         sendJson(res, 503, { error: "Banco de dados ainda nao inicializado." });
         return true;
@@ -450,7 +498,7 @@ async function handleApi(req, res, cleanUrl) {
       sendJson(res, 401, { error: "Sessao expirada ou nao autorizada." });
       return true;
     }
-    const data = readAuthData();
+    const data = await readAuthData();
     sendJson(res, 200, session.role === "coach" ? dataForCoach(data) : dataForAthlete(data, session.userId));
     return true;
   }
@@ -468,7 +516,7 @@ async function handleApi(req, res, cleanUrl) {
         sendJson(res, 400, { error: "Dados invalidos." });
         return true;
       }
-      const current = readAuthData() || { users: [] };
+      const current = (await readAuthData()) || { users: [] };
       const currentById = new Map((current.users || []).map((user) => [user.id, user]));
       payload.users = payload.users.map((user) => {
         const currentUser = currentById.get(user.id);
@@ -484,7 +532,7 @@ async function handleApi(req, res, cleanUrl) {
               : user.mustChangePassword;
         return { ...user, password, mustChangePassword };
       });
-      saveAuthData(payload);
+      await saveAuthData(payload);
       sendJson(res, 200, { ok: true });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel salvar os dados." });
@@ -501,7 +549,7 @@ async function handleApi(req, res, cleanUrl) {
     try {
       const body = await collectBody(req, 1024 * 64);
       const payload = JSON.parse(body.toString("utf8"));
-      const data = readAuthData();
+      const data = await readAuthData();
       const user = data.users.find((item) => item.id === session.userId);
       if (!user) {
         sendJson(res, 404, { error: "Usuario nao encontrado." });
@@ -509,7 +557,7 @@ async function handleApi(req, res, cleanUrl) {
       }
       user.password = payload.password;
       user.mustChangePassword = false;
-      saveAuthData(data);
+      await saveAuthData(data);
       sendJson(res, 200, { data: session.role === "coach" ? dataForCoach(data) : dataForAthlete(data, user.id) });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel trocar a senha." });
@@ -526,7 +574,7 @@ async function handleApi(req, res, cleanUrl) {
     try {
       const body = await collectBody(req, 1024 * 64);
       const payload = JSON.parse(body.toString("utf8"));
-      const data = readAuthData();
+      const data = await readAuthData();
       const user = data.users.find((item) => item.id === session.userId);
       data.messages = data.messages || [];
       data.messages.push({
@@ -538,7 +586,7 @@ async function handleApi(req, res, cleanUrl) {
         text: String(payload.text || "").trim(),
         createdAt: new Date().toISOString(),
       });
-      saveAuthData(data);
+      await saveAuthData(data);
       sendJson(res, 200, { data: dataForAthlete(data, user.id) });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel enviar a mensagem." });
@@ -555,7 +603,7 @@ async function handleApi(req, res, cleanUrl) {
     try {
       const body = await collectBody(req, 1024 * 128);
       const payload = JSON.parse(body.toString("utf8"));
-      const data = readAuthData();
+      const data = await readAuthData();
       const user = data.users.find((item) => item.id === session.userId);
       user.profile = {
         ...(user.profile || {}),
@@ -564,7 +612,7 @@ async function handleApi(req, res, cleanUrl) {
         email: String(payload.email || "").trim(),
         address: String(payload.address || "").trim(),
       };
-      saveAuthData(data);
+      await saveAuthData(data);
       sendJson(res, 200, { data: dataForAthlete(data, user.id) });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel salvar o perfil." });
@@ -589,10 +637,10 @@ async function handleApi(req, res, cleanUrl) {
       const ext = path.extname(file.filename).toLowerCase() || ".jpg";
       const safeName = `avatar-${session.userId}-${Date.now()}${ext}`;
       fs.writeFileSync(path.join(uploadsDir, safeName), file.data);
-      const data = readAuthData();
+      const data = await readAuthData();
       const user = data.users.find((item) => item.id === session.userId);
       user.profile = { ...(user.profile || {}), avatar: `/uploads/${safeName}` };
-      saveAuthData(data);
+      await saveAuthData(data);
       sendJson(res, 200, { data: dataForAthlete(data, user.id) });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel salvar a foto." });
@@ -607,7 +655,7 @@ async function handleApi(req, res, cleanUrl) {
       const role = String(payload.role || "athlete");
       const cpf = String(payload.cpf || "").replace(/\D/g, "");
       const email = String(payload.email || "").trim().toLowerCase();
-      const data = readAuthData();
+      const data = await readAuthData();
       const user = data.users.find((item) => item.role === role && item.cpf === cpf && String(item.profile?.email || "").toLowerCase() === email);
       data.passwordResets = data.passwordResets || [];
       if (user) {
@@ -627,7 +675,7 @@ async function handleApi(req, res, cleanUrl) {
           createdAt: new Date().toISOString(),
           expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
         });
-        saveAuthData(data);
+        await saveAuthData(data);
       }
       sendJson(res, 200, { ok: true, message: "Se o e-mail estiver cadastrado, a recuperacao sera processada." });
     } catch (error) {
@@ -649,7 +697,7 @@ async function handleApi(req, res, cleanUrl) {
         sendJson(res, 400, { error: "Dados de recuperacao invalidos." });
         return true;
       }
-      const data = readAuthData();
+      const data = await readAuthData();
       const user = data.users.find((item) => item.role === role && item.cpf === cpf && String(item.profile?.email || "").toLowerCase() === email);
       const reset = (data.passwordResets || []).slice().reverse().find((item) =>
         item.userId === user?.id &&
@@ -666,7 +714,7 @@ async function handleApi(req, res, cleanUrl) {
       user.mustChangePassword = false;
       reset.status = "used";
       reset.usedAt = new Date().toISOString();
-      saveAuthData(data);
+      await saveAuthData(data);
       sendJson(res, 200, { ok: true });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel redefinir a senha." });
@@ -678,10 +726,10 @@ async function handleApi(req, res, cleanUrl) {
     try {
       const body = await collectBody(req, 1024 * 128);
       const payload = JSON.parse(body.toString("utf8"));
-      const data = readAuthData();
+      const data = await readAuthData();
       data.interests = data.interests || [];
       data.interests.push(payload);
-      saveAuthData(data);
+      await saveAuthData(data);
       sendJson(res, 201, { ok: true });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel registrar o contato." });
@@ -690,7 +738,7 @@ async function handleApi(req, res, cleanUrl) {
   }
 
   if (req.method === "GET" && cleanUrl === "/api/media") {
-    sendJson(res, 200, readMedia());
+    sendJson(res, 200, await readMedia());
     return true;
   }
 
@@ -709,7 +757,7 @@ async function handleApi(req, res, cleanUrl) {
       const filePath = path.join(uploadsDir, safeName);
       fs.writeFileSync(filePath, file.data);
 
-      const media = readMedia();
+      const media = await readMedia();
       const item = {
         id: `media-${Date.now()}`,
         type: "photo",
@@ -718,7 +766,7 @@ async function handleApi(req, res, cleanUrl) {
         createdAt: new Date().toISOString(),
       };
       media.push(item);
-      saveMedia(media);
+      await saveMedia(media);
       sendJson(res, 201, item);
     } catch (error) {
       sendJson(res, 400, { error: error.message || "Nao foi possivel salvar a foto." });
@@ -736,7 +784,7 @@ async function handleApi(req, res, cleanUrl) {
         return true;
       }
 
-      const media = readMedia();
+      const media = await readMedia();
       const item = {
         id: `media-${Date.now()}`,
         type: "youtube",
@@ -747,7 +795,7 @@ async function handleApi(req, res, cleanUrl) {
         createdAt: new Date().toISOString(),
       };
       media.push(item);
-      saveMedia(media);
+      await saveMedia(media);
       sendJson(res, 201, item);
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel salvar o video." });
@@ -757,14 +805,14 @@ async function handleApi(req, res, cleanUrl) {
 
   if (req.method === "DELETE" && cleanUrl.startsWith("/api/media/")) {
     const id = decodeURIComponent(cleanUrl.replace("/api/media/", ""));
-    const media = readMedia();
+    const media = await readMedia();
     const item = media.find((entry) => entry.id === id);
     const next = media.filter((entry) => entry.id !== id);
     if (item?.type === "photo" && item.src?.startsWith("/uploads/")) {
       const filePath = path.join(root, item.src);
       if (filePath.startsWith(uploadsDir) && fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
-    saveMedia(next);
+    await saveMedia(next);
     sendJson(res, 200, { ok: true });
     return true;
   }

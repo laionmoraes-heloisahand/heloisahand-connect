@@ -1,0 +1,72 @@
+GUIA RAPIDO: MIGRAR OS DADOS DO HELOISAHAND CONNECT PARA SUPABASE
+
+Objetivo:
+Salvar atletas, scouts, presencas, ranking, campanhas, quiz, loja, mensagens e perfis em um banco real.
+Assim os dados nao somem quando o site reiniciar ou quando uma nova versao for publicada.
+
+PASSO 1 - Criar o projeto
+1. Entre em https://supabase.com
+2. Clique em New project.
+3. Escolha sua organizacao.
+4. Nome sugerido: heloisahand-connect
+5. Crie uma senha forte para o banco e guarde.
+6. Escolha a regiao mais proxima disponivel.
+7. Clique em Create new project.
+
+PASSO 2 - Criar a tabela
+1. Dentro do projeto Supabase, va em SQL Editor.
+2. Clique em New query.
+3. Cole este codigo:
+
+create table if not exists public.app_state (
+  key text primary key,
+  payload jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.app_state enable row level security;
+
+create policy "Service role can manage app state"
+on public.app_state
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+4. Clique em Run.
+
+PASSO 3 - Pegar as chaves
+1. No Supabase, va em Project Settings.
+2. Entre em API.
+3. Copie o Project URL.
+4. Copie a service_role key.
+
+IMPORTANTE:
+Use a service_role key somente no Render, nunca cole essa chave dentro do app.js ou em arquivos publicos.
+
+PASSO 4 - Colocar no Render
+1. Abra o Render.
+2. Entre no servico heloisahand-connect.
+3. Va em Environment.
+4. Adicione:
+
+SUPABASE_URL=cole_aqui_o_project_url
+SUPABASE_SERVICE_ROLE_KEY=cole_aqui_a_service_role_key
+
+5. Clique em Save, rebuild, and deploy.
+
+PASSO 5 - Subir a nova versao do site
+Suba o pacote mais novo gerado pelo Codex no GitHub.
+Quando o Render publicar, o site passa a salvar os dados principais no Supabase.
+
+COMO FUNCIONA A MIGRACAO INICIAL
+Na primeira vez que o site rodar com Supabase configurado, ele pega os dados atuais do arquivo data/auth.json e data/media.json e cria os registros no Supabase.
+Depois disso, as proximas alteracoes passam a ser salvas no banco.
+
+OBSERVACAO IMPORTANTE SOBRE FOTOS
+Os dados principais ficam no Supabase com esta mudanca.
+Fotos enviadas para uploads ainda dependem de UPLOADS_DIR/disco persistente no Render.
+Depois podemos fazer uma segunda etapa usando Supabase Storage para as fotos tambem.
+
+Resumo:
+SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY resolvem a persistencia dos dados principais.
+UPLOADS_DIR ou Supabase Storage resolve a persistencia de imagens/fotos.
