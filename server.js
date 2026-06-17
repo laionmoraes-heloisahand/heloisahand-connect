@@ -9,7 +9,7 @@ const dataDir = process.env.DATA_DIR || path.join(root, "data");
 const uploadsDir = process.env.UPLOADS_DIR || path.join(root, "uploads");
 const mediaFile = path.join(dataDir, "media.json");
 const authFile = path.join(dataDir, "auth.json");
-const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
+const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/rest\/v1\/?$/, "").replace(/\/$/, "");
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
 const hasSupabase = Boolean(supabaseUrl && supabaseKey);
 const seedDataDir = path.join(root, "data");
@@ -100,6 +100,30 @@ async function saveStateToSupabase(key, payload) {
     headers: { Prefer: "resolution=merge-duplicates" },
     body: JSON.stringify([{ key, payload, updated_at: new Date().toISOString() }]),
   });
+}
+
+async function checkSupabaseStatus() {
+  if (!hasSupabase) {
+    return { configured: false, ok: false, message: "Supabase nao configurado no Render." };
+  }
+  try {
+    const rows = await supabaseFetch("app_state?select=key,updated_at&limit=1");
+    return {
+      configured: true,
+      ok: true,
+      url: supabaseUrl,
+      keyType: supabaseKey.startsWith("sb_secret_") ? "secret" : supabaseKey.startsWith("sb_publishable_") ? "publishable" : "legacy",
+      rows: Array.isArray(rows) ? rows.length : 0,
+    };
+  } catch (error) {
+    return {
+      configured: true,
+      ok: false,
+      url: supabaseUrl,
+      keyType: supabaseKey.startsWith("sb_secret_") ? "secret" : supabaseKey.startsWith("sb_publishable_") ? "publishable" : "legacy",
+      message: error.message,
+    };
+  }
 }
 
 async function readMedia() {
@@ -437,6 +461,15 @@ function getYoutubeVideoId(url) {
 }
 
 async function handleApi(req, res, cleanUrl) {
+  if (req.method === "GET" && cleanUrl === "/api/health") {
+    sendJson(res, 200, {
+      ok: true,
+      version: "v58",
+      supabase: await checkSupabaseStatus(),
+    });
+    return true;
+  }
+
   if (req.method === "GET" && cleanUrl === "/api/public-data") {
     sendJson(res, 200, publicData((await readAuthData()) || { events: [] }));
     return true;
@@ -539,7 +572,8 @@ async function handleApi(req, res, cleanUrl) {
       await saveAuthData(payload);
       sendJson(res, 200, { ok: true });
     } catch (error) {
-      sendJson(res, 400, { error: "Nao foi possivel salvar os dados." });
+      console.error("[HeloisaHand] Falha ao salvar /api/auth:", error);
+      sendJson(res, 400, { error: "Nao foi possivel salvar os dados.", details: error.message });
     }
     return true;
   }
@@ -564,7 +598,8 @@ async function handleApi(req, res, cleanUrl) {
       await saveAuthData(data);
       sendJson(res, 200, { data: session.role === "coach" ? dataForCoach(data) : dataForAthlete(data, user.id) });
     } catch (error) {
-      sendJson(res, 400, { error: "Nao foi possivel trocar a senha." });
+      console.error("[HeloisaHand] Falha ao trocar senha:", error);
+      sendJson(res, 400, { error: "Nao foi possivel trocar a senha.", details: error.message });
     }
     return true;
   }
