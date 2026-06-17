@@ -194,6 +194,18 @@ const productSeeds = [
   { id: "product-meiao", name: "Meião esportivo", category: "Treino", price: 24.9, emoji: "🧦", description: "Meião para treinos, jogos e uniforme da equipe.", active: true },
 ];
 
+const productCatalogOptions = [
+  { label: "Camisa feminina", category: "Uniforme", emoji: "👕" },
+  { label: "Camisa masculina", category: "Uniforme", emoji: "👕" },
+  { label: "Short feminino", category: "Uniforme", emoji: "🩳" },
+  { label: "Short masculino", category: "Uniforme", emoji: "🩳" },
+  { label: "Boné", category: "Acessório", emoji: "🧢" },
+  { label: "Meião esportivo", category: "Treino", emoji: "🧦" },
+  { label: "Agasalho esportivo", category: "Uniforme", emoji: "🧥" },
+  { label: "Munhequeira", category: "Acessório", emoji: "🎽" },
+  { label: "Produto livre", category: "Livre", emoji: "🛒" },
+];
+
 const quizQuestionSeeds = [
   { id: "quiz-handball-1", scope: "handball", level: "facil", question: "Quantos jogadores de cada equipe ficam em quadra no handebol?", options: ["5", "6", "7", "8"], answerIndex: 2, explanation: "Uma equipe joga com 7 atletas em quadra: 6 jogadores de linha e 1 goleiro.", active: true },
   { id: "quiz-handball-2", scope: "handball", level: "facil", question: "Qual e o tempo oficial de uma partida adulta de handebol?", options: ["2 tempos de 20 minutos", "2 tempos de 25 minutos", "2 tempos de 30 minutos", "4 tempos de 10 minutos"], answerIndex: 2, explanation: "No adulto, o jogo tem dois tempos de 30 minutos.", active: true },
@@ -1707,10 +1719,64 @@ function renderProductCard(product, editable = false) {
       <div class="product-body">
         <small>${escapeHtml(product.category || "Produto")}</small>
         <h3>${escapeHtml(product.name)}</h3>
+        ${product.promo ? `<span class="product-promo">${escapeHtml(product.promo)}</span>` : ""}
         <p>${escapeHtml(product.description || "")}</p>
         <strong>${price}</strong>
-        ${editable ? `<button type="button" data-action="delete-product" data-product-id="${escapeAttribute(product.id)}">Remover</button>` : `<a class="button" href="${whatsappLink(buyMessage)}" target="_blank" rel="noreferrer">Comprar pelo WhatsApp</a>`}
+        ${editable ? "" : `<a class="button" href="${whatsappLink(buyMessage)}" target="_blank" rel="noreferrer">Comprar pelo WhatsApp</a>`}
       </div>
+    </article>
+  `;
+}
+
+function renderProductTypeOptions(selected = "") {
+  return productCatalogOptions
+    .map((item) => `<option value="${escapeAttribute(item.label)}" ${item.label === selected ? "selected" : ""}>${escapeHtml(item.label)}</option>`)
+    .join("");
+}
+
+function renderProductEmojiOptions(selected = "") {
+  const options = productCatalogOptions.reduce((acc, item) => {
+    if (!acc.some((option) => option.emoji === item.emoji)) acc.push(item);
+    return acc;
+  }, []);
+  return options
+    .map((item) => `<option value="${escapeAttribute(item.emoji)}" ${item.emoji === selected ? "selected" : ""}>${item.emoji} ${escapeHtml(item.label)}</option>`)
+    .join("");
+}
+
+function getProductCatalogOption(label) {
+  return productCatalogOptions.find((item) => item.label === label) || productCatalogOptions[productCatalogOptions.length - 1];
+}
+
+function renderProductAdminCard(product) {
+  const catalogMatch = productCatalogOptions.find((item) => item.label.toLowerCase() === String(product.name || "").toLowerCase());
+  const selectedType = product.type || catalogMatch?.label || "Produto livre";
+  return `
+    <article class="product-admin-card">
+      ${renderProductCard(product, true)}
+      <details class="product-edit-details">
+        <summary>Editar produto</summary>
+        <form class="form-grid product-edit-form" data-product-id="${escapeAttribute(product.id)}">
+          <label>Tipo do produto
+            <select name="type" data-product-type-select>${renderProductTypeOptions(selectedType)}</select>
+          </label>
+          <label>Nome do produto<input name="name" required value="${escapeAttribute(product.name || "")}" /></label>
+          <div class="form-grid two">
+            <label>Categoria<input name="category" required value="${escapeAttribute(product.category || "")}" /></label>
+            <label>Preço<input name="price" type="number" min="0" step="0.01" required value="${escapeAttribute(product.price || 0)}" /></label>
+          </div>
+          <label>Emoji ou símbolo
+            <select name="emoji">${renderProductEmojiOptions(product.emoji || "")}</select>
+          </label>
+          <label>Chamada promocional<input name="promo" value="${escapeAttribute(product.promo || "")}" placeholder="Ex.: promoção de lançamento, pronta entrega..." /></label>
+          <label>Descrição<textarea name="description" required>${escapeHtml(product.description || "")}</textarea></label>
+          <div class="edit-actions">
+            <button class="button" type="submit">Salvar alterações</button>
+            <button type="button" data-action="delete-product" data-product-id="${escapeAttribute(product.id)}">Remover</button>
+          </div>
+          <div class="portal-message"></div>
+        </form>
+      </details>
     </article>
   `;
 }
@@ -3567,12 +3633,20 @@ function renderStoreManager(data) {
       <div class="portal-card">
         <h3>Novo produto</h3>
         <form id="productForm" class="form-grid">
+          <label>Tipo do produto
+            <select id="productType" data-product-type-select>
+              ${renderProductTypeOptions("Camisa feminina")}
+            </select>
+          </label>
           <label>Nome do produto<input id="productName" required placeholder="Ex.: Camisa oficial HeloisaHand" /></label>
           <div class="form-grid two">
-            <label>Categoria<input id="productCategory" required placeholder="Uniforme, acessório..." /></label>
+            <label>Categoria<input id="productCategory" required placeholder="Uniforme, acessório..." value="Uniforme" /></label>
             <label>Preço<input id="productPrice" type="number" min="0" step="0.01" required placeholder="79.90" /></label>
           </div>
-          <label>Emoji ou símbolo<input id="productEmoji" maxlength="4" placeholder="👕" /></label>
+          <label>Emoji ou símbolo
+            <select id="productEmoji">${renderProductEmojiOptions("👕")}</select>
+          </label>
+          <label>Chamada promocional<input id="productPromo" placeholder="Ex.: promoção de lançamento, pronta entrega..." /></label>
           <label>Descrição<textarea id="productDescription" required placeholder="Explique o produto e como ele ajuda o projeto"></textarea></label>
           <button class="button" type="submit">Publicar produto</button>
           <div id="portalMessage" class="portal-message"></div>
@@ -3581,7 +3655,7 @@ function renderStoreManager(data) {
       <div class="portal-card">
         <h3>Produtos publicados</h3>
         <div class="store-grid compact">
-          ${products.length ? products.map((item) => renderProductCard(item, true)).join("") : "<p>Nenhum produto cadastrado ainda.</p>"}
+          ${products.length ? products.map(renderProductAdminCard).join("") : "<p>Nenhum produto cadastrado ainda.</p>"}
         </div>
       </div>
     </div>
@@ -3826,6 +3900,8 @@ function bindInteractions() {
   document.querySelector("#athleteMessageForm")?.addEventListener("submit", handleAthleteMessage);
   document.querySelector("#athleteProfileForm")?.addEventListener("submit", handleAthleteProfileSave);
   document.querySelector("#productForm")?.addEventListener("submit", handleProductSave);
+  document.querySelectorAll("[data-product-type-select]").forEach((select) => select.addEventListener("change", handleProductTypeChange));
+  document.querySelectorAll(".product-edit-form").forEach((form) => form.addEventListener("submit", handleProductEdit));
   document.querySelector("#campaignForm")?.addEventListener("submit", handleCampaignSave);
   document.querySelector("#sponsorForm")?.addEventListener("submit", handleSponsorSave);
   document.querySelector("#rankingForm")?.addEventListener("submit", handleRankingSave);
@@ -3864,8 +3940,10 @@ function bindDragScrollCarousels() {
     let startX = 0;
     let scrollLeft = 0;
     let dragging = false;
+    let moved = false;
     track.addEventListener("pointerdown", (event) => {
       dragging = true;
+      moved = false;
       startX = event.clientX;
       scrollLeft = track.scrollLeft;
       track.classList.add("dragging");
@@ -3873,7 +3951,21 @@ function bindDragScrollCarousels() {
     });
     track.addEventListener("pointermove", (event) => {
       if (!dragging) return;
+      if (Math.abs(event.clientX - startX) > 6) moved = true;
       track.scrollLeft = scrollLeft - (event.clientX - startX);
+    });
+    track.addEventListener("click", (event) => {
+      const link = event.target.closest("a[href]");
+      if (moved) {
+        event.preventDefault();
+        event.stopPropagation();
+        moved = false;
+        return;
+      }
+      if (link?.getAttribute("href")?.startsWith("#")) {
+        event.preventDefault();
+        location.hash = link.getAttribute("href");
+      }
     });
     ["pointerup", "pointercancel", "pointerleave"].forEach((type) => {
       track.addEventListener(type, () => {
@@ -4711,24 +4803,75 @@ function handleAvatarPreview(event) {
   preview.innerHTML = `<img src="${src}" alt="Previa da foto de perfil" /><span>Foto selecionada. Clique em salvar perfil para enviar.</span>`;
 }
 
-function handleProductSave(event) {
+function handleProductTypeChange(event) {
+  const option = getProductCatalogOption(event.currentTarget.value);
+  const form = event.currentTarget.closest("form");
+  if (!option || !form) return;
+  const name = form.querySelector("#productName, [name='name']");
+  const category = form.querySelector("#productCategory, [name='category']");
+  const emoji = form.querySelector("#productEmoji, [name='emoji']");
+  if (name && (!name.value.trim() || name.dataset.autofilled === "true")) {
+    name.value = option.label === "Produto livre" ? "" : option.label;
+    name.dataset.autofilled = option.label === "Produto livre" ? "false" : "true";
+  }
+  if (category) category.value = option.category || "Livre";
+  if (emoji) emoji.value = option.emoji || "🛒";
+}
+
+async function handleProductSave(event) {
   event.preventDefault();
   const data = getAuthData();
   data.products = data.products || [];
+  const type = document.querySelector("#productType")?.value || "Produto livre";
   data.products.unshift({
     id: `product-${Date.now()}`,
+    type,
     name: document.querySelector("#productName").value.trim(),
     category: document.querySelector("#productCategory").value.trim(),
     price: Number(document.querySelector("#productPrice").value || 0),
-    emoji: document.querySelector("#productEmoji").value.trim() || "🛒",
+    emoji: document.querySelector("#productEmoji").value || "🛒",
+    promo: document.querySelector("#productPromo")?.value.trim() || "",
     description: document.querySelector("#productDescription").value.trim(),
     active: true,
     createdAt: new Date().toISOString(),
   });
-  saveAuthData(data);
-  app.innerHTML = renderCoachDashboard("store");
-  bindInteractions();
-  showToast("Produto publicado na loja.", "ok");
+  try {
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("store");
+    bindInteractions();
+    showToast("Produto publicado na loja.", "ok");
+  } catch (error) {
+    showToast(error.message || "Não foi possível publicar o produto.", "error");
+  }
+}
+
+async function handleProductEdit(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const productId = form.dataset.productId;
+  const data = getAuthData();
+  const product = (data.products || []).find((item) => item.id === productId);
+  if (!product) return;
+  product.type = form.elements.type?.value || "Produto livre";
+  product.name = form.elements.name.value.trim();
+  product.category = form.elements.category.value.trim();
+  product.price = Number(form.elements.price.value || 0);
+  product.emoji = form.elements.emoji.value || "🛒";
+  product.promo = form.elements.promo?.value.trim() || "";
+  product.description = form.elements.description.value.trim();
+  product.updatedAt = new Date().toISOString();
+  try {
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("store");
+    bindInteractions();
+    showToast("Produto atualizado.", "ok");
+  } catch (error) {
+    const message = form.querySelector(".portal-message");
+    if (message) {
+      message.textContent = error.message || "Não foi possível salvar o produto.";
+      message.className = "portal-message error";
+    }
+  }
 }
 
 async function handleCampaignSave(event) {
@@ -5110,9 +5253,14 @@ async function handleAction(event) {
   if (action === "delete-product") {
     const data = getAuthData();
     data.products = (data.products || []).filter((item) => item.id !== event.currentTarget.dataset.productId);
-    await saveAuthDataConfirmed(data);
-    app.innerHTML = renderCoachDashboard("store");
-    bindInteractions();
+    try {
+      await saveAuthDataConfirmed(data);
+      app.innerHTML = renderCoachDashboard("store");
+      bindInteractions();
+      showToast("Produto removido da loja.", "ok");
+    } catch (error) {
+      showToast(error.message || "Não foi possível remover o produto.", "error");
+    }
   }
   if (action === "delete-quiz-question") {
     const data = getAuthData();

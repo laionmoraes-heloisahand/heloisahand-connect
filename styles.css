@@ -3349,6 +3349,16 @@ textarea:focus {
   font-weight: 900;
 }
 
+.product-promo {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #5f4300;
+  background: rgba(255, 205, 51, 0.24);
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .product-body h3 {
   margin: 0;
   font-size: 22px;
@@ -3376,6 +3386,29 @@ textarea:focus {
   background: #fff;
   font-weight: 900;
   cursor: pointer;
+}
+
+.product-admin-card {
+  display: grid;
+  gap: 12px;
+}
+
+.product-edit-details {
+  border: 1px solid rgba(17, 92, 54, 0.14);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(10, 39, 25, 0.06);
+}
+
+.product-edit-details summary {
+  padding: 14px 16px;
+  color: var(--primary);
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.product-edit-form {
+  padding: 0 16px 16px;
 }
 
 .support-admin-card {
