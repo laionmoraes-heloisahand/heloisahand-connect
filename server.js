@@ -2,6 +2,12 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+let webpush = null;
+try {
+  webpush = require("web-push");
+} catch (error) {
+  webpush = null;
+}
 
 const root = __dirname;
 const port = Number(process.env.PORT || 5400);
@@ -19,6 +25,13 @@ const maxUploadBytes = 12 * 1024 * 1024;
 const defaultPassword = "1234";
 const sessions = new Map();
 const mailFrom = process.env.MAIL_FROM || `Instituto HeloisaHand <${process.env.SMTP_USER || "institutoheloisahand@gmail.com"}>`;
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
+const vapidSubject = process.env.VAPID_SUBJECT || `mailto:${process.env.SMTP_USER || "institutoheloisahand@gmail.com"}`;
+const pushEnabled = Boolean(webpush && vapidPublicKey && vapidPrivateKey);
+if (pushEnabled) {
+  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+}
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -393,6 +406,45 @@ function sendJson(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function sanitizePushSubscription(subscription) {
+  if (!subscription || typeof subscription !== "object") return null;
+  const endpoint = String(subscription.endpoint || "");
+  const p256dh = String(subscription.keys?.p256dh || "");
+  const auth = String(subscription.keys?.auth || "");
+  if (!endpoint || !p256dh || !auth) return null;
+  return {
+    endpoint,
+    expirationTime: subscription.expirationTime || null,
+    keys: { p256dh, auth },
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function sendPush(subscription, payload) {
+  if (!pushEnabled || !subscription) return false;
+  try {
+    await webpush.sendNotification(subscription, JSON.stringify(payload));
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function notifyAthletes(data, athleteIds, payload) {
+  if (!pushEnabled) return;
+  const ids = new Set(athleteIds);
+  await Promise.all((data.users || [])
+    .filter((user) => user.role === "athlete" && ids.has(user.id) && user.pushSubscription)
+    .map((user) => sendPush(user.pushSubscription, payload)));
+}
+
+async function notifyAllAthletes(data, payload) {
+  if (!pushEnabled) return;
+  await Promise.all((data.users || [])
+    .filter((user) => user.role === "athlete" && user.pushSubscription)
+    .map((user) => sendPush(user.pushSubscription, payload)));
+}
+
 function collectBody(req, limit = maxUploadBytes) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -474,6 +526,97 @@ async function handleApi(req, res, cleanUrl) {
 
   if (req.method === "GET" && cleanUrl === "/api/public-data") {
     sendJson(res, 200, publicData((await readAuthData()) || { events: [] }));
+    return true;
+  }
+
+  if (req.method === "GET" && cleanUrl === "/api/push-public-key") {
+    sendJson(res, 200, { enabled: pushEnabled, publicKey: vapidPublicKey });
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/push-subscribe") {
+    const session = getSession(req);
+    if (!session || session.role !== "athlete") {
+      sendJson(res, 403, { error: "Acesso restrito ao atleta." });
+      return true;
+    }
+    if (!pushEnabled) {
+      sendJson(res, 503, { error: "Notificacoes push ainda nao foram configuradas no servidor." });
+      return true;
+    }
+    try {
+      const body = await collectBody(req, 1024 * 128);
+      const payload = JSON.parse(body.toString("utf8"));
+      const subscription = sanitizePushSubscription(payload.subscription);
+      if (!subscription) {
+        sendJson(res, 400, { error: "Assinatura de notificacao invalida." });
+        return true;
+      }
+      const data = await readAuthData();
+      const user = data.users.find((item) => item.id === session.userId);
+      user.pushSubscription = subscription;
+      await saveAuthData(data);
+      await sendPush(subscription, {
+        title: "Notificacoes ativadas",
+        body: "Agora o Instituto HeloisaHand pode te avisar sobre treinos, jogos e novidades.",
+        url: "/#/notificacoes",
+      });
+      sendJson(res, 200, { ok: true, data: dataForAthlete(data, user.id) });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel ativar as notificacoes." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/push-broadcast") {
+    const session = getSession(req);
+    if (!session || session.role !== "coach") {
+      sendJson(res, 403, { error: "Acesso restrito ao treinador." });
+      return true;
+    }
+    if (!pushEnabled) {
+      sendJson(res, 503, { error: "Notificacoes push ainda nao foram configuradas no servidor." });
+      return true;
+    }
+    try {
+      const body = await collectBody(req, 1024 * 32);
+      const payload = JSON.parse(body.toString("utf8"));
+      const data = await readAuthData();
+      await notifyAllAthletes(data, {
+        title: String(payload.title || "Instituto HeloisaHand").slice(0, 80),
+        body: String(payload.body || "Voce tem uma novidade no aplicativo.").slice(0, 180),
+        url: String(payload.url || "/#/notificacoes").slice(0, 120),
+      });
+      sendJson(res, 200, { ok: true });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel enviar a notificacao." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/push-athlete") {
+    const session = getSession(req);
+    if (!session || session.role !== "coach") {
+      sendJson(res, 403, { error: "Acesso restrito ao treinador." });
+      return true;
+    }
+    if (!pushEnabled) {
+      sendJson(res, 503, { error: "Notificacoes push ainda nao foram configuradas no servidor." });
+      return true;
+    }
+    try {
+      const body = await collectBody(req, 1024 * 32);
+      const payload = JSON.parse(body.toString("utf8"));
+      const data = await readAuthData();
+      await notifyAthletes(data, [String(payload.athleteId || "")], {
+        title: String(payload.title || "Instituto HeloisaHand").slice(0, 80),
+        body: String(payload.body || "Voce tem uma novidade no aplicativo.").slice(0, 180),
+        url: String(payload.url || "/#/notificacoes").slice(0, 120),
+      });
+      sendJson(res, 200, { ok: true });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel enviar a notificacao." });
+    }
     return true;
   }
 
@@ -675,12 +818,13 @@ async function handleApi(req, res, cleanUrl) {
         sendJson(res, 400, { error: "Selecione uma imagem valida." });
         return true;
       }
-      const ext = path.extname(file.filename).toLowerCase() || ".jpg";
-      const safeName = `avatar-${session.userId}-${Date.now()}${ext}`;
-      fs.writeFileSync(path.join(uploadsDir, safeName), file.data);
+      if (file.data.length > 1024 * 1024) {
+        sendJson(res, 400, { error: "A foto ficou muito grande. Escolha uma imagem menor." });
+        return true;
+      }
       const data = await readAuthData();
       const user = data.users.find((item) => item.id === session.userId);
-      user.profile = { ...(user.profile || {}), avatar: `/uploads/${safeName}` };
+      user.profile = { ...(user.profile || {}), avatar: `data:${file.contentType};base64,${file.data.toString("base64")}` };
       await saveAuthData(data);
       sendJson(res, 200, { data: dataForAthlete(data, user.id) });
     } catch (error) {

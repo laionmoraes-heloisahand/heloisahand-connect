@@ -2790,6 +2790,7 @@ function renderAthleteNotificationsPage() {
           <strong>${unreadCount}</strong>
           <span>avisos recentes</span>
           <p>Entre aqui sempre que o sininho indicar novidade.</p>
+          <button class="button pulse-action" type="button" data-action="enable-push">Ativar notificações no celular</button>
         </article>
         <div class="notification-list">
           ${notifications.length ? notifications.map(renderAthleteNotification).join("") : `<article class="athlete-notification"><strong>Tudo certo por enquanto</strong><span>Nenhuma notificacao nova foi publicada.</span></article>`}
@@ -4535,13 +4536,20 @@ function handleAthleteEdit(event) {
   bindInteractions();
 }
 
-function handleNotice(event) {
+async function handleNotice(event) {
   event.preventDefault();
   const data = getAuthData();
-  data.notices.push({ title: document.querySelector("#noticeTitle").value.trim(), text: document.querySelector("#noticeText").value.trim(), createdAt: new Date().toISOString() });
-  saveAuthData(data);
-  app.innerHTML = renderCoachDashboard("notices");
-  bindInteractions();
+  const notice = { title: document.querySelector("#noticeTitle").value.trim(), text: document.querySelector("#noticeText").value.trim(), createdAt: new Date().toISOString() };
+  data.notices.push(notice);
+  try {
+    await saveAuthDataConfirmed(data);
+    sendPushBroadcast(notice.title || "Novo aviso", notice.text || "Voce tem um novo aviso do Instituto HeloisaHand.");
+    app.innerHTML = renderCoachDashboard("notices");
+    bindInteractions();
+    showToast("Aviso publicado.", "ok");
+  } catch (error) {
+    showPortalMessage(error.message || "Nao foi possivel salvar o aviso.", "error");
+  }
 }
 
 async function handleTeamEvent(event) {
@@ -4561,6 +4569,7 @@ async function handleTeamEvent(event) {
   try {
     coachCalendarReference = new Date(`${document.querySelector("#eventDate").value}T00:00:00`);
     await saveAuthDataConfirmed(data);
+    sendPushBroadcast("Novo evento na agenda", `${document.querySelector("#eventTitle").value.trim()} em ${new Date(`${document.querySelector("#eventDate").value}T00:00:00`).toLocaleDateString("pt-BR")} às ${document.querySelector("#eventTime").value || "--:--"}.`, "/#/competicoes");
     app.innerHTML = renderCoachDashboard("events");
     bindInteractions();
     showToast("Evento publicado na agenda.", "ok");
@@ -4746,6 +4755,7 @@ async function handleScoutSave(event) {
   registerScoutEvolution(athlete, previousScout, scout);
   try {
     await saveAuthDataConfirmed(data);
+    sendPushToAthlete(athlete.id, "Seu scout foi atualizado", "Entre na sua area do atleta para acompanhar sua evolucao.");
     const message = form.querySelector(".scout-message");
     if (message) message.textContent = "Scout salvo com sucesso.";
     showToast("Scout salvo com sucesso.", "ok");
@@ -4844,12 +4854,39 @@ async function handleAthleteProfileSave(event) {
 async function uploadAthleteAvatar(file) {
   if (!file.type.startsWith("image/")) throw new Error("Escolha um arquivo de imagem valido.");
   if (file.size > 12 * 1024 * 1024) throw new Error("Use uma foto com ate 12 MB.");
+  const optimized = await compressAvatarFile(file);
   const formData = new FormData();
-  formData.append("avatar", file);
+  formData.append("avatar", optimized, "avatar.jpg");
   const response = await fetch("/api/athlete-avatar", { method: "POST", headers: getAuthHeaders(), body: formData });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "Nao foi possivel salvar a foto.");
   authDataCache = payload.data;
+}
+
+function compressAvatarFile(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const maxSize = 520;
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (!blob) reject(new Error("Nao foi possivel preparar a foto."));
+        else resolve(blob);
+      }, "image/jpeg", 0.82);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Nao foi possivel ler a imagem."));
+    };
+    img.src = url;
+  });
 }
 
 function handleAvatarPreview(event) {
@@ -4869,6 +4906,61 @@ function handleAvatarPreview(event) {
   const src = URL.createObjectURL(file);
   preview.hidden = false;
   preview.innerHTML = `<img src="${src}" alt="Previa da foto de perfil" /><span>Foto selecionada. Clique em salvar perfil para enviar.</span>`;
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+}
+
+async function enablePushNotifications() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    showToast("Este navegador nao oferece suporte a notificacoes push.", "error");
+    return;
+  }
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    showToast("Permissao de notificacao nao autorizada.", "error");
+    return;
+  }
+  const keyResponse = await fetch("/api/push-public-key", { cache: "no-store" });
+  const keyPayload = await keyResponse.json();
+  if (!keyPayload.enabled || !keyPayload.publicKey) {
+    showToast("Notificacoes push ainda precisam das chaves VAPID no Render.", "error");
+    return;
+  }
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(keyPayload.publicKey),
+  });
+  const response = await fetch("/api/push-subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({ subscription }),
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Nao foi possivel ativar notificacoes.");
+  authDataCache = payload.data;
+  showToast("Notificacoes ativadas neste aparelho.", "ok");
+}
+
+function sendPushBroadcast(title, body, url = "/#/notificacoes") {
+  fetch("/api/push-broadcast", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({ title, body, url }),
+  }).catch(() => {});
+}
+
+function sendPushToAthlete(athleteId, title, body, url = "/#/notificacoes") {
+  fetch("/api/push-athlete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({ athleteId, title, body, url }),
+  }).catch(() => {});
 }
 
 function handleProductTypeChange(event) {
@@ -5171,6 +5263,13 @@ async function handleAction(event) {
   }
   if (action === "open-athlete-notifications") {
     location.hash = "#/notificacoes";
+  }
+  if (action === "enable-push") {
+    try {
+      await enablePushNotifications();
+    } catch (error) {
+      showToast(error.message || "Nao foi possivel ativar notificacoes.", "error");
+    }
   }
   if (action === "back-athlete-dashboard") {
     location.hash = "#/atleta";
