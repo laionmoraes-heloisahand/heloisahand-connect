@@ -25,12 +25,17 @@ const maxUploadBytes = 12 * 1024 * 1024;
 const defaultPassword = "1234";
 const sessions = new Map();
 const mailFrom = process.env.MAIL_FROM || `Instituto HeloisaHand <${process.env.SMTP_USER || "institutoheloisahand@gmail.com"}>`;
-const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
-const vapidSubject = process.env.VAPID_SUBJECT || `mailto:${process.env.SMTP_USER || "institutoheloisahand@gmail.com"}`;
-const pushEnabled = Boolean(webpush && vapidPublicKey && vapidPrivateKey);
-if (pushEnabled) {
-  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+const vapidPublicKey = (process.env.VAPID_PUBLIC_KEY || "").trim();
+const vapidPrivateKey = (process.env.VAPID_PRIVATE_KEY || "").trim();
+const vapidSubject = (process.env.VAPID_SUBJECT || `mailto:${process.env.SMTP_USER || "institutoheloisahand@gmail.com"}`).trim();
+let pushEnabled = false;
+if (webpush && vapidPublicKey && vapidPrivateKey) {
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+    pushEnabled = true;
+  } catch (error) {
+    console.warn(`[HeloisaHand] Notificacoes push desativadas: ${error.message}`);
+  }
 }
 
 const types = {
