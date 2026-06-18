@@ -2528,13 +2528,13 @@ textarea:focus {
 
 .ranking-carousel {
   position: relative;
-  min-height: 310px;
+  min-height: 340px;
   padding: 8px 0 54px;
 }
 
 .ranking-deck {
   position: relative;
-  min-height: 258px;
+  min-height: 288px;
   touch-action: pan-y;
   user-select: none;
 }
@@ -2545,8 +2545,8 @@ textarea:focus {
   display: grid;
   align-content: start;
   gap: 10px;
-  width: min(100%, 410px);
-  min-height: 244px;
+  width: min(100%, 430px);
+  min-height: 274px;
   border: 1px solid rgba(31, 138, 76, 0.18);
   border-radius: 28px;
   padding: 24px;
@@ -2660,14 +2660,18 @@ textarea:focus {
   margin: 6px 0 0;
   color: var(--text);
   font-family: Montserrat, sans-serif;
-  font-size: clamp(24px, 4vw, 34px);
-  line-height: 1.03;
+  font-size: clamp(22px, 3.2vw, 30px);
+  line-height: 1.08;
   font-weight: 1000;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
 }
 
 .ranking-card-slide small {
   color: var(--muted);
   font-weight: 900;
+  overflow-wrap: anywhere;
 }
 
 .ranking-card-slide p {
@@ -2675,6 +2679,8 @@ textarea:focus {
   color: #42574e;
   font-size: 16px;
   line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .ranking-current-badge {
@@ -5524,23 +5530,23 @@ textarea:focus {
   }
 
   .ranking-carousel {
-    min-height: 350px;
+    min-height: 372px;
   }
 
   .ranking-deck {
-    min-height: 288px;
+    min-height: 310px;
   }
 
   .ranking-card-slide {
     width: 100%;
-    min-height: 276px;
+    min-height: 300px;
     border-radius: 24px;
-    padding: 18px;
+    padding: 18px 16px;
   }
 
   .ranking-card-slide.next {
-    opacity: 0.7;
-    transform: translateX(7%) scale(0.92);
+    opacity: 0.45;
+    transform: translateX(6%) scale(0.9);
   }
 
   .ranking-card-slide.after-next,
@@ -5550,11 +5556,13 @@ textarea:focus {
   }
 
   .ranking-card-slide h4 {
-    font-size: 26px;
+    font-size: clamp(20px, 7vw, 25px);
+    line-height: 1.1;
   }
 
   .ranking-card-slide p {
-    font-size: 15px;
+    font-size: 14px;
+    line-height: 1.42;
   }
 
   .feature-grid .feature-card {
