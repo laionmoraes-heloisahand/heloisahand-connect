@@ -747,6 +747,7 @@ function renderRoute() {
   bindInteractions();
   hydrateMediaViews(path);
   if (path === "/quiz" && !quizState) refreshQuizPublicData();
+  if (path === "/notificacoes") markAthleteNotificationsRead();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -2731,7 +2732,7 @@ function renderAthlete() {
     return renderPasswordChange(user, "Por seguranca, todo atleta precisa trocar a senha temporaria no primeiro acesso.");
   }
   const data = getAuthData();
-  const realNotifications = [...(user.notifications || [])].filter((item) => item.type !== "read").length;
+  const realNotifications = getUnreadAthleteNotifications(user).length;
   const notifications = getAthleteNotifications(user);
   const latestEvolution = notifications.find((item) => item.type === "evolution");
   return `
@@ -2742,7 +2743,7 @@ function renderAthlete() {
           <h2>Bem-vindo, ${user.profile?.nickname || user.name}</h2>
           <p>${latestEvolution ? `Parabens pela evolucao: ${escapeHtml(latestEvolution.title)}.` : "Consulte sua jornada, metas, presencas e mensagens da comissao tecnica."}</p>
         </div>
-        <button class="notification-bell" type="button" data-action="open-athlete-notifications" aria-label="Abrir notificacoes">🔔<span>${realNotifications}</span></button>
+        <button class="notification-bell" type="button" data-action="open-athlete-notifications" aria-label="Abrir notificacoes">??${realNotifications ? `<span>${realNotifications}</span>` : ""}</button>
         <button class="button ghost-dark" data-action="logout">Sair</button>
       </div>
       ${renderAthleteJourney(user, data)}
@@ -2774,7 +2775,8 @@ function renderAthleteNotificationsPage() {
     return renderPasswordChange(user, "Troque sua senha temporaria para liberar suas notificacoes.");
   }
   const notifications = getAthleteNotifications(user);
-  const unreadCount = notifications.filter((item) => item.type !== "read").length;
+  const unreadCount = getUnreadAthleteNotifications(user).length;
+  const pushActive = Boolean(user.pushSubscription);
   return `
     <section class="section portal-section notification-center">
       <div class="portal-header">
@@ -2789,8 +2791,12 @@ function renderAthleteNotificationsPage() {
         <article class="notification-summary-card">
           <strong>${unreadCount}</strong>
           <span>avisos recentes</span>
-          <p>Entre aqui sempre que o sininho indicar novidade.</p>
-          <button class="button pulse-action" type="button" data-action="enable-push">Ativar notificações no celular</button>
+          <p>${unreadCount ? "As notificacoes abertas aqui serao marcadas como lidas." : "Voce ja visualizou as notificacoes recentes."}</p>
+          ${
+            pushActive
+              ? `<button class="button ghost-dark" type="button" data-action="disable-push">Notificações ativadas - desativar</button>`
+              : `<button class="button pulse-action" type="button" data-action="enable-push">Ativar notificações no celular</button>`
+          }
         </article>
         <div class="notification-list">
           ${notifications.length ? notifications.map(renderAthleteNotification).join("") : `<article class="athlete-notification"><strong>Tudo certo por enquanto</strong><span>Nenhuma notificacao nova foi publicada.</span></article>`}
@@ -2936,9 +2942,36 @@ function getAthleteNotifications(user) {
   ];
 }
 
+function getUnreadAthleteNotifications(user) {
+  return [...(user.notifications || [])].filter((item) => !item.readAt);
+}
+
+async function markAthleteNotificationsRead() {
+  const user = getCurrentUser("athlete");
+  if (!user) return;
+  const unread = getUnreadAthleteNotifications(user);
+  if (!unread.length) return;
+  user.notifications = (user.notifications || []).map((item) => (item.readAt ? item : { ...item, readAt: new Date().toISOString() }));
+  const data = getAuthData();
+  const savedUser = data.users.find((item) => item.id === user.id);
+  if (savedUser) savedUser.notifications = user.notifications;
+  try {
+    await fetch("/api/athlete-notifications-read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify({}),
+    });
+    authDataCache = data;
+    localStorage.setItem(authStoreKey, JSON.stringify(data));
+  } catch (error) {
+    authDataCache = data;
+    localStorage.setItem(authStoreKey, JSON.stringify(data));
+  }
+}
+
 function renderAthleteNotification(item) {
   return `
-    <article class="athlete-notification ${item.type || ""}">
+    <article class="athlete-notification ${item.type || ""} ${item.readAt ? "read" : "unread"}">
       <strong>${escapeHtml(item.title)}</strong>
       <span>${escapeHtml(item.text || "")}</span>
       <small>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("pt-BR") : ""}</small>
@@ -3812,7 +3845,10 @@ function renderMediaManager(data) {
       </div>
       <div class="portal-card">
         <h3>Midias publicadas</h3>
-        <div id="coachMediaList" class="media-list"></div>
+        <p class="panel-subtitle">Veja tudo que esta na galeria publica e remova rapidamente fotos ou videos quebrados.</p>
+        <div id="coachMediaList" class="media-list admin-media-list">
+          <div class="empty-state compact"><strong>Carregando midias...</strong><p>Aguarde um instante.</p></div>
+        </div>
       </div>
     </div>
   `;
@@ -3823,13 +3859,15 @@ function renderMediaCard(item, editable = false) {
   const thumb = isVideo ? item.thumbnail : item.src;
   const title = escapeHtml(item.title || "Midia do instituto");
   const description = escapeHtml(item.description || (isVideo ? "Video do canal do instituto" : "Foto publicada pelo treinador"));
+  const dateLabel = item.createdAt ? new Date(item.createdAt).toLocaleString("pt-BR") : "";
   const content = isVideo
     ? `<a class="media-thumb video" href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer" aria-label="Abrir video ${title} no YouTube"><img src="${escapeAttribute(thumb)}" alt="${title}" /><span>Assistir no YouTube</span></a>`
-    : `<a class="media-thumb photo" href="${escapeAttribute(thumb)}" target="_blank" rel="noreferrer" aria-label="Ver foto ${title}"><img src="${escapeAttribute(thumb)}" alt="${title}" /></a>`;
+    : `<a class="media-thumb photo" href="${escapeAttribute(thumb)}" target="_blank" rel="noreferrer" aria-label="Ver foto ${title}"><img src="${escapeAttribute(thumb)}" alt="${title}" onerror="this.closest('.media-thumb').classList.add('broken')" /></a>`;
   return `
-    <article class="media-card">
+    <article class="media-card ${editable ? "admin-media-card" : ""}">
       ${content}
       <div class="media-card-body">
+        <small>${isVideo ? "Video" : "Foto"}${dateLabel ? ` - ${escapeHtml(dateLabel)}` : ""}</small>
         <strong>${title}</strong>
         <span>${description}</span>
       </div>
@@ -4945,6 +4983,23 @@ async function enablePushNotifications() {
   if (!response.ok) throw new Error(payload.error || "Nao foi possivel ativar notificacoes.");
   authDataCache = payload.data;
   showToast("Notificacoes ativadas neste aparelho.", "ok");
+  renderRoute();
+}
+
+async function disablePushNotifications() {
+  const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.ready.catch(() => null) : null;
+  const subscription = await registration?.pushManager?.getSubscription?.();
+  await subscription?.unsubscribe?.();
+  const response = await fetch("/api/push-unsubscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({}),
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Nao foi possivel desativar notificacoes.");
+  authDataCache = payload.data;
+  showToast("Notificacoes desativadas neste aparelho.", "ok");
+  renderRoute();
 }
 
 function sendPushBroadcast(title, body, url = "/#/notificacoes") {
@@ -5269,6 +5324,13 @@ async function handleAction(event) {
       await enablePushNotifications();
     } catch (error) {
       showToast(error.message || "Nao foi possivel ativar notificacoes.", "error");
+    }
+  }
+  if (action === "disable-push") {
+    try {
+      await disablePushNotifications();
+    } catch (error) {
+      showToast(error.message || "Nao foi possivel desativar notificacoes.", "error");
     }
   }
   if (action === "back-athlete-dashboard") {

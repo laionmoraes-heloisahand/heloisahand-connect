@@ -584,6 +584,45 @@ async function handleApi(req, res, cleanUrl) {
     return true;
   }
 
+  if (req.method === "POST" && cleanUrl === "/api/push-unsubscribe") {
+    const session = getSession(req);
+    if (!session || session.role !== "athlete") {
+      sendJson(res, 403, { error: "Acesso restrito ao atleta." });
+      return true;
+    }
+    try {
+      const data = await readAuthData();
+      const user = data.users.find((item) => item.id === session.userId);
+      if (user) delete user.pushSubscription;
+      await saveAuthData(data);
+      sendJson(res, 200, { ok: true, data: dataForAthlete(data, user.id) });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel desativar notificacoes." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/athlete-notifications-read") {
+    const session = getSession(req);
+    if (!session || session.role !== "athlete") {
+      sendJson(res, 403, { error: "Acesso restrito ao atleta." });
+      return true;
+    }
+    try {
+      const data = await readAuthData();
+      const user = data.users.find((item) => item.id === session.userId);
+      const readAt = new Date().toISOString();
+      if (user) {
+        user.notifications = (user.notifications || []).map((item) => (item.readAt ? item : { ...item, readAt }));
+      }
+      await saveAuthData(data);
+      sendJson(res, 200, { ok: true, data: dataForAthlete(data, user.id) });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel marcar notificacoes como lidas." });
+    }
+    return true;
+  }
+
   if (req.method === "POST" && cleanUrl === "/api/push-broadcast") {
     const session = getSession(req);
     if (!session || session.role !== "coach") {

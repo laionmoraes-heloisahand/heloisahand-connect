@@ -3816,6 +3816,52 @@ textarea:focus {
   font-size: 14px;
 }
 
+.admin-media-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.admin-media-card {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 0;
+}
+
+.admin-media-card .media-thumb {
+  min-height: 86px;
+}
+
+.media-thumb.broken {
+  display: grid;
+  place-items: center;
+  min-height: 86px;
+  background: #fff1f1;
+}
+
+.media-thumb.broken img {
+  display: none;
+}
+
+.media-thumb.broken::before {
+  content: "Imagem indisponivel";
+  padding: 10px;
+  color: #a51f1f;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.athlete-notification.read {
+  opacity: 0.72;
+}
+
+.athlete-notification.unread {
+  border-color: rgba(246, 197, 53, 0.48);
+  background: linear-gradient(135deg, #fffdf1, #f8fbf9);
+}
+
 .project-page,
 .support-page {
   padding-top: 92px;
@@ -5563,6 +5609,14 @@ textarea:focus {
   .ranking-card-slide p {
     font-size: 14px;
     line-height: 1.42;
+  }
+
+  .admin-media-card {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-media-card .media-thumb {
+    min-height: 150px;
   }
 
   .feature-grid .feature-card {
