@@ -3847,9 +3847,23 @@ function renderMediaManager(data) {
         <h3>Midias publicadas</h3>
         <p class="panel-subtitle">Veja tudo que esta na galeria publica e remova rapidamente fotos ou videos quebrados.</p>
         <div id="coachMediaList" class="media-list admin-media-list">
-          <div class="empty-state compact"><strong>Carregando midias...</strong><p>Aguarde um instante.</p></div>
+          ${renderMediaLoadingState()}
         </div>
       </div>
+    </div>
+  `;
+}
+
+function renderMediaLoadingState() {
+  return `<div class="empty-state compact media-loading-state"><strong>Carregando midias...</strong><p>Aguarde um instante.</p></div>`;
+}
+
+function renderMediaErrorState(message = "Nao foi possivel carregar as midias agora.") {
+  return `
+    <div class="empty-state compact media-error-state">
+      <strong>Midias indisponiveis agora.</strong>
+      <p>${escapeHtml(message)}</p>
+      <button class="button ghost" type="button" data-action="reload-media">Tentar carregar novamente</button>
     </div>
   `;
 }
@@ -3894,14 +3908,26 @@ function renderSimpleManager(title, button, field, textLabel) {
 }
 
 async function fetchServerMedia() {
-  const response = await fetch("/api/media", { cache: "no-store" });
-  if (!response.ok) throw new Error("Nao foi possivel carregar as midias.");
-  return response.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 9000);
+  try {
+    const response = await fetch(`/api/media?ts=${Date.now()}`, { cache: "no-store", signal: controller.signal });
+    if (!response.ok) throw new Error("Nao foi possivel carregar as midias.");
+    const payload = await response.json();
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload.media)) return payload.media;
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function hydrateMediaViews(path) {
   const needsMedia = path === "/competicoes" || path === "/atletas-em-acao" || document.querySelector("#coachMediaList");
   if (!needsMedia) return;
+  document.querySelectorAll("#coachMediaList, #publicMediaGallery, .media-preview-list").forEach((target) => {
+    if (!target.dataset.keepMediaLoading) target.innerHTML = renderMediaLoadingState();
+  });
   try {
     const media = await fetchServerMedia();
     renderCoachMediaList(media);
@@ -3909,9 +3935,11 @@ async function hydrateMediaViews(path) {
     renderCompetitionMedia(media);
     bindInteractions();
   } catch (error) {
+    const message = error?.name === "AbortError" ? "O servidor demorou para responder. Tente novamente." : error?.message || "Verifique se o servidor esta respondendo.";
     document.querySelectorAll("#coachMediaList, #publicMediaGallery, .media-preview-list").forEach((target) => {
-      target.innerHTML = `<div class="empty-state compact"><strong>Midias indisponiveis agora.</strong><p>Verifique se o servidor local esta rodando.</p></div>`;
+      target.innerHTML = renderMediaErrorState(message);
     });
+    bindInteractions();
   }
 }
 
@@ -4132,9 +4160,20 @@ function handleCompetitionTab(event) {
   document.querySelectorAll("[data-competition-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.competitionTab === tab);
   });
+  let activePanel = null;
   document.querySelectorAll("[data-competition-panel]").forEach((panel) => {
-    panel.hidden = panel.dataset.competitionPanel !== tab;
+    const isActive = panel.dataset.competitionPanel === tab;
+    panel.hidden = !isActive;
+    panel.classList.toggle("is-active", isActive);
+    if (isActive) activePanel = panel;
   });
+  if (activePanel) {
+    activePanel.classList.remove("panel-focus-pulse");
+    requestAnimationFrame(() => {
+      activePanel.classList.add("panel-focus-pulse");
+      activePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 }
 
 function handleChatTab(event) {
@@ -5471,6 +5510,9 @@ async function handleAction(event) {
       bindInteractions();
       hydrateMediaViews("/treinador");
     });
+  }
+  if (action === "reload-media") {
+    hydrateMediaViews(location.hash.replace("#", "") || "/treinador");
   }
   if (action === "delete-event") {
     const data = getAuthData();

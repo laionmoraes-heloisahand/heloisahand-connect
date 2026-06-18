@@ -3816,6 +3816,41 @@ textarea:focus {
   font-size: 14px;
 }
 
+.media-loading-state,
+.media-error-state {
+  min-height: 128px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  border: 1px dashed rgba(20, 137, 73, 0.28);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 197, 26, 0.16), transparent 32%),
+    #fff;
+}
+
+.media-loading-state strong::after {
+  content: "";
+  display: inline-block;
+  width: 1.1em;
+  animation: loadingDots 1.25s steps(4, end) infinite;
+}
+
+@keyframes loadingDots {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75%,
+  100% {
+    content: "...";
+  }
+}
+
 .admin-media-list {
   display: grid;
   gap: 14px;
@@ -4222,6 +4257,10 @@ textarea:focus {
   gap: 22px;
 }
 
+.competition-panel[hidden] {
+  display: none !important;
+}
+
 .public-event-list {
   display: grid;
   gap: 16px;
@@ -4318,6 +4357,31 @@ textarea:focus {
   padding: 26px;
   background: #fff;
   box-shadow: 0 12px 30px rgba(9, 32, 24, 0.05);
+  scroll-margin-top: 110px;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.competition-panel.panel-focus-pulse {
+  border-color: rgba(255, 197, 26, 0.85);
+  box-shadow:
+    0 20px 48px rgba(20, 137, 73, 0.16),
+    0 0 0 6px rgba(255, 197, 26, 0.12);
+  animation: panelFocusPulse 0.72s ease both;
+}
+
+@keyframes panelFocusPulse {
+  0% {
+    transform: translateY(8px);
+  }
+  55% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
 
 .media-panel-head {

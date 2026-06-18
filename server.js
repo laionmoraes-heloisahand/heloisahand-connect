@@ -82,6 +82,8 @@ function saveJsonFile(file, payload) {
 
 async function supabaseFetch(pathname, options = {}) {
   if (!hasSupabase) return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 9000);
   const headers = {
     apikey: supabaseKey,
     "Content-Type": "application/json",
@@ -90,19 +92,24 @@ async function supabaseFetch(pathname, options = {}) {
   if (!supabaseKey.startsWith("sb_secret_") && !supabaseKey.startsWith("sb_publishable_")) {
     headers.Authorization = `Bearer ${supabaseKey}`;
   }
-  const response = await fetch(`${supabaseUrl}/rest/v1/${pathname}`, {
-    ...options,
-    headers,
-  });
-  if (!response.ok) {
-    const details = await response.text().catch(() => "");
-    console.error(`[HeloisaHand] Erro Supabase em ${pathname}: ${response.status} ${details}`);
-    throw new Error(`Supabase ${response.status}: ${details}`);
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/${pathname}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const details = await response.text().catch(() => "");
+      console.error(`[HeloisaHand] Erro Supabase em ${pathname}: ${response.status} ${details}`);
+      throw new Error(`Supabase ${response.status}: ${details}`);
+    }
+    if (response.status === 204) return null;
+    const text = await response.text();
+    if (!text.trim()) return null;
+    return JSON.parse(text);
+  } finally {
+    clearTimeout(timeout);
   }
-  if (response.status === 204) return null;
-  const text = await response.text();
-  if (!text.trim()) return null;
-  return JSON.parse(text);
 }
 
 async function readStateFromSupabase(key, fallback) {
@@ -148,7 +155,15 @@ async function checkSupabaseStatus() {
 
 async function readMedia() {
   const fallback = readJsonFile(mediaFile, []);
-  if (hasSupabase) return readStateFromSupabase("media", fallback);
+  if (hasSupabase) {
+    try {
+      const media = await readStateFromSupabase("media", fallback);
+      return Array.isArray(media) ? media : fallback;
+    } catch (error) {
+      console.error("[HeloisaHand] Nao foi possivel ler midias do Supabase:", error.message);
+      return fallback;
+    }
+  }
   return readJsonFile(mediaFile, []);
 }
 
