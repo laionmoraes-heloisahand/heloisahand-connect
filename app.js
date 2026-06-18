@@ -421,6 +421,9 @@ const app = document.querySelector("#app");
 const nav = document.querySelector("#mainNav");
 let authDataCache = null;
 let handballHubTimer = null;
+let coachCalendarReference = new Date();
+let quizPublicRefreshInFlight = false;
+let quizPublicRefreshAt = 0;
 
 const routes = {
   "/": renderHome,
@@ -743,7 +746,34 @@ function renderRoute() {
   app.innerHTML = view();
   bindInteractions();
   hydrateMediaViews(path);
+  if (path === "/quiz" && !quizState) refreshQuizPublicData();
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function refreshQuizPublicData() {
+  const now = Date.now();
+  if (quizPublicRefreshInFlight || now - quizPublicRefreshAt < 8000) return;
+  quizPublicRefreshInFlight = true;
+  try {
+    const fresh = await fetchBackendAuthData("/api/public-data");
+    quizPublicRefreshAt = Date.now();
+    if (!fresh) return;
+    const current = getAuthData();
+    authDataCache = {
+      ...current,
+      events: fresh.events || current.events || [],
+      rankings: fresh.rankings || current.rankings || [],
+      quizQuestions: fresh.quizQuestions || current.quizQuestions || [],
+      quizScores: fresh.quizScores || current.quizScores || [],
+    };
+    localStorage.setItem(authStoreKey, JSON.stringify(authDataCache));
+    if ((location.hash.replace("#", "") || "/") === "/quiz" && !quizState) {
+      app.innerHTML = renderQuiz();
+      bindInteractions();
+    }
+  } finally {
+    quizPublicRefreshInFlight = false;
+  }
 }
 
 function setActiveNav(path) {
@@ -781,7 +811,7 @@ function pageIntro(kicker, title, text) {
 
 function featureCard(title, text, href, icon, yellow = false, visual = "") {
   return `
-    <a class="card feature-card ${yellow ? "yellow" : ""} ${visual}" href="${href}">
+    <a class="card feature-card ${yellow ? "yellow" : ""} ${visual}" href="${href}" data-card-href="${href}">
       <span class="feature-bg-mark" aria-hidden="true"></span>
       <span class="icon-pill"><b>${icon}</b><i aria-hidden="true"></i></span>
       <span class="feature-spark" aria-hidden="true"></span>
@@ -2122,8 +2152,8 @@ function renderPublicEventItem(event) {
   `;
 }
 
-function renderCalendarMonth(events, interactive = false) {
-  const reference = events[0] ? getEventDate(events[0]) : new Date();
+function renderCalendarMonth(events, interactive = false, referenceDate = null) {
+  const reference = referenceDate ? new Date(referenceDate) : events[0] ? getEventDate(events[0]) : new Date();
   const year = reference.getFullYear();
   const month = reference.getMonth();
   const first = new Date(year, month, 1);
@@ -2135,22 +2165,24 @@ function renderCalendarMonth(events, interactive = false) {
     day.setDate(start.getDate() + index);
     const key = getDateKey(day);
     const dayEvents = events.filter((event) => event.date === key);
+    const cellAttrs = interactive ? `button type="button" data-action="select-event-date" data-event-date="${key}" title="Adicionar evento em ${day.toLocaleDateString("pt-BR")}"` : "div";
+    const closingTag = interactive ? "button" : "div";
     return `
-      <div class="calendar-cell ${day.getMonth() !== month ? "muted" : ""} ${key === todayKey ? "today" : ""} ${interactive ? "clickable" : ""}" ${interactive ? `data-action="select-event-date" data-event-date="${key}" title="Adicionar evento em ${day.toLocaleDateString("pt-BR")}"` : ""}>
+      <${cellAttrs} class="calendar-cell ${day.getMonth() !== month ? "muted" : ""} ${key === todayKey ? "today" : ""} ${interactive ? "clickable" : ""}">
         <strong>${day.getDate()}</strong>
         <div class="calendar-event-stack">
           ${dayEvents.map((event) => `<span class="calendar-chip ${event.type}">${event.time} ${escapeHtml(event.title)}</span>`).join("")}
         </div>
-      </div>
+      </${closingTag}>
     `;
   }).join("");
 
   return `
     <div class="calendar-board">
       <div class="calendar-month-head">
-        <button type="button" aria-label="Mes anterior">‹</button>
+        <button type="button" data-action="calendar-prev-month" aria-label="Mês anterior">‹</button>
         <h3>${getMonthLabel(reference)}</h3>
-        <button type="button" aria-label="Proximo mes">›</button>
+        <button type="button" data-action="calendar-next-month" aria-label="Próximo mês">›</button>
       </div>
       <div class="calendar-weekdays">${weekDays.map((day) => `<span>${day}</span>`).join("")}</div>
       <div class="calendar-grid">${cells}</div>
@@ -3091,7 +3123,7 @@ function renderCoachEvents(data) {
         <div id="portalMessage" class="portal-message"></div>
       </form>
     </div>
-    ${renderCalendarMonth(events, true)}
+    ${renderCalendarMonth(events, true, coachCalendarReference)}
     <div class="event-list-panel">
       <h3>Proximos eventos publicados</h3>
       <div class="coach-event-list">
@@ -3941,9 +3973,14 @@ function bindDragScrollCarousels() {
     let scrollLeft = 0;
     let dragging = false;
     let moved = false;
+    let pendingHref = "";
+    let suppressNextClick = false;
     track.addEventListener("pointerdown", (event) => {
       dragging = true;
       moved = false;
+      suppressNextClick = false;
+      const card = event.target.closest("[data-card-href], a[href]");
+      pendingHref = card?.dataset.cardHref || card?.getAttribute("href") || "";
       startX = event.clientX;
       scrollLeft = track.scrollLeft;
       track.classList.add("dragging");
@@ -3956,6 +3993,12 @@ function bindDragScrollCarousels() {
     });
     track.addEventListener("click", (event) => {
       const link = event.target.closest("a[href]");
+      if (suppressNextClick) {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressNextClick = false;
+        return;
+      }
       if (moved) {
         event.preventDefault();
         event.stopPropagation();
@@ -3969,7 +4012,16 @@ function bindDragScrollCarousels() {
     });
     ["pointerup", "pointercancel", "pointerleave"].forEach((type) => {
       track.addEventListener(type, () => {
+        if (type === "pointerup" && pendingHref && !moved) {
+          suppressNextClick = true;
+          if (pendingHref.startsWith("#")) {
+            location.hash = pendingHref;
+          } else {
+            location.href = pendingHref;
+          }
+        }
         dragging = false;
+        pendingHref = "";
         track.classList.remove("dragging");
       });
     });
@@ -4492,9 +4544,10 @@ function handleNotice(event) {
   bindInteractions();
 }
 
-function handleTeamEvent(event) {
+async function handleTeamEvent(event) {
   event.preventDefault();
   const data = getAuthData();
+  data.events = data.events || [];
   data.events.push({
     id: `event-${Date.now()}`,
     title: document.querySelector("#eventTitle").value.trim(),
@@ -4505,9 +4558,15 @@ function handleTeamEvent(event) {
     opponent: document.querySelector("#eventOpponent").value.trim(),
     notes: document.querySelector("#eventNotes").value.trim(),
   });
-  saveAuthData(data);
-  app.innerHTML = renderCoachDashboard("events");
-  bindInteractions();
+  try {
+    coachCalendarReference = new Date(`${document.querySelector("#eventDate").value}T00:00:00`);
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("events");
+    bindInteractions();
+    showToast("Evento publicado na agenda.", "ok");
+  } catch (error) {
+    showPortalMessage(error.message || "Não foi possível salvar o evento.", "error");
+  }
 }
 
 function openEventForm(date = "") {
@@ -4520,6 +4579,15 @@ function openEventForm(date = "") {
   if (timeInput && !timeInput.value) timeInput.value = "08:00";
   document.querySelector("#eventTitle")?.focus();
   wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function moveCoachCalendar(delta) {
+  const next = new Date(coachCalendarReference);
+  next.setDate(1);
+  next.setMonth(next.getMonth() + delta);
+  coachCalendarReference = next;
+  app.innerHTML = renderCoachDashboard("events");
+  bindInteractions();
 }
 
 async function handleAttendanceSave(event) {
@@ -5151,7 +5219,14 @@ async function handleAction(event) {
   if (action === "open-event-form") {
     openEventForm();
   }
+  if (action === "calendar-prev-month") {
+    moveCoachCalendar(-1);
+  }
+  if (action === "calendar-next-month") {
+    moveCoachCalendar(1);
+  }
   if (action === "select-event-date") {
+    coachCalendarReference = new Date(`${event.currentTarget.dataset.eventDate}T00:00:00`);
     openEventForm(event.currentTarget.dataset.eventDate);
   }
   if (action === "edit-attendance") {

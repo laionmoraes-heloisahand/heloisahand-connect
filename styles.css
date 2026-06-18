@@ -4573,11 +4573,17 @@ textarea:focus {
 }
 
 .calendar-cell {
+  display: block;
+  width: 100%;
   min-height: 104px;
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
   padding: 14px;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
   background: #fff;
+  cursor: default;
 }
 
 .calendar-cell.clickable {
