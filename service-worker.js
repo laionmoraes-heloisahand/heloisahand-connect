@@ -1,9 +1,9 @@
-const CACHE_NAME = "heloisahand-connect-v66";
+const CACHE_NAME = "heloisahand-connect-v67";
 const APP_SHELL = [
   "/",
   "/index.html",
-  "/styles.css?v=66",
-  "/app.js?v=66",
+  "/styles.css?v=67",
+  "/app.js?v=67",
   "/assets/feature-quiz.svg",
   "/assets/feature-training.svg",
   "/assets/feature-project.svg",

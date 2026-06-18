@@ -425,6 +425,16 @@ function sanitizePushSubscription(subscription) {
   };
 }
 
+function mergeProfilePreservingCurrent(incoming = {}, current = {}) {
+  const merged = { ...(current || {}), ...(incoming || {}) };
+  ["nickname", "phone", "email", "address", "avatar"].forEach((key) => {
+    if ((incoming?.[key] === undefined || incoming?.[key] === "") && current?.[key]) {
+      merged[key] = current[key];
+    }
+  });
+  return merged;
+}
+
 async function sendPush(subscription, payload) {
   if (!pushEnabled || !subscription) return false;
   try {
@@ -436,18 +446,19 @@ async function sendPush(subscription, payload) {
 }
 
 async function notifyAthletes(data, athleteIds, payload) {
-  if (!pushEnabled) return;
+  if (!pushEnabled) return { attempted: 0, sent: 0 };
   const ids = new Set(athleteIds);
-  await Promise.all((data.users || [])
-    .filter((user) => user.role === "athlete" && ids.has(user.id) && user.pushSubscription)
-    .map((user) => sendPush(user.pushSubscription, payload)));
+  const subscriptions = (data.users || [])
+    .filter((user) => user.role === "athlete" && ids.has(user.id) && user.pushSubscription);
+  const results = await Promise.all(subscriptions.map((user) => sendPush(user.pushSubscription, payload)));
+  return { attempted: subscriptions.length, sent: results.filter(Boolean).length };
 }
 
 async function notifyAllAthletes(data, payload) {
-  if (!pushEnabled) return;
-  await Promise.all((data.users || [])
-    .filter((user) => user.role === "athlete" && user.pushSubscription)
-    .map((user) => sendPush(user.pushSubscription, payload)));
+  if (!pushEnabled) return { attempted: 0, sent: 0 };
+  const subscriptions = (data.users || []).filter((user) => user.role === "athlete" && user.pushSubscription);
+  const results = await Promise.all(subscriptions.map((user) => sendPush(user.pushSubscription, payload)));
+  return { attempted: subscriptions.length, sent: results.filter(Boolean).length };
 }
 
 function collectBody(req, limit = maxUploadBytes) {
@@ -587,12 +598,12 @@ async function handleApi(req, res, cleanUrl) {
       const body = await collectBody(req, 1024 * 32);
       const payload = JSON.parse(body.toString("utf8"));
       const data = await readAuthData();
-      await notifyAllAthletes(data, {
+      const result = await notifyAllAthletes(data, {
         title: String(payload.title || "Instituto HeloisaHand").slice(0, 80),
         body: String(payload.body || "Voce tem uma novidade no aplicativo.").slice(0, 180),
         url: String(payload.url || "/#/notificacoes").slice(0, 120),
       });
-      sendJson(res, 200, { ok: true });
+      sendJson(res, 200, { ok: true, ...result });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel enviar a notificacao." });
     }
@@ -613,15 +624,35 @@ async function handleApi(req, res, cleanUrl) {
       const body = await collectBody(req, 1024 * 32);
       const payload = JSON.parse(body.toString("utf8"));
       const data = await readAuthData();
-      await notifyAthletes(data, [String(payload.athleteId || "")], {
+      const result = await notifyAthletes(data, [String(payload.athleteId || "")], {
         title: String(payload.title || "Instituto HeloisaHand").slice(0, 80),
         body: String(payload.body || "Voce tem uma novidade no aplicativo.").slice(0, 180),
         url: String(payload.url || "/#/notificacoes").slice(0, 120),
       });
-      sendJson(res, 200, { ok: true });
+      sendJson(res, 200, { ok: true, ...result });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel enviar a notificacao." });
     }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/push-test") {
+    const session = getSession(req);
+    if (!session || session.role !== "coach") {
+      sendJson(res, 403, { error: "Acesso restrito ao treinador." });
+      return true;
+    }
+    if (!pushEnabled) {
+      sendJson(res, 503, { error: "Notificacoes push ainda nao foram configuradas no servidor." });
+      return true;
+    }
+    const data = await readAuthData();
+    const result = await notifyAllAthletes(data, {
+      title: "Teste HeloisaHand",
+      body: "Se voce recebeu isso, suas notificacoes estao funcionando.",
+      url: "/#/notificacoes",
+    });
+    sendJson(res, 200, { ok: true, ...result });
     return true;
   }
 
@@ -717,7 +748,13 @@ async function handleApi(req, res, cleanUrl) {
             : currentUser?.mustChangePassword === false && !incomingHasPassword
               ? false
               : user.mustChangePassword;
-        return { ...user, password, mustChangePassword };
+        return {
+          ...user,
+          password,
+          mustChangePassword,
+          profile: mergeProfilePreservingCurrent(user.profile, currentUser?.profile),
+          pushSubscription: user.pushSubscription || currentUser?.pushSubscription,
+        };
       });
       await saveAuthData(payload);
       sendJson(res, 200, { ok: true });
