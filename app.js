@@ -2432,8 +2432,16 @@ function normalizeAuthData(data) {
         athlete.badges = [];
         changed = true;
       }
+      if (!Array.isArray(athlete.scoutHistory)) {
+        athlete.scoutHistory = [];
+        changed = true;
+      }
       if (!athlete.profile) {
-        athlete.profile = { phone: "", email: "", address: "", nickname: "", avatar: "" };
+        athlete.profile = { phone: "", email: "", address: "", nickname: "", avatar: "", guardian: { name: "", phone: "", email: "", relation: "" } };
+        changed = true;
+      }
+      if (!athlete.profile.guardian) {
+        athlete.profile.guardian = { name: "", phone: "", email: "", relation: "" };
         changed = true;
       }
     });
@@ -2746,6 +2754,7 @@ function renderAthlete() {
         <button class="notification-bell" type="button" data-action="open-athlete-notifications" aria-label="Abrir notificacoes">??${realNotifications ? `<span>${realNotifications}</span>` : ""}</button>
         <button class="button ghost-dark" data-action="logout">Sair</button>
       </div>
+      ${renderAthleteTodayPanel(user, data)}
       ${renderAthleteJourney(user, data)}
       ${renderAthleteMonthlyRanking(data, user.id)}
       <div class="athlete-dashboard">
@@ -2764,6 +2773,47 @@ function renderAthlete() {
       </div>
     </section>
   `;
+}
+
+function renderAthleteTodayPanel(user, data) {
+  const attendance = getAttendanceRecord(data, user.id);
+  const rate = getAttendanceRate(attendance);
+  const scoutAverage = getAthleteScoutAverage(user);
+  const nextEvent = getNextTeamEvent(data);
+  const unread = getUnreadAthleteNotifications(user).length;
+  const latestHistory = getScoutHistory(user)[0];
+  const historyText = latestHistory?.improved?.length
+    ? `${latestHistory.improved.length} ponto${latestHistory.improved.length > 1 ? "s" : ""} em evolucao`
+    : user.scout?.updatedAt
+      ? "Avaliacao atual registrada"
+      : "Aguardando avaliacao";
+  return `
+    <section class="athlete-today-panel">
+      <article class="today-main-card">
+        <span class="eyebrow">Seu painel de hoje</span>
+        <h3>${nextEvent ? escapeHtml(nextEvent.title) : "Jornada em andamento"}</h3>
+        <p>${nextEvent ? `${formatShortEventDate(nextEvent)} - ${escapeHtml(nextEvent.location || "Local a confirmar")}` : "Quando houver treino, jogo ou aviso importante, ele aparece aqui primeiro."}</p>
+        <div class="today-tags">
+          <span>${rate === null ? "Frequencia sem dados" : `${rate}% de frequencia`}</span>
+          <span>Scout ${scoutAverage || "--"}</span>
+          <span>${unread} notificacao${unread === 1 ? "" : "es"}</span>
+        </div>
+      </article>
+      <article class="today-side-card">
+        <strong>${historyText}</strong>
+        <span>${latestHistory ? `Ultima atualizacao: ${new Date(latestHistory.createdAt).toLocaleDateString("pt-BR")}` : "Seu historico de evolucao vai aparecer conforme novas avaliacoes forem salvas."}</span>
+      </article>
+    </section>
+  `;
+}
+
+function getNextTeamEvent(data = getAuthData()) {
+  const now = new Date();
+  return (data.events || [])
+    .filter((event) => event.date)
+    .map((event) => ({ ...event, sortDate: new Date(`${event.date}T${event.time || "00:00"}`) }))
+    .filter((event) => event.sortDate >= now)
+    .sort((a, b) => a.sortDate - b.sortDate)[0] || null;
 }
 
 function renderAthleteNotificationsPage() {
@@ -2899,6 +2949,7 @@ function renderRankingCarousel(ranking, data, currentAthleteId = "", variant = "
 
 function renderAthleteProfileCard(user) {
   const profile = user.profile || {};
+  const guardian = profile.guardian || {};
   return `
     <div class="athlete-profile-head">
       <div class="profile-avatar">${profile.avatar ? `<img src="${escapeAttribute(profile.avatar)}" alt="Foto de ${escapeAttribute(user.name)}" />` : `<span>${(profile.nickname || user.name || "A").slice(0, 1).toUpperCase()}</span>`}</div>
@@ -2912,6 +2963,11 @@ function renderAthleteProfileCard(user) {
     <p><strong>Posicao:</strong> ${user.position || "A definir"}</p>
     <p><strong>Telefone:</strong> ${escapeHtml(profile.phone || "Nao informado")}</p>
     <p><strong>E-mail:</strong> ${escapeHtml(profile.email || "Nao informado")}</p>
+    <div class="guardian-summary">
+      <strong>Responsavel</strong>
+      <span>${escapeHtml(guardian.name || "Nao informado")}</span>
+      <small>${escapeHtml(guardian.phone || guardian.email || "Adicione os dados do responsavel no perfil.")}</small>
+    </div>
     <button class="button ghost-dark" type="button" data-action="toggle-athlete-profile">Editar meu perfil</button>
     <div id="athleteProfileFormWrap" class="athlete-profile-form-wrap" hidden>
       <form id="athleteProfileForm" class="form-grid">
@@ -2921,6 +2977,15 @@ function renderAthleteProfileCard(user) {
         <label>Telefone<input id="profilePhone" value="${escapeAttribute(profile.phone || "")}" placeholder="(27) 99999-9999" /></label>
         <label>E-mail<input id="profileEmail" type="email" value="${escapeAttribute(profile.email || "")}" placeholder="seuemail@exemplo.com" /></label>
         <label>Endereco<textarea id="profileAddress" placeholder="Rua, numero, bairro e cidade">${escapeHtml(profile.address || "")}</textarea></label>
+        <div class="guardian-fields">
+          <h4>Dados do responsavel</h4>
+          <label>Nome do responsavel<input id="guardianName" value="${escapeAttribute(guardian.name || "")}" placeholder="Nome completo do responsavel" /></label>
+          <div class="form-grid two">
+            <label>Telefone do responsavel<input id="guardianPhone" value="${escapeAttribute(guardian.phone || "")}" placeholder="(27) 99999-9999" /></label>
+            <label>E-mail do responsavel<input id="guardianEmail" type="email" value="${escapeAttribute(guardian.email || "")}" placeholder="email@exemplo.com" /></label>
+          </div>
+          <label>Parentesco<input id="guardianRelation" value="${escapeAttribute(guardian.relation || "")}" placeholder="Mae, pai, avo, tia..." /></label>
+        </div>
         <button class="button" type="submit">Salvar perfil</button>
         <div id="portalMessage" class="portal-message"></div>
       </form>
@@ -3032,8 +3097,50 @@ function renderAthleteScoutSummary(athlete) {
     <p>Media geral da ultima avaliacao.</p>
     ${scout.updatedAt ? `<p><strong>Atualizado:</strong> ${new Date(scout.updatedAt).toLocaleDateString("pt-BR")}</p>` : "<p>Aguardando primeira avaliacao do treinador.</p>"}
     ${hasScores ? renderScoutReadOnly(athlete) : ""}
+    ${renderScoutHistory(athlete)}
     ${scout.notes ? `<p><strong>Pontos positivos:</strong> ${scout.notes}</p>` : ""}
     ${scout.improvements ? `<p><strong>Pontos a melhorar:</strong> ${scout.improvements}</p>` : ""}
+  `;
+}
+
+function getScoutHistory(athlete) {
+  const history = Array.isArray(athlete.scoutHistory) ? athlete.scoutHistory : [];
+  if (history.length) return history.slice().sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).slice(0, 6);
+  const scout = athlete.scout;
+  if (!scout?.updatedAt) return [];
+  return [{
+    id: "current-scout-history",
+    createdAt: scout.updatedAt,
+    average: getAthleteScoutAverage(athlete),
+    improved: [],
+    declined: [],
+    notes: "Registro atual do scout.",
+  }];
+}
+
+function renderScoutHistory(athlete) {
+  const history = getScoutHistory(athlete);
+  if (!history.length) return "";
+  return `
+    <div class="scout-history">
+      <h4>Historico de evolucao</h4>
+      ${history
+        .map((item) => {
+          const improved = Array.isArray(item.improved) ? item.improved : [];
+          const declined = Array.isArray(item.declined) ? item.declined : [];
+          return `
+            <article class="scout-history-item">
+              <div>
+                <strong>${Number(item.average || 0).toFixed(1).replace(".0", "")}</strong>
+                <span>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("pt-BR") : "Data nao informada"}</span>
+              </div>
+              <p>${improved.length ? `Evoluiu em ${improved.slice(0, 3).map((entry) => escapeHtml(entry.label || entry.key)).join(", ")}.` : escapeHtml(item.notes || "Avaliacao registrada.")}</p>
+              ${declined.length ? `<small>Pontos de atencao: ${declined.slice(0, 2).map((entry) => escapeHtml(entry.label || entry.key)).join(", ")}.</small>` : ""}
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
   `;
 }
 
@@ -3085,6 +3192,7 @@ function renderCoachDashboard(activeTab = "athletes") {
     ["ranking", "Ranking"],
     ["quiz", "Quiz"],
     ["store", "Loja"],
+    ["guardians", "Responsaveis"],
     ["media", "Fotos & Videos"],
     ["attendance", "Presencas"],
     ["chat", "Chat"],
@@ -3116,6 +3224,7 @@ function renderCoachTab(tab, data) {
     ranking: () => renderRankingManager(data),
     quiz: () => renderQuizManager(data),
     store: () => renderStoreManager(data),
+    guardians: () => renderGuardiansManager(data),
     media: () => renderMediaManager(data),
     attendance: () => renderAttendanceManager(data),
     chat: () => renderChatManager(data),
@@ -3407,6 +3516,43 @@ function renderAttendanceManager(data) {
           ? athletes.map((athlete) => renderAttendanceRow(athlete, getAttendanceRecord(data, athlete.id))).join("")
           : `<div class="empty-state compact"><strong>Nenhum atleta cadastrado.</strong><p>Cadastre atletas primeiro para controlar a frequencia.</p></div>`
       }
+    </div>
+  `;
+}
+
+function renderGuardiansManager(data) {
+  const athletes = data.users.filter((user) => user.role === "athlete").sort((a, b) => a.name.localeCompare(b.name));
+  return `
+    <div class="coach-panel-head">
+      <h3>Responsaveis</h3>
+      <p class="panel-subtitle">Contatos familiares cadastrados pelos atletas para facilitar comunicados importantes.</p>
+    </div>
+    <div class="guardian-directory">
+      ${athletes
+        .map((athlete) => {
+          const guardian = athlete.profile?.guardian || {};
+          const phone = guardian.phone || "";
+          const text = `Ola, ${guardian.name || "responsavel"}! Aqui e o treinador Laionel do Instituto HeloisaHand.`;
+          return `
+            <article class="guardian-card">
+              <div>
+                <span>${(athlete.profile?.nickname || athlete.name || "A").slice(0, 1).toUpperCase()}</span>
+                <div>
+                  <strong>${escapeHtml(athlete.name)}</strong>
+                  <small>${escapeHtml(athlete.position || "Atleta")}</small>
+                </div>
+              </div>
+              <dl>
+                <dt>Responsavel</dt><dd>${escapeHtml(guardian.name || "Nao informado")}</dd>
+                <dt>Parentesco</dt><dd>${escapeHtml(guardian.relation || "Nao informado")}</dd>
+                <dt>Telefone</dt><dd>${escapeHtml(phone || "Nao informado")}</dd>
+                <dt>E-mail</dt><dd>${escapeHtml(guardian.email || "Nao informado")}</dd>
+              </dl>
+              ${phone ? `<a class="button" href="${whatsappLinkTo(phone, text)}" target="_blank" rel="noreferrer">Chamar responsavel</a>` : `<button class="button ghost-dark" type="button" disabled>Sem telefone</button>`}
+            </article>
+          `;
+        })
+        .join("")}
     </div>
   `;
 }
@@ -4842,14 +4988,33 @@ async function handleScoutSave(event) {
 }
 
 function registerScoutEvolution(athlete, previousScout, nextScout) {
+  athlete.scoutHistory = Array.isArray(athlete.scoutHistory) ? athlete.scoutHistory : [];
+  const labels = Object.fromEntries(getScoutItems(athlete.position).map(([key, label]) => [key, label]));
+  const nextValues = Object.values(nextScout.scores || {}).map(Number).filter((value) => Number.isFinite(value));
+  const nextAverage = nextValues.length ? Math.round((nextValues.reduce((sum, value) => sum + value, 0) / nextValues.length) * 10) / 10 : 0;
+  const improved = previousScout?.scores
+    ? Object.entries(nextScout.scores)
+        .filter(([key, value]) => Number(value) > Number(previousScout.scores[key] || 0))
+        .map(([key, value]) => ({ key, label: labels[key] || key, value, previous: previousScout.scores[key] || 0 }))
+    : [];
+  const declined = previousScout?.scores
+    ? Object.entries(nextScout.scores)
+        .filter(([key, value]) => Number(value) < Number(previousScout.scores[key] || 0))
+        .map(([key, value]) => ({ key, label: labels[key] || key, value, previous: previousScout.scores[key] || 0 }))
+    : [];
+  athlete.scoutHistory.unshift({
+    id: `history-${Date.now()}`,
+    createdAt: nextScout.updatedAt || new Date().toISOString(),
+    average: nextAverage,
+    improved,
+    declined,
+    notes: nextScout.notes || "",
+  });
+  athlete.scoutHistory = athlete.scoutHistory.slice(0, 12);
   if (!previousScout?.scores) return;
   athlete.notifications = Array.isArray(athlete.notifications) ? athlete.notifications : [];
   athlete.badges = Array.isArray(athlete.badges) ? athlete.badges : [];
-  const improved = Object.entries(nextScout.scores)
-    .filter(([key, value]) => Number(value) > Number(previousScout.scores[key] || 0))
-    .map(([key, value]) => ({ key, value, previous: previousScout.scores[key] || 0 }));
   if (!improved.length) return;
-  const labels = Object.fromEntries(getScoutItems(athlete.position).map(([key, label]) => [key, label]));
   athlete.notifications.unshift({
     id: `note-${Date.now()}`,
     type: "evolution",
@@ -4904,6 +5069,12 @@ async function handleAthleteProfileSave(event) {
     phone: document.querySelector("#profilePhone").value.trim(),
     email: document.querySelector("#profileEmail").value.trim(),
     address: document.querySelector("#profileAddress").value.trim(),
+    guardian: {
+      name: document.querySelector("#guardianName")?.value.trim() || "",
+      phone: document.querySelector("#guardianPhone")?.value.trim() || "",
+      email: document.querySelector("#guardianEmail")?.value.trim() || "",
+      relation: document.querySelector("#guardianRelation")?.value.trim() || "",
+    },
   };
   try {
     const response = await fetch("/api/athlete-profile", {

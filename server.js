@@ -891,6 +891,13 @@ async function handleApi(req, res, cleanUrl) {
         phone: String(payload.phone || "").trim(),
         email: String(payload.email || "").trim(),
         address: String(payload.address || "").trim(),
+        guardian: {
+          ...((user.profile || {}).guardian || {}),
+          name: String(payload.guardian?.name || "").trim(),
+          phone: String(payload.guardian?.phone || "").trim(),
+          email: String(payload.guardian?.email || "").trim(),
+          relation: String(payload.guardian?.relation || "").trim(),
+        },
       };
       await saveAuthData(data);
       sendJson(res, 200, { data: dataForAthlete(data, user.id) });
