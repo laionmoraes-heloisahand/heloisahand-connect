@@ -2523,6 +2523,23 @@ textarea:focus {
   font-size: 18px;
 }
 
+.athlete-badge.destaque {
+  background: linear-gradient(135deg, #fff4c5, #ffe17a);
+}
+
+.athlete-badge.companheiro {
+  color: #07301d;
+  background: linear-gradient(135deg, #dcf7e8, #b9edd1);
+}
+
+.athlete-badge[class*="ranking"] {
+  color: #fff;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.38), transparent 28%),
+    linear-gradient(135deg, #0c2b1c, #159154);
+  box-shadow: 0 12px 28px rgba(9, 32, 24, 0.14);
+}
+
 .ghost-dark:hover {
   color: #fff;
 }
@@ -3054,6 +3071,80 @@ textarea:focus {
 .quiz-status-card span {
   color: var(--muted);
   font-weight: 800;
+}
+
+.quiz-achievement-track {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.55fr) minmax(0, 1.45fr);
+  gap: 18px;
+  max-width: 1080px;
+  margin: 0 auto 24px;
+  border: 1px solid rgba(31, 138, 76, 0.16);
+  border-radius: 26px;
+  padding: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 197, 26, 0.18), transparent 210px),
+    #fff;
+  box-shadow: 0 18px 46px rgba(9, 32, 24, 0.08);
+}
+
+.quiz-achievement-track h3 {
+  margin: 12px 0 8px;
+}
+
+.quiz-achievement-track p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.quiz-medal-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quiz-medal-grid article {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 13px;
+  background: #f6faf7;
+  opacity: 0.58;
+}
+
+.quiz-medal-grid article.earned {
+  opacity: 1;
+  border-color: rgba(255, 197, 26, 0.58);
+  background:
+    radial-gradient(circle at top right, rgba(255, 197, 26, 0.28), transparent 76px),
+    #fff;
+  box-shadow: 0 12px 26px rgba(9, 32, 24, 0.08);
+}
+
+.quiz-medal-grid strong {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  color: #102016;
+  background: var(--accent);
+  font-family: Montserrat, sans-serif;
+}
+
+.quiz-medal-grid span {
+  color: var(--text);
+  font-weight: 1000;
+  line-height: 1.2;
+}
+
+.quiz-medal-grid small,
+.quiz-medal-grid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .quiz-choice-grid,
@@ -4031,6 +4122,74 @@ textarea:focus {
   align-items: start;
 }
 
+.media-album-overview {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.media-album-overview article {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(20, 137, 73, 0.14);
+  border-radius: 20px;
+  padding: 16px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 197, 26, 0.18), transparent 74px),
+    #fff;
+  box-shadow: 0 12px 28px rgba(9, 32, 24, 0.06);
+}
+
+.media-album-overview span,
+.media-album-pill {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #102016;
+  background: var(--accent);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 1000;
+}
+
+.media-album-overview strong {
+  font-family: Montserrat, sans-serif;
+}
+
+.media-album-overview small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.media-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+  border-radius: 18px;
+  padding: 8px;
+  background: #edf3ef;
+}
+
+.media-filter-bar button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 14px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.media-filter-bar button.active,
+.media-filter-bar button:hover {
+  color: var(--text);
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(9, 32, 24, 0.1);
+}
+
 .media-preview-card {
   display: flex;
   flex-direction: column;
@@ -4097,7 +4256,7 @@ textarea:focus {
 
 .admin-media-card {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr) auto;
+  grid-template-columns: 120px minmax(0, 1fr) minmax(170px, auto);
   align-items: center;
   min-height: 0;
 }
@@ -4788,8 +4947,29 @@ textarea:focus {
   line-height: 1.45;
 }
 
+.media-admin-actions {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.media-admin-actions label {
+  gap: 5px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.media-admin-actions select {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0 10px;
+  background: #fff;
+  font-weight: 800;
+}
+
 .media-delete {
-  margin: 0 16px 16px;
+  margin: 0;
   min-height: 38px;
   border: 1px solid #ffd1cc;
   border-radius: 12px;
@@ -4798,6 +4978,31 @@ textarea:focus {
   background: #fff7f5;
   font-weight: 900;
   cursor: pointer;
+}
+
+.public-media-albums {
+  display: grid;
+  gap: 26px;
+}
+
+.public-media-album {
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  padding: 24px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(9, 32, 24, 0.06);
+}
+
+.compact-media-card small {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #102016;
+  background: rgba(255, 197, 26, 0.9);
+  font-weight: 1000;
 }
 
 .media-delete:hover {
@@ -5678,6 +5883,7 @@ textarea:focus {
   .support-admin-list,
   .store-grid,
   .store-grid.compact,
+  .media-album-overview,
   .project-values,
   .support-impact-grid,
   .support-donation-grid,
@@ -5686,6 +5892,7 @@ textarea:focus {
   .notification-center-grid,
   .quiz-choice-grid,
   .quiz-leaderboard-grid,
+  .quiz-achievement-track,
   .quiz-manager-grid,
   .coach-chat-layout,
   .athlete-dashboard,
@@ -5694,6 +5901,10 @@ textarea:focus {
   .scout-grid,
   .scout-notes-grid {
     grid-template-columns: 1fr;
+  }
+
+  .quiz-medal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .coach-shell {

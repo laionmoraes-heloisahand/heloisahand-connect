@@ -545,6 +545,11 @@ function getYoutubeVideoId(url) {
   return "";
 }
 
+function normalizeMediaAlbum(value) {
+  const allowed = new Set(["treinos", "competicoes", "bastidores", "conquistas", "social", "outros"]);
+  return allowed.has(value) ? value : "outros";
+}
+
 async function handleApi(req, res, cleanUrl) {
   if (req.method === "GET" && cleanUrl === "/api/health") {
     sendJson(res, 200, {
@@ -1050,6 +1055,7 @@ async function handleApi(req, res, cleanUrl) {
         id: `media-${Date.now()}`,
         type: "photo",
         title: fields.title || "Foto do instituto",
+        album: normalizeMediaAlbum(fields.album || "treinos"),
         src: `/uploads/${safeName}`,
         createdAt: new Date().toISOString(),
       };
@@ -1077,6 +1083,7 @@ async function handleApi(req, res, cleanUrl) {
         id: `media-${Date.now()}`,
         type: "youtube",
         title: payload.title || "Video do instituto",
+        album: normalizeMediaAlbum(payload.album || "competicoes"),
         description: payload.description || "",
         url: payload.url,
         thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
@@ -1087,6 +1094,27 @@ async function handleApi(req, res, cleanUrl) {
       sendJson(res, 201, item);
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel salvar o video." });
+    }
+    return true;
+  }
+
+  if (req.method === "PATCH" && cleanUrl.startsWith("/api/media/")) {
+    try {
+      const id = decodeURIComponent(cleanUrl.replace("/api/media/", ""));
+      const body = await collectBody(req, 1024 * 64);
+      const payload = JSON.parse(body.toString("utf8") || "{}");
+      const media = await readMedia();
+      const item = media.find((entry) => entry.id === id);
+      if (!item) {
+        sendJson(res, 404, { error: "Midia nao encontrada." });
+        return true;
+      }
+      item.album = normalizeMediaAlbum(payload.album || item.album || "outros");
+      item.updatedAt = new Date().toISOString();
+      await saveMedia(media);
+      sendJson(res, 200, item);
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel atualizar a midia." });
     }
     return true;
   }

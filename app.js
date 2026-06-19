@@ -10,6 +10,24 @@ const pixKey = "lalves.unimed@gmail.com";
 const pixPayload = "00020126450014br.gov.bcb.pix0123lalves.unimed@gmail.com5204000053039865802BR5914LAIONEL MORAES6007VITORIA62130509HHCONNECT6304EAA6";
 let quizState = null;
 
+const mediaAlbums = [
+  { id: "treinos", label: "Treinos", badge: "TR", description: "Rotina de treinos, fundamentos e preparacao da equipe." },
+  { id: "competicoes", label: "Competicoes", badge: "CJ", description: "Jogos, campeonatos, amistosos e momentos de quadra." },
+  { id: "bastidores", label: "Bastidores", badge: "BS", description: "Viagens, concentracao, reunioes e vida de grupo." },
+  { id: "conquistas", label: "Conquistas", badge: "CQ", description: "Medalhas, reconhecimentos, ranking e celebracoes." },
+  { id: "social", label: "Acoes sociais", badge: "AS", description: "Campanhas, apoiadores e impacto do instituto." },
+  { id: "outros", label: "Outros", badge: "OT", description: "Materiais importantes que ainda nao entraram em uma pasta especifica." },
+];
+
+const quizMilestones = [
+  { points: 15, title: "Primeiro arremesso", icon: "Q1", text: "Comecou a construir conhecimento no handebol." },
+  { points: 30, title: "Leitor de jogo", icon: "Q2", text: "Ja entende melhor regras, historia e curiosidades." },
+  { points: 45, title: "Mente de armador", icon: "Q3", text: "Mostrou raciocinio e atencao nas perguntas." },
+  { points: 60, title: "Especialista de quadra", icon: "Q4", text: "Esta chegando em um nivel forte de conhecimento." },
+  { points: 80, title: "Craque do conhecimento", icon: "Q5", text: "Virou referencia no quiz HeloisaHand." },
+  { points: 100, title: "Lenda HeloisaHand", icon: "Q6", text: "Concluiu a trilha completa de conhecimento." },
+];
+
 const categories = [
   {
     name: "Mirim",
@@ -1081,6 +1099,7 @@ function renderQuiz() {
         <strong>${stats.score} pontos acumulados</strong>
         <span>${stats.seenCount} perguntas diferentes vistas de ${allHandball}. ${completedAll ? "Medalha especial do time desbloqueada." : "Continue jogando para liberar novos desafios."}</span>
       </div>
+      ${renderQuizAchievements(stats.score)}
       <div class="quiz-choice-grid">
         ${renderQuizChoice("handball", "Quiz do Handebol", "Regras, historia, fundamentos, curiosidades e leitura de jogo. Cada rodada traz ate 10 perguntas.", handballCount, "facil")}
         ${renderQuizChoice("team", "Quiz da Equipe", "Perguntas sobre o Instituto HeloisaHand, nossa rotina, competicoes e historia. Cada rodada traz ate 10 perguntas.", teamCount, "facil")}
@@ -1092,6 +1111,33 @@ function renderQuiz() {
         </div>
       </div>
       ${renderQuizLeaderboard(data)}
+    </section>
+  `;
+}
+
+function renderQuizAchievements(score = 0) {
+  const next = quizMilestones.find((item) => Number(score || 0) < item.points);
+  return `
+    <section class="quiz-achievement-track">
+      <div>
+        <span class="eyebrow">Medalhas do quiz</span>
+        <h3>Trilha do conhecimento</h3>
+        <p>${next ? `Proxima medalha: ${next.title}, faltam ${next.points - Number(score || 0)} ponto${next.points - Number(score || 0) === 1 ? "" : "s"}.` : "Voce desbloqueou todas as medalhas do quiz."}</p>
+      </div>
+      <div class="quiz-medal-grid">
+        ${quizMilestones
+          .map(
+            (item) => `
+              <article class="${Number(score || 0) >= item.points ? "earned" : "locked"}">
+                <strong>${item.icon}</strong>
+                <span>${item.title}</span>
+                <small>${item.points} pts</small>
+                <p>${item.text}</p>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
     </section>
   `;
 }
@@ -3965,12 +4011,31 @@ function renderExternalMessageItem(item) {
 
 function renderMediaManager(data) {
   return `
-    <div class="coach-panel-head"><h3>Fotos & Videos</h3></div>
+    <div class="coach-panel-head">
+      <h3>Central de Midia</h3>
+      <p class="panel-subtitle">Organize fotos e videos por pastas para deixar a galeria publica mais profissional.</p>
+    </div>
+    <div class="media-album-overview">
+      ${mediaAlbums
+        .map(
+          (album) => `
+            <article>
+              <span>${album.badge}</span>
+              <strong>${album.label}</strong>
+              <small>${album.description}</small>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
     <div class="grid two media-manager">
       <div class="portal-card">
         <h3>Novo item de midia</h3>
         <form id="mediaForm" class="form-grid">
           <label>Titulo<input id="mediaTitle" required placeholder="Ex.: Treino da categoria infantil" /></label>
+          <label>Pasta da galeria
+            <select id="mediaAlbum" required>${renderMediaAlbumOptions("treinos")}</select>
+          </label>
           <label>Tipo de midia
             <select id="mediaType" required>
               <option value="photo">Foto do computador</option>
@@ -3991,13 +4056,31 @@ function renderMediaManager(data) {
       </div>
       <div class="portal-card">
         <h3>Midias publicadas</h3>
-        <p class="panel-subtitle">Veja tudo que esta na galeria publica e remova rapidamente fotos ou videos quebrados.</p>
+        <p class="panel-subtitle">Veja tudo que esta na galeria publica, mova para a pasta correta ou remova materiais quebrados.</p>
+        <div class="media-filter-bar" aria-label="Filtrar midias por pasta">
+          <button class="active" type="button" data-action="filter-media-album" data-media-album-filter="all">Todas</button>
+          ${mediaAlbums.map((album) => `<button type="button" data-action="filter-media-album" data-media-album-filter="${album.id}">${album.label}</button>`).join("")}
+        </div>
         <div id="coachMediaList" class="media-list admin-media-list">
           ${renderMediaLoadingState()}
         </div>
       </div>
     </div>
   `;
+}
+
+function getMediaAlbum(item = {}) {
+  const id = item.album || item.category || (item.type === "youtube" ? "competicoes" : "treinos");
+  return mediaAlbums.some((album) => album.id === id) ? id : "outros";
+}
+
+function getMediaAlbumInfo(itemOrId = {}) {
+  const id = typeof itemOrId === "string" ? itemOrId : getMediaAlbum(itemOrId);
+  return mediaAlbums.find((album) => album.id === id) || mediaAlbums[mediaAlbums.length - 1];
+}
+
+function renderMediaAlbumOptions(selected = "treinos") {
+  return mediaAlbums.map((album) => `<option value="${album.id}" ${album.id === selected ? "selected" : ""}>${album.label}</option>`).join("");
 }
 
 function renderMediaLoadingState() {
@@ -4020,18 +4103,29 @@ function renderMediaCard(item, editable = false) {
   const title = escapeHtml(item.title || "Midia do instituto");
   const description = escapeHtml(item.description || (isVideo ? "Video do canal do instituto" : "Foto publicada pelo treinador"));
   const dateLabel = item.createdAt ? new Date(item.createdAt).toLocaleString("pt-BR") : "";
+  const album = getMediaAlbumInfo(item);
   const content = isVideo
     ? `<a class="media-thumb video" href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer" aria-label="Abrir video ${title} no YouTube"><img src="${escapeAttribute(thumb)}" alt="${title}" /><span>Assistir no YouTube</span></a>`
     : `<a class="media-thumb photo" href="${escapeAttribute(thumb)}" target="_blank" rel="noreferrer" aria-label="Ver foto ${title}"><img src="${escapeAttribute(thumb)}" alt="${title}" onerror="this.closest('.media-thumb').classList.add('broken')" /></a>`;
   return `
-    <article class="media-card ${editable ? "admin-media-card" : ""}">
+    <article class="media-card ${editable ? "admin-media-card" : ""}" data-media-album="${album.id}">
       ${content}
       <div class="media-card-body">
         <small>${isVideo ? "Video" : "Foto"}${dateLabel ? ` - ${escapeHtml(dateLabel)}` : ""}</small>
         <strong>${title}</strong>
+        <em class="media-album-pill">${album.badge} ${album.label}</em>
         <span>${description}</span>
       </div>
-      ${editable ? `<button class="media-delete" type="button" data-action="delete-media" data-media-id="${escapeAttribute(item.id)}">Remover</button>` : ""}
+      ${
+        editable
+          ? `<div class="media-admin-actions">
+              <label>Mover para
+                <select class="media-album-select" data-media-id="${escapeAttribute(item.id)}">${renderMediaAlbumOptions(album.id)}</select>
+              </label>
+              <button class="media-delete" type="button" data-action="delete-media" data-media-id="${escapeAttribute(item.id)}">Remover</button>
+            </div>`
+          : ""
+      }
     </article>
   `;
 }
@@ -4041,9 +4135,11 @@ function renderCompactMediaCard(item) {
   const thumb = isVideo ? item.thumbnail : item.src;
   const title = escapeHtml(item.title || "Midia do instituto");
   const href = isVideo ? item.url : item.src;
+  const album = getMediaAlbumInfo(item);
   return `
     <a class="compact-media-card ${isVideo ? "video" : "photo"}" href="${escapeAttribute(href)}" target="_blank" rel="noreferrer">
       <img src="${escapeAttribute(thumb)}" alt="${title}" />
+      <small>${album.label}</small>
       <span>${title}</span>
     </a>
   `;
@@ -4092,14 +4188,34 @@ async function hydrateMediaViews(path) {
 function renderCoachMediaList(media) {
   const target = document.querySelector("#coachMediaList");
   if (!target) return;
-  target.innerHTML = media.length ? media.slice().reverse().map((item) => renderMediaCard(item, true)).join("") : "<p>Nenhuma foto ou video publicado ainda.</p>";
+  target.innerHTML = media.length
+    ? media.slice().reverse().map((item) => renderMediaCard(item, true)).join("")
+    : "<p>Nenhuma foto ou video publicado ainda.</p>";
 }
 
 function renderPublicMediaGallery(media) {
   const target = document.querySelector("#publicMediaGallery");
   if (!target) return;
+  const grouped = groupMediaByAlbum(media);
   target.innerHTML = media.length
-    ? media.slice().reverse().map((item) => renderMediaCard(item, false)).join("")
+    ? `
+        <div class="public-media-albums">
+          ${mediaAlbums
+            .filter((album) => grouped[album.id]?.length)
+            .map(
+              (album) => `
+                <section class="public-media-album">
+                  <div class="media-panel-head">
+                    <span class="icon-pill">${album.badge}</span>
+                    <div><h3>${album.label}</h3><p>${album.description}</p></div>
+                  </div>
+                  <div class="media-gallery">${grouped[album.id].slice().reverse().map((item) => renderMediaCard(item, false)).join("")}</div>
+                </section>
+              `,
+            )
+            .join("")}
+        </div>
+      `
     : `<div class="empty-state"><strong>As fotos e videos serao adicionados em breve!</strong><p>Acompanhe as novidades do instituto.</p></div>`;
 }
 
@@ -4110,6 +4226,15 @@ function renderCompetitionMedia(media) {
   const videoTarget = document.querySelector("#competitionVideos");
   if (photoTarget) photoTarget.innerHTML = photos.length ? photos.map(renderCompactMediaCard).join("") : `<div class="empty-state compact">${photoTarget.dataset.empty}</div>`;
   if (videoTarget) videoTarget.innerHTML = videos.length ? videos.map(renderCompactMediaCard).join("") : `<div class="empty-state compact">${videoTarget.dataset.empty}</div>`;
+}
+
+function groupMediaByAlbum(media) {
+  return media.reduce((groups, item) => {
+    const album = getMediaAlbum(item);
+    groups[album] = groups[album] || [];
+    groups[album].push(item);
+    return groups;
+  }, {});
 }
 
 function escapeHtml(value) {
@@ -4141,6 +4266,7 @@ function bindInteractions() {
   document.querySelectorAll(".attendance-edit-form").forEach((form) => form.addEventListener("submit", handleAttendanceSave));
   document.querySelector("#mediaForm")?.addEventListener("submit", handleMediaSubmit);
   document.querySelector("#mediaType")?.addEventListener("change", handleMediaTypeChange);
+  document.querySelectorAll(".media-album-select").forEach((select) => select.addEventListener("change", handleMediaAlbumMove));
   document.querySelector("#coachMessageForm")?.addEventListener("submit", handleCoachMessage);
   document.querySelector("#athleteMessageForm")?.addEventListener("submit", handleAthleteMessage);
   document.querySelector("#athleteProfileForm")?.addEventListener("submit", handleAthleteProfileSave);
@@ -4886,6 +5012,7 @@ async function savePhotoMedia() {
   }
   const formData = new FormData();
   formData.append("title", document.querySelector("#mediaTitle").value.trim());
+  formData.append("album", document.querySelector("#mediaAlbum")?.value || "treinos");
   formData.append("photo", file);
   try {
     const response = await fetch("/api/media/photo", { method: "POST", body: formData });
@@ -4912,6 +5039,7 @@ async function saveYoutubeMedia() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: document.querySelector("#mediaTitle").value.trim(),
+        album: document.querySelector("#mediaAlbum")?.value || "treinos",
         description: document.querySelector("#mediaDescription").value.trim(),
         url,
       }),
@@ -4923,6 +5051,26 @@ async function saveYoutubeMedia() {
     hydrateMediaViews("/treinador");
   } catch (error) {
     showPortalMessage(error.message, "error");
+  }
+}
+
+async function handleMediaAlbumMove(event) {
+  const select = event.currentTarget;
+  const mediaId = select.dataset.mediaId;
+  select.disabled = true;
+  try {
+    const response = await fetch(`/api/media/${encodeURIComponent(mediaId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ album: select.value }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Nao foi possivel mover a midia.");
+    showToast("Midia movida para a pasta correta.", "ok");
+    hydrateMediaViews("/treinador");
+  } catch (error) {
+    showToast(error.message || "Nao foi possivel mover a midia.", "error");
+    select.disabled = false;
   }
 }
 
@@ -5014,6 +5162,7 @@ function registerScoutEvolution(athlete, previousScout, nextScout) {
   if (!previousScout?.scores) return;
   athlete.notifications = Array.isArray(athlete.notifications) ? athlete.notifications : [];
   athlete.badges = Array.isArray(athlete.badges) ? athlete.badges : [];
+  evaluateEvolutionBadges(athlete, nextScout, { improved, declined, average: nextAverage });
   if (!improved.length) return;
   athlete.notifications.unshift({
     id: `note-${Date.now()}`,
@@ -5030,18 +5179,67 @@ function registerScoutEvolution(athlete, previousScout, nextScout) {
   }
 }
 
-function addAthleteBadge(athlete, type, title, icon) {
+function evaluateEvolutionBadges(athlete, scout, context) {
+  const history = Array.isArray(athlete.scoutHistory) ? athlete.scoutHistory : [];
+  const monthGain = getScoutGainSince(history, 31);
+  const twoWeekGain = getScoutGainSince(history, 14);
+  const twoWeekRecords = history.filter((item) => isWithinDays(item.createdAt, 14));
+  const noLossTwoWeeks = twoWeekRecords.length >= 2 && twoWeekRecords.every((item) => !item.declined?.length);
+  const scores = scout.scores || {};
+  const technicalGain = getScoutGainForKeys(context.improved, ["shooting", "pass", "dribble", "ballControl", "counterAttackPass"]);
+  const defensiveGain = getScoutGainForKeys(context.improved, ["defense", "positioning", "reading", "highDefense", "lowDefense", "reflex", "sevenMeterDefense", "defenseCoverage"]);
+  const medals = [
+    { type: "constancia", title: "Constância", icon: "C", earned: noLossTwoWeeks, text: "Duas semanas mantendo evolução sem perder pontos no scout." },
+    { type: "prodigio", title: "Prodígio", icon: "P", earned: twoWeekGain >= 4, text: "Subiu quatro ou mais pontos em até duas semanas." },
+    { type: "dedicado", title: "Dedicado", icon: "D", earned: monthGain >= 5 && monthGain <= 7, text: "Ganhou entre cinco e sete pontos no mês." },
+    { type: "evolucao-explosiva", title: "Evolução explosiva", icon: "E", earned: monthGain >= 8, text: "Teve salto forte de oito ou mais pontos no mês." },
+    { type: "mao-calibrada", title: "Mão calibrada", icon: "M", earned: technicalGain >= 2 || Number(scores.shooting || 0) >= 8, text: "Evoluiu em arremesso, passe ou controle de bola." },
+    { type: "muralha", title: "Muralha defensiva", icon: "DF", earned: defensiveGain >= 2 || Number(scores.defense || 0) >= 8, text: "Mostrou evolução defensiva importante." },
+    { type: "espirito-equipe", title: "Espírito de equipe", icon: "EQ", earned: Number(scores.commitment || 0) >= 8 && Number(scores.communication || 0) >= 8, text: "Compromisso e comunicação em alta com a equipe." },
+    { type: "mente-forte", title: "Mente forte", icon: "MF", earned: Number(scores.emotionalControl || 0) >= 8 && Number(scores.discipline || 0) >= 9 && !(context.declined || []).length, text: "Controle emocional e disciplina sustentando a evolução." },
+    { type: "atleta-completo", title: "Atleta completo", icon: "AC", earned: Number(context.average || 0) >= 8 && monthGain >= 4, text: "Média alta no scout com evolução real no mês." },
+    { type: "referencia", title: "Referência HeloisaHand", icon: "RH", earned: Number(context.average || 0) >= 9 && monthGain >= 8, text: "Conquista rara para atletas que viram referência técnica e comportamental." },
+  ];
+  medals.forEach((medal) => {
+    if (medal.earned) addAthleteBadge(athlete, medal.type, medal.title, medal.icon, medal.text);
+  });
+}
+
+function getScoutGainSince(history, days) {
+  return history
+    .filter((item) => isWithinDays(item.createdAt, days))
+    .flatMap((item) => item.improved || [])
+    .reduce((sum, item) => sum + Math.max(0, Number(item.value || 0) - Number(item.previous || 0)), 0);
+}
+
+function getScoutGainForKeys(improved = [], keys = []) {
+  const wanted = new Set(keys);
+  return improved
+    .filter((item) => wanted.has(item.key))
+    .reduce((sum, item) => sum + Math.max(0, Number(item.value || 0) - Number(item.previous || 0)), 0);
+}
+
+function isWithinDays(dateValue, days) {
+  if (!dateValue) return false;
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return false;
+  return Date.now() - date.getTime() <= days * 24 * 60 * 60 * 1000;
+}
+
+function addAthleteBadge(athlete, type, title, icon, text = "Seu empenho foi reconhecido na jornada do atleta.") {
+  if (type === "destaque" || type === "companheiro") return false;
   const monthKey = new Date().toISOString().slice(0, 7);
   const exists = athlete.badges.some((badge) => badge.type === type && badge.monthKey === monthKey);
-  if (exists) return;
-  athlete.badges.unshift({ id: `badge-${type}-${Date.now()}`, type, title, icon, monthKey, createdAt: new Date().toISOString() });
+  if (exists) return false;
+  athlete.badges.unshift({ id: `badge-${type}-${Date.now()}`, type, title, icon, text, monthKey, createdAt: new Date().toISOString() });
   athlete.notifications.unshift({
     id: `note-badge-${Date.now()}`,
     type: "badge",
     title: `Nova medalha: ${title}`,
-    text: "Seu empenho foi reconhecido na jornada do atleta.",
+    text,
     createdAt: new Date().toISOString(),
   });
+  return true;
 }
 
 async function handleAthleteMessage(event) {
@@ -5351,6 +5549,7 @@ async function handleRankingSave(event) {
   const existing = data.rankings.find((item) => item.monthKey === monthKey);
   if (existing) Object.assign(existing, ranking);
   else data.rankings.unshift(ranking);
+  awardRankingBadges(data, ranking);
   try {
     await saveAuthDataConfirmed(data);
     app.innerHTML = renderCoachDashboard("ranking");
@@ -5364,6 +5563,22 @@ async function handleRankingSave(event) {
     }
     showToast(error.message, "error");
   }
+}
+
+function awardRankingBadges(data, ranking) {
+  const titles = ["O topo é meu lugar", "Trabalho duro vale a pena", "Incansável perseguidor", "Resiliente", "Desistir Jamais"];
+  const icons = ["1", "2", "3", "4", "5"];
+  (ranking.items || []).forEach((item, index) => {
+    const athlete = (data.users || []).find((user) => user.id === item.athleteId);
+    if (!athlete) return;
+    athlete.notifications = Array.isArray(athlete.notifications) ? athlete.notifications : [];
+    athlete.badges = Array.isArray(athlete.badges) ? athlete.badges : [];
+    const created = addAthleteBadge(athlete, `ranking-${index + 1}`, titles[index] || "Destaque do ranking", icons[index] || "R");
+    const latest = athlete.notifications[0];
+    if (created && latest?.type === "badge") {
+      latest.text = `Voce entrou no ranking ${ranking.title || "do mes"}: ${item.reason || "Destaque do mes"}`;
+    }
+  });
 }
 
 async function handleQuizQuestionSave(event) {
@@ -5684,6 +5899,15 @@ async function handleAction(event) {
   }
   if (action === "reload-media") {
     hydrateMediaViews(location.hash.replace("#", "") || "/treinador");
+  }
+  if (action === "filter-media-album") {
+    const filter = event.currentTarget.dataset.mediaAlbumFilter || "all";
+    document.querySelectorAll("[data-media-album-filter]").forEach((button) => {
+      button.classList.toggle("active", button.dataset.mediaAlbumFilter === filter);
+    });
+    document.querySelectorAll("#coachMediaList .media-card").forEach((card) => {
+      card.hidden = filter !== "all" && card.dataset.mediaAlbum !== filter;
+    });
   }
   if (action === "delete-event") {
     const data = getAuthData();
