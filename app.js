@@ -302,16 +302,16 @@ quizQuestionSeeds.push(
   ["dificil", "historia", "O handebol de campo antigo tinha mais jogadores que o atual?", "Sim", "Nao, sempre sete", "Nunca existiu", "Era individual", "Versoes antigas eram praticadas em campo com mais atletas."],
   ["dificil", "tatico", "O que e superioridade numerica?", "Ter mais atletas atacando que defendendo", "Jogar sem bola", "Perder jogador punido", "Ter menos opcoes", "Superioridade numerica gera vantagem ofensiva momentanea."],
   ["dificil", "regra", "Quando pode ocorrer tiro de 7 metros?", "Ao impedir chance clara de gol ilegalmente", "Ao errar passe simples", "Ao pedir agua", "Ao trocar de camisa", "A penalidade pune falta que tira oportunidade clara de gol."],
-  ["desafio40", "desafio", "Desafio 40: qual e a melhor resposta contra defesa muito fechada?", "Circular bola e atacar espacos", "Arremessar sem olhar", "Parar o ataque", "Fugir da quadra", "Contra defesa fechada, paciencia, circulacao e ataque aos espacos ajudam."],
-  ["desafio40", "desafio", "Desafio 40: o que define um bom lider em quadra?", "Comunicar e ajudar a equipe", "Gritar sem orientar", "Reclamar sempre", "Jogar sozinho", "Lideranca aparece em atitude, comunicacao e exemplo."],
-  ["desafio40", "desafio", "Desafio 40: qual acao melhora contra-ataque?", "Passe rapido apos recuperar a bola", "Andar devagar", "Esperar defesa voltar", "Olhar para baixo", "Transicao rapida pega defesa desorganizada."],
-  ["desafio40", "desafio", "Desafio 40: por que estudar jogo importa?", "Ajuda a decidir melhor", "Nao muda nada", "Serve so para teoria", "Atrasa treino", "Quem entende o jogo decide melhor sob pressao."],
-  ["desafio40", "desafio", "Desafio 40: qual fundamento conecta defesa e ataque?", "Transicao", "Uniforme", "Foto", "Arquibancada", "Transicao transforma recuperacao de bola em ataque rapido."],
-  ["desafio80", "elite", "Desafio 80: qual leitura ajuda o armador antes do passe?", "Posicao da defesa e dos companheiros", "Cor da parede", "Barulho da torcida apenas", "Numero do banco", "Armador precisa ler defesa e movimentacao ofensiva."],
-  ["desafio80", "elite", "Desafio 80: qual escolha e melhor sob pressao?", "Passe seguro ou arremesso claro", "Forcar sempre", "Fechar os olhos", "Parar sem motivo", "Boa decisao considera risco, espaco e companheiros."],
-  ["desafio80", "elite", "Desafio 80: em defesa, o que evita buracos?", "Cobertura e comunicacao", "Cada um por si", "Silencio total", "Ficar parado", "Cobertura fecha espacos quando alguem sai na marcacao."],
-  ["desafio80", "elite", "Desafio 80: qual detalhe ajuda finalizacao de ponta?", "Angulo, impulsao e escolha do canto", "Chutar de qualquer jeito", "Nao saltar", "Virar de costas", "Ponta precisa escolher canto e usar angulo no salto."],
-  ["desafio80", "elite", "Desafio 80: o que diferencia atleta completo?", "Tecnica, tatica, disciplina e atitude", "So forca", "So altura", "So velocidade", "Atleta completo combina varias dimensoes do jogo."],
+  ["desafio40", "desafio", "Missão tática: qual é a melhor resposta contra defesa muito fechada?", "Circular bola e atacar espaços", "Arremessar sem olhar", "Parar o ataque", "Fugir da quadra", "Contra defesa fechada, paciência, circulação e ataque aos espaços ajudam."],
+  ["desafio40", "desafio", "Missão tática: o que define um bom líder em quadra?", "Comunicar e ajudar a equipe", "Gritar sem orientar", "Reclamar sempre", "Jogar sozinho", "Liderança aparece em atitude, comunicação e exemplo."],
+  ["desafio40", "desafio", "Missão tática: qual ação melhora o contra-ataque?", "Passe rápido após recuperar a bola", "Andar devagar", "Esperar defesa voltar", "Olhar para baixo", "Transição rápida pega defesa desorganizada."],
+  ["desafio40", "desafio", "Missão tática: por que estudar jogo importa?", "Ajuda a decidir melhor", "Não muda nada", "Serve só para teoria", "Atrasa treino", "Quem entende o jogo decide melhor sob pressão."],
+  ["desafio40", "desafio", "Missão tática: qual fundamento conecta defesa e ataque?", "Transição", "Uniforme", "Foto", "Arquibancada", "Transição transforma recuperação de bola em ataque rápido."],
+  ["desafio80", "elite", "Desafio elite: qual leitura ajuda o armador antes do passe?", "Posição da defesa e dos companheiros", "Cor da parede", "Barulho da torcida apenas", "Número do banco", "Armador precisa ler defesa e movimentação ofensiva."],
+  ["desafio80", "elite", "Desafio elite: qual escolha é melhor sob pressão?", "Passe seguro ou arremesso claro", "Forçar sempre", "Fechar os olhos", "Parar sem motivo", "Boa decisão considera risco, espaço e companheiros."],
+  ["desafio80", "elite", "Desafio elite: em defesa, o que evita buracos?", "Cobertura e comunicação", "Cada um por si", "Silêncio total", "Ficar parado", "Cobertura fecha espaços quando alguém sai na marcação."],
+  ["desafio80", "elite", "Desafio elite: qual detalhe ajuda finalização de ponta?", "Ângulo, impulsão e escolha do canto", "Chutar de qualquer jeito", "Não saltar", "Virar de costas", "Ponta precisa escolher canto e usar ângulo no salto."],
+  ["desafio80", "elite", "Desafio elite: o que diferencia atleta completo?", "Técnica, tática, disciplina e atitude", "Só força", "Só altura", "Só velocidade", "Atleta completo combina várias dimensões do jogo."],
 ].forEach(([level, category, question, correct, wrong1, wrong2, wrong3, explanation], index) => {
   quizQuestionSeeds.push({
     id: `quiz-handball-extra-${level}-${index}`,
@@ -370,6 +370,55 @@ Array.from({ length: 24 }, (_, index) => {
     active: true,
   });
 });
+
+const QUIZ_EXPERIENCE_VERSION = "competitive-quiz-v1";
+
+const competitiveQuizQuestionSeeds = [
+  { id: "quiz-competitive-facil-1", scope: "handball", level: "facil", category: "regra", question: "Quantos atletas de cada equipe ficam em quadra durante uma partida de handebol?", options: ["6 atletas", "7 atletas", "8 atletas", "5 atletas"], answerIndex: 1, explanation: "Cada equipe joga com 7 atletas em quadra: 6 jogadores de linha e 1 goleiro.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-facil-2", scope: "handball", level: "facil", category: "regra", question: "Depois de receber a bola parado, quantos passos o jogador pode dar sem driblar?", options: ["2 passos", "4 passos", "3 passos", "1 passo"], answerIndex: 2, explanation: "A regra permite ate 3 passos com a bola antes de passar, arremessar ou driblar.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-facil-3", scope: "handball", level: "facil", category: "fundamento", question: "Qual fundamento ajuda o atleta a avancar com a bola sem cometer excesso de passos?", options: ["Passe por cima", "Drible", "Bloqueio", "Tiro lateral"], answerIndex: 1, explanation: "O drible permite progredir com a bola quicando no chao.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-facil-4", scope: "handball", level: "facil", category: "posicao", question: "Qual posicao atua mais proxima da defesa adversaria, entre os defensores?", options: ["Pivo", "Ponta", "Goleiro", "Armador central"], answerIndex: 0, explanation: "O pivo joga infiltrado, buscando receber perto da area e abrir espacos.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-facil-5", scope: "handball", level: "facil", category: "regra", question: "Quem pode pisar normalmente dentro da area de 6 metros para defender?", options: ["Ponta", "Armador", "Pivo", "Goleiro"], answerIndex: 3, explanation: "A area do gol e espaco do goleiro; jogadores de linha nao podem invadi-la para obter vantagem.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-facil-6", scope: "handball", level: "facil", category: "jogo", question: "O que a equipe precisa fazer para marcar ponto no handebol?", options: ["Acertar a trave", "Fazer a bola entrar no gol", "Manter a posse por 1 minuto", "Cruzar a linha central"], answerIndex: 1, explanation: "O gol acontece quando a bola ultrapassa completamente a linha do gol.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-facil-7", scope: "handball", level: "facil", category: "posicao", question: "Qual posicao costuma finalizar de angulos mais fechados nas laterais da quadra?", options: ["Armador central", "Ponta", "Pivo", "Goleiro"], answerIndex: 1, explanation: "Os pontas jogam abertos e precisam aproveitar pouco angulo para finalizar.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-facil-8", scope: "handball", level: "facil", category: "historia", question: "O handebol e uma modalidade reconhecida em qual grande evento esportivo mundial?", options: ["Jogos Olimpicos", "Copa do Mundo FIFA", "Tour de France", "Formula 1"], answerIndex: 0, explanation: "O handebol e modalidade olimpica e tem selecoes muito tradicionais.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-facil-9", scope: "handball", level: "facil", category: "fundamento", question: "Qual atitude mais ajuda uma equipe a atacar bem?", options: ["Passar e se movimentar", "Ficar parado esperando", "Arremessar sem olhar", "Evitar receber a bola"], answerIndex: 0, explanation: "Passe, movimentacao e leitura coletiva criam espacos na defesa.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-facil-10", scope: "handball", level: "facil", category: "curiosidade", question: "Em qual continente o handebol moderno ganhou muita forca e tradicao?", options: ["America do Sul", "Europa", "Oceania", "America Central"], answerIndex: 1, explanation: "A Europa tem ligas, clubes e selecoes historicamente muito fortes no handebol.", active: true, quality: "competitive" },
+
+  { id: "quiz-competitive-medio-1", scope: "handball", level: "medio", category: "regra", question: "O que caracteriza o drible duplo no handebol?", options: ["Driblar, segurar a bola e voltar a driblar", "Passar a bola de primeira", "Receber e arremessar em suspensao", "Quicar a bola antes de cruzar o meio"], answerIndex: 0, explanation: "Depois de controlar a bola, o atleta nao pode iniciar outro drible.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-medio-2", scope: "handball", level: "medio", category: "regra", question: "Para que serve principalmente a linha tracejada dos 9 metros?", options: ["Marcar a area do goleiro", "Indicar cobrancas de tiro livre", "Separar banco de reservas", "Definir substituicao do goleiro"], answerIndex: 1, explanation: "A linha de 9 metros e referencia para tiros livres e organizacao ofensiva.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-medio-3", scope: "handball", level: "medio", category: "regra", question: "O que acontece em uma exclusao temporaria?", options: ["O atleta fica 2 minutos fora", "A equipe ganha um tiro de meta", "O jogo termina automaticamente", "O atleta troca obrigatoriamente de posicao"], answerIndex: 0, explanation: "A exclusao temporaria dura 2 minutos e deixa a equipe com um jogador a menos.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-medio-4", scope: "handball", level: "medio", category: "tatico", question: "Qual e uma funcao importante do armador central?", options: ["Organizar jogadas e acelerar decisoes", "Ficar fixo dentro da area", "Cobrar apenas laterais", "Defender somente o gol"], answerIndex: 0, explanation: "O armador central costuma ler o jogo, chamar jogadas e distribuir passes.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-medio-5", scope: "handball", level: "medio", category: "historia", question: "Qual selecao europeia e uma potencia muito recente no handebol masculino?", options: ["Dinamarca", "Portugal", "Belgica", "Irlanda"], answerIndex: 0, explanation: "A Dinamarca e uma das principais referencias recentes do handebol mundial.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-medio-6", scope: "handball", level: "medio", category: "curiosidade", question: "Como se chama a versao do handebol jogada na areia?", options: ["Street handball", "Beach handball", "Handebol reduzido", "Handebol de campo"], answerIndex: 1, explanation: "Beach handball e a versao de areia, com dinamica e pontuacao proprias.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-medio-7", scope: "handball", level: "medio", category: "defesa", question: "Qual acao defensiva tenta dificultar o arremesso sem agarrar o atacante?", options: ["Bloqueio", "Drible", "Passe longo", "Tiro de saida"], answerIndex: 0, explanation: "O bloqueio usa posicionamento e bracos para fechar angulos de arremesso.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-medio-8", scope: "handball", level: "medio", category: "tatico", question: "O que e contra-ataque?", options: ["Ataque rapido apos recuperar a bola", "Defesa parada na linha de 6 metros", "Troca de bola com o arbitro", "Pedido de tempo tecnico"], answerIndex: 0, explanation: "Contra-ataque e a transicao rapida para pegar a defesa desorganizada.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-medio-9", scope: "handball", level: "medio", category: "regra", question: "Quando pode ser marcado um tiro de 7 metros?", options: ["Quando uma chance clara de gol e impedida ilegalmente", "Sempre que a bola sai pela lateral", "Quando o goleiro defende com o pe", "Quando a equipe pede substituicao"], answerIndex: 0, explanation: "O tiro de 7 metros pune uma falta que impede chance clara de gol.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-medio-10", scope: "handball", level: "medio", category: "historia", question: "Qual selecao brasileira ganhou grande destaque historico no handebol mundial?", options: ["Selecao feminina", "Selecao de beisebol", "Selecao de futebol americano", "Selecao de hoquei no gelo"], answerIndex: 0, explanation: "A selecao feminina brasileira ja colocou o pais em grande evidencia no handebol.", active: true, quality: "competitive" },
+
+  { id: "quiz-competitive-dificil-1", scope: "handball", level: "dificil", category: "tatico", question: "Qual caracteristica diferencia a defesa 5:1 da defesa 6:0?", options: ["Um defensor atua mais avancado pressionando a primeira linha", "Todos ficam dentro da area do goleiro", "A equipe joga sem goleiro", "Dois jogadores ficam obrigatoriamente no ataque"], answerIndex: 0, explanation: "No 5:1, um defensor fica mais alto para pressionar armadores e linhas de passe.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-dificil-2", scope: "handball", level: "dificil", category: "tatico", question: "O que e superioridade numerica no ataque?", options: ["Atacar com mais jogadores do que a defesa tem naquele setor", "Ter mais torcedores no ginasio", "Fazer substituicao sem avisar", "Finalizar sempre da ponta"], answerIndex: 0, explanation: "Superioridade numerica cria vantagem para passe, infiltracao ou arremesso.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-dificil-3", scope: "handball", level: "dificil", category: "regra", question: "O que o arbitro sinaliza quando levanta o braco por jogo passivo?", options: ["Que o ataque precisa buscar finalizacao", "Que houve gol confirmado", "Que o goleiro deve sair", "Que a partida acabou"], answerIndex: 0, explanation: "O gesto alerta que a equipe nao pode seguir atacando sem intencao clara de finalizar.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-dificil-4", scope: "handball", level: "dificil", category: "leitura", question: "Qual decisao costuma ser melhor contra uma defesa muito fechada no centro?", options: ["Circular a bola e atacar espacos laterais", "Forcar arremesso sem angulo", "Parar a movimentacao", "Concentrar todos no pivo"], answerIndex: 0, explanation: "Circular a bola e variar ataque ajuda a deslocar a defesa e abrir espacos.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-dificil-5", scope: "handball", level: "dificil", category: "fundamento", question: "Por que a movimentacao sem bola e tao importante?", options: ["Cria linha de passe e desorganiza a marcacao", "Serve para descansar durante o ataque", "Evita que o atleta participe", "Impede contra-ataque da propria equipe"], answerIndex: 0, explanation: "Quem se movimenta sem bola ajuda a equipe mesmo antes de receber o passe.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-dificil-6", scope: "handball", level: "dificil", category: "posicao", question: "Na finalizacao de ponta, qual detalhe costuma aumentar a chance de gol?", options: ["Saltar bem, ganhar angulo e escolher o canto", "Arremessar sempre no meio do gol", "Evitar impulsao", "Esperar a defesa fechar"], answerIndex: 0, explanation: "Ponta precisa usar impulsao, angulo e leitura do goleiro.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-dificil-7", scope: "handball", level: "dificil", category: "historia", question: "Qual entidade internacional organiza competicoes mundiais de handebol?", options: ["IHF", "FIBA", "FIFA", "ATP"], answerIndex: 0, explanation: "A IHF e a Federacao Internacional de Handebol.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-dificil-8", scope: "handball", level: "dificil", category: "defesa", question: "O que ajuda a evitar buracos quando um defensor sai para pressionar?", options: ["Cobertura e comunicacao dos companheiros", "Todos olharem apenas a bola", "Ninguem trocar marcacao", "O goleiro avancar sempre ate o meio"], answerIndex: 0, explanation: "Cobertura e comunicacao mantem a defesa compacta quando alguem pressiona.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-dificil-9", scope: "handball", level: "dificil", category: "leitura", question: "O que melhor define uma boa tomada de decisao no ataque?", options: ["Escolher entre passe, finta ou arremesso conforme espaco e defesa", "Arremessar toda vez que receber", "Fintar sem observar companheiros", "Esperar o juiz mandar jogar"], answerIndex: 0, explanation: "Decidir bem e ler espaco, marcador, goleiro e companheiros em poucos segundos.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-dificil-10", scope: "handball", level: "dificil", category: "curiosidade", question: "Por que o handebol exige condicionamento fisico e mental ao mesmo tempo?", options: ["Porque alterna contato, velocidade, leitura e decisao rapida", "Porque nao ha pausas nem substituicoes", "Porque todos jogam na mesma posicao", "Porque a bola nunca sai da quadra"], answerIndex: 0, explanation: "O atleta precisa correr, resistir ao contato e decidir rapido sob pressao.", active: true, quality: "competitive" },
+
+  { id: "quiz-competitive-desafio40-1", scope: "handball", level: "desafio40", category: "desafio", question: "Contra uma defesa 5:1 pressionando seu armador, qual resposta coletiva tende a funcionar melhor?", options: ["Aproximacoes, passes curtos e ataque ao espaco deixado", "Parar a bola e esperar", "Forcar arremesso do meio sem preparacao", "Mandar todos ficarem na linha de 6 metros"], answerIndex: 0, explanation: "Pressao alta abre espacos se a equipe aproxima, da apoio e ataca o setor certo.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-desafio40-2", scope: "handball", level: "desafio40", category: "desafio", question: "Qual atitude mostra lideranca positiva em quadra?", options: ["Orientar, incentivar e assumir responsabilidade", "Gritar culpando colegas", "Parar de correr apos erro", "Jogar sozinho para aparecer"], answerIndex: 0, explanation: "Lideranca aparece em comunicacao, exemplo e cuidado com o grupo.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-desafio40-3", scope: "handball", level: "desafio40", category: "desafio", question: "Em uma transicao ofensiva, qual primeira leitura e mais importante?", options: ["Ver se ha vantagem numerica ou companheiro livre", "Procurar a torcida", "Esperar todos adversarios voltarem", "Quicar sem olhar para frente"], answerIndex: 0, explanation: "Contra-ataque bom nasce da leitura rapida de vantagem e passe seguro.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-desafio40-4", scope: "handball", level: "desafio40", category: "desafio", question: "Se o goleiro adversario fecha muito o primeiro pau na ponta, qual ajuste faz sentido?", options: ["Variar canto, altura e tempo de arremesso", "Chutar sempre no mesmo lugar", "Evitar saltar", "Arremessar antes de olhar o goleiro"], answerIndex: 0, explanation: "Variar finalizacao impede que o goleiro antecipe sempre a mesma escolha.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-desafio40-5", scope: "handball", level: "desafio40", category: "desafio", question: "Qual comportamento ajuda mais depois de cometer um erro em jogo?", options: ["Recompor rapido e aprender na proxima acao", "Reclamar ate parar o time", "Desistir da jogada", "Culpar o colega mais proximo"], answerIndex: 0, explanation: "Erro faz parte do jogo; recompor rapido protege a equipe e mostra maturidade.", active: true, quality: "competitive" },
+
+  { id: "quiz-competitive-desafio80-1", scope: "handball", level: "desafio80", category: "elite", question: "Em superioridade numerica, qual principio aumenta a chance de finalizacao clara?", options: ["Fixar um defensor antes de passar", "Passar sem atacar ninguem", "Afastar todos da bola", "Arremessar da pior posicao"], answerIndex: 0, explanation: "Fixar defensor obriga a defesa a escolher e abre companheiro livre.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-desafio80-2", scope: "handball", level: "desafio80", category: "elite", question: "Qual leitura avancada ajuda o pivo a receber melhor?", options: ["Sentir o lado fraco do defensor e ganhar posicao antes do passe", "Ficar atras do marcador sem se mover", "Pedir bola longe da area", "Virar de costas para a jogada"], answerIndex: 0, explanation: "Pivo eficiente antecipa contato, ganha linha de passe e protege a bola.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-desafio80-3", scope: "handball", level: "desafio80", category: "elite", question: "Quando a defesa troca marcacao em cruzamento, o que o ataque deve procurar?", options: ["O intervalo criado pela troca", "A lateral mais distante sem bola", "O banco de reservas", "Parar o cruzamento imediatamente"], answerIndex: 0, explanation: "Trocas podem abrir intervalos se o ataque ler o tempo certo.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-desafio80-4", scope: "handball", level: "desafio80", category: "elite", question: "Qual detalhe mostra maturidade defensiva contra um bom arremessador?", options: ["Controlar distancia, braço de arremesso e cobertura", "Saltar sempre sem contato", "Dar espaco para ele escolher", "Marcar olhando apenas a bola"], answerIndex: 0, explanation: "Boa defesa controla distancia, direciona o atacante e conta com cobertura.", active: true, quality: "competitive" },
+  { id: "quiz-competitive-desafio80-5", scope: "handball", level: "desafio80", category: "elite", question: "Em fim de jogo equilibrado, qual escolha costuma ser mais inteligente?", options: ["Valorizar posse, buscar arremesso claro e evitar erro forcado", "Finalizar de qualquer lugar rapidamente", "Ignorar placar e tempo", "Parar de atacar para esperar falta"], answerIndex: 0, explanation: "Momentos decisivos pedem controle emocional, leitura do tempo e boa selecao de arremesso.", active: true, quality: "competitive" },
+];
 
 function lineScout(scores, notes, improvements) {
   return {
@@ -1062,15 +1111,42 @@ function renderPublicMonthlyRanking(data = getAuthData()) {
   `;
 }
 
+function getQuizSeedQuestions() {
+  return [...quizQuestionSeeds, ...competitiveQuizQuestionSeeds];
+}
+
+function shuffleQuizItems(items) {
+  return [...items].sort(() => Math.random() - 0.5);
+}
+
+function prepareQuizQuestionForSession(question) {
+  const originalAnswerIndex = Number(question.answerIndex || 0);
+  const options = (question.options || []).map((text, index) => ({ text, index }));
+  const shuffledOptions = shuffleQuizItems(options);
+  const answerIndex = Math.max(0, shuffledOptions.findIndex((item) => item.index === originalAnswerIndex));
+  return {
+    ...question,
+    options: shuffledOptions.map((item) => item.text),
+    answerIndex,
+  };
+}
+
 function getQuizQuestions(data = getAuthData(), scope = "", level = "") {
   const byId = new Map();
-  quizQuestionSeeds.forEach((item) => byId.set(item.id, item));
+  const seedQuestions = getQuizSeedQuestions();
+  const seedIds = new Set(seedQuestions.map((item) => item.id));
+  seedQuestions.forEach((item) => byId.set(item.id, item));
   (Array.isArray(data.quizQuestions) ? data.quizQuestions : []).forEach((item) => byId.set(item.id, item));
-  const questions = [...byId.values()];
-  return questions
+  const questions = [...byId.values()]
     .filter((item) => item.active !== false)
     .filter((item) => !scope || item.scope === scope)
     .filter((item) => !level || item.level === level);
+  if (scope === "handball") {
+    const competitive = questions.filter((item) => item.quality === "competitive");
+    const custom = questions.filter((item) => !seedIds.has(item.id));
+    if (competitive.length >= Math.min(10, questions.length)) return [...competitive, ...custom];
+  }
+  return questions;
 }
 
 function renderQuiz() {
@@ -1107,7 +1183,7 @@ function renderQuiz() {
       <div class="quiz-level-board">
         <h3>Escolha seu nivel</h3>
         <div>
-          ${["facil", "medio", "dificil", "desafio40", "desafio80"].map((level) => renderQuizLevelCard(data, level, stats)).join("")}
+          ${["facil", "medio", "dificil", "desafio40", "desafio80"].map((level) => renderQuizLevelCardClean(data, level, stats)).join("")}
         </div>
       </div>
       ${renderQuizLeaderboard(data)}
@@ -1176,6 +1252,25 @@ function renderQuizLevelCard(data, level, stats) {
       <strong>${quizLevelLabel(level)}</strong>
       <span>${count} perguntas</span>
       <small>${unlocked ? "Jogar agora" : `🔒 ${unlockText}`}</small>
+    </button>
+  `;
+}
+
+function renderQuizLevelCardClean(data, level, stats) {
+  const count = getQuizQuestions(data, "handball", level).length;
+  const unlocked = isQuizLevelUnlocked(level, stats);
+  const unlockText = level === "medio" || level === "dificil"
+    ? "Libera com 6 pontos"
+    : level === "desafio40"
+      ? "Libera com 40 pontos"
+      : level === "desafio80"
+        ? "Libera com 80 pontos"
+        : "Liberado";
+  return `
+    <button class="quiz-level-card ${unlocked ? "" : "locked"}" type="button" data-action="start-quiz" data-quiz-scope="handball" data-quiz-level="${level}" ${unlocked ? "" : `aria-disabled="true"`}>
+      <strong>${quizLevelLabel(level)}</strong>
+      <span>${count} perguntas</span>
+      <small>${unlocked ? "Jogar agora" : `Bloqueado: ${unlockText}`}</small>
     </button>
   `;
 }
@@ -1288,7 +1383,7 @@ function renderQuizChoice(scope, title, text, count, level) {
 }
 
 function quizLevelLabel(level) {
-  return ({ facil: "Nivel facil", medio: "Nivel medio", dificil: "Nivel dificil", desafio40: "Desafio 40", desafio80: "Desafio 80" })[level] || "Nivel livre";
+  return ({ facil: "Nível fácil", medio: "Nível médio", dificil: "Nível difícil", desafio40: "Missão tática", desafio80: "Desafio elite" })[level] || "Nível livre";
 }
 
 function renderQuizPlay() {
@@ -1396,7 +1491,7 @@ function startQuizSession(scope = "handball", level = "facil") {
     level,
     playerName: identity.playerName,
     playerKey: identity.playerKey,
-    questions: pool.sort(() => Math.random() - 0.5).slice(0, Math.min(10, pool.length)),
+    questions: shuffleQuizItems(pool).slice(0, Math.min(10, pool.length)).map(prepareQuizQuestionForSession),
     answers: [],
     index: 0,
     saved: false,
@@ -2352,7 +2447,8 @@ function createInitialAuthData() {
     campaigns: campaignSeeds,
     products: productSeeds,
     rankings: [],
-    quizQuestions: quizQuestionSeeds,
+    quizQuestions: getQuizSeedQuestions(),
+    quizVersion: QUIZ_EXPERIENCE_VERSION,
     quizScores: [],
     passwordResets: [],
   };
@@ -2427,11 +2523,11 @@ function normalizeAuthData(data) {
     changed = true;
   }
   if (!Array.isArray(normalized.quizQuestions)) {
-    normalized.quizQuestions = quizQuestionSeeds;
+    normalized.quizQuestions = getQuizSeedQuestions();
     changed = true;
   } else {
     const existingQuizIds = new Set(normalized.quizQuestions.map((item) => item.id));
-    quizQuestionSeeds.forEach((item) => {
+    getQuizSeedQuestions().forEach((item) => {
       if (!existingQuizIds.has(item.id)) {
         normalized.quizQuestions.push(item);
         changed = true;
@@ -2441,12 +2537,20 @@ function normalizeAuthData(data) {
   if (!Array.isArray(normalized.quizScores)) {
     normalized.quizScores = [];
     changed = true;
+  } else if (normalized.quizVersion !== QUIZ_EXPERIENCE_VERSION) {
+    normalized.quizScores = [];
+    normalized.quizVersion = QUIZ_EXPERIENCE_VERSION;
+    changed = true;
   } else {
     const mergedScores = mergeQuizScores(normalized.quizScores);
     if (mergedScores.length !== normalized.quizScores.length) {
       normalized.quizScores = mergedScores;
       changed = true;
     }
+  }
+  if (normalized.quizVersion !== QUIZ_EXPERIENCE_VERSION) {
+    normalized.quizVersion = QUIZ_EXPERIENCE_VERSION;
+    changed = true;
   }
   if (!Array.isArray(normalized.passwordResets)) {
     normalized.passwordResets = [];
@@ -3773,7 +3877,7 @@ function renderRankingPreview(ranking, data) {
 }
 
 function renderQuizManager(data) {
-  const questions = data.quizQuestions || quizQuestionSeeds;
+  const questions = data.quizQuestions || getQuizSeedQuestions();
   const scores = data.quizScores || [];
   return `
     <div class="coach-panel-head">
@@ -3827,7 +3931,7 @@ function renderQuizManager(data) {
       ${questions.map((item) => `
         <article>
           <div>
-            <span>${item.scope === "team" ? "Equipe" : "Handebol"} - ${quizLevelLabel(item.level).replace("Nivel ", "")}</span>
+            <span>${item.scope === "team" ? "Equipe" : "Handebol"} - ${quizLevelLabel(item.level).replace(/^Nível\s|^Nivel\s/, "")}</span>
             <strong>${escapeHtml(item.question)}</strong>
             <small>Correta: ${escapeHtml(item.options?.[item.answerIndex] || "")}</small>
           </div>
