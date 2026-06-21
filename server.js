@@ -23,6 +23,8 @@ const seedMediaFile = path.join(seedDataDir, "media.json");
 const seedAuthFile = path.join(seedDataDir, "auth.json");
 const maxUploadBytes = 12 * 1024 * 1024;
 const defaultPassword = "1234";
+const QUIZ_SEASON_KEY = new Date().toISOString().slice(0, 7);
+const QUIZ_LEGACY_SEASON_KEY = "2026-06";
 const sessions = new Map();
 const mailFrom = process.env.MAIL_FROM || `Instituto HeloisaHand <${process.env.SMTP_USER || "institutoheloisahand@gmail.com"}>`;
 const vapidPublicKey = (process.env.VAPID_PUBLIC_KEY || "").trim();
@@ -344,32 +346,80 @@ function slugifyValue(value) {
     .slice(0, 48) || "visitante";
 }
 
+function normalizeQuizIdentityText(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getQuizCanonicalKey(item = {}) {
+  const scope = item.scope || "handball";
+  const playerName = normalizeQuizIdentityText(item.playerName || "");
+  const rawKey = String(item.playerKey || "");
+  if (playerName.includes("amorim") || rawKey.includes("amorim")) return `${scope}:person:alexander-alves-amorim`;
+  if (rawKey.startsWith("athlete:")) return `${scope}:${rawKey}`;
+  return `${scope}:${rawKey || `visitor:${slugifyValue(playerName || "visitante")}`}`;
+}
+
+function chooseQuizDisplayName(currentName = "", incomingName = "") {
+  const current = String(currentName || "").trim();
+  const incoming = String(incomingName || "").trim();
+  if (!current) return incoming || "Atleta";
+  if (!incoming) return current;
+  return incoming.length > current.length ? incoming : current;
+}
+
 function mergeQuizScores(scores = []) {
   const map = new Map();
   scores.forEach((item) => {
     const playerName = String(item.playerName || "Visitante").slice(0, 40);
+    const seasonKey = item.seasonKey || QUIZ_LEGACY_SEASON_KEY;
+    if (seasonKey !== QUIZ_SEASON_KEY) return;
     const playerKey = item.playerKey || `visitor:${slugifyValue(playerName)}`;
     const scope = item.scope || "handball";
-    const key = `${scope}:${playerKey}`;
+    const key = getQuizCanonicalKey({ ...item, scope, playerName, playerKey });
     const current = map.get(key);
     const score = Number(item.score || 0);
     const total = Number(item.total || item.questionsAnswered || 0);
+    const seenQuestionIds = item.seenQuestionIds || item.answeredQuestionIds || [];
+    const correctQuestionIds = item.correctQuestionIds || [];
+    const completedLevels = item.completedLevels || [];
+    const scoreByLevel = item.scoreByLevel || {};
     if (current) {
-      current.score += score;
+      const currentCorrect = new Set(current.correctQuestionIds || []);
+      if (correctQuestionIds.length) {
+        correctQuestionIds.forEach((id) => currentCorrect.add(id));
+        current.score = currentCorrect.size;
+      } else {
+        current.score = Math.max(Number(current.score || 0), score);
+      }
       current.total += total;
       current.attempts += Number(item.attempts || 1);
-      current.seenQuestionIds = [...new Set([...(current.seenQuestionIds || []), ...(item.seenQuestionIds || [])])];
+      current.playerName = chooseQuizDisplayName(current.playerName, playerName);
+      current.seenQuestionIds = [...new Set([...(current.seenQuestionIds || []), ...seenQuestionIds])];
+      current.answeredQuestionIds = [...new Set([...(current.answeredQuestionIds || []), ...seenQuestionIds])];
+      current.correctQuestionIds = [...currentCorrect];
+      current.completedLevels = [...new Set([...(current.completedLevels || []), ...completedLevels])];
+      current.scoreByLevel = { ...(current.scoreByLevel || {}), ...scoreByLevel };
       current.lastPlayedAt = item.lastPlayedAt || item.createdAt || current.lastPlayedAt;
     } else {
       map.set(key, {
         ...item,
         scope,
         playerName,
-        playerKey,
+        playerKey: key.split(":").slice(1).join(":"),
+        seasonKey,
         score,
         total,
         attempts: Number(item.attempts || 1),
-        seenQuestionIds: item.seenQuestionIds || [],
+        seenQuestionIds,
+        answeredQuestionIds: item.answeredQuestionIds || seenQuestionIds,
+        correctQuestionIds,
+        completedLevels,
+        scoreByLevel,
         lastPlayedAt: item.lastPlayedAt || item.createdAt || "",
       });
     }
@@ -379,17 +429,43 @@ function mergeQuizScores(scores = []) {
 
 function upsertQuizScore(scores = [], entry) {
   const merged = mergeQuizScores(scores);
-  const key = `${entry.scope}:${entry.playerKey}`;
-  const current = merged.find((item) => `${item.scope}:${item.playerKey}` === key);
+  const key = getQuizCanonicalKey(entry);
+  const current = merged.find((item) => getQuizCanonicalKey(item) === key);
+  const incomingSeen = entry.seenQuestionIds || entry.answeredQuestionIds || [];
+  const incomingCorrect = entry.correctQuestionIds || [];
+  const incomingLevel = entry.level || "facil";
   if (current) {
-    current.score = Number(current.score || 0) + Number(entry.score || 0);
-    current.total = Number(current.total || 0) + Number(entry.total || 0);
+    const seenSet = new Set(current.seenQuestionIds || []);
+    const correctSet = new Set(current.correctQuestionIds || []);
+    const newSeen = incomingSeen.filter((id) => !seenSet.has(id));
+    incomingSeen.forEach((id) => seenSet.add(id));
+    incomingCorrect.forEach((id) => correctSet.add(id));
+    current.score = correctSet.size || Math.max(Number(current.score || 0), Number(entry.score || 0));
+    current.total = seenSet.size || Number(current.total || 0) + Number(entry.total || 0);
     current.attempts = Number(current.attempts || 0) + 1;
-    current.lastScore = Number(entry.score || 0);
-    current.seenQuestionIds = [...new Set([...(current.seenQuestionIds || []), ...(entry.seenQuestionIds || [])])];
+    current.lastScore = incomingCorrect.filter((id) => newSeen.includes(id)).length;
+    current.playerName = chooseQuizDisplayName(current.playerName, entry.playerName);
+    current.seenQuestionIds = [...seenSet];
+    current.answeredQuestionIds = [...seenSet];
+    current.correctQuestionIds = [...correctSet];
+    current.completedLevels = [...new Set([...(current.completedLevels || []), ...(entry.completedLevels || [])])];
+    current.scoreByLevel = { ...(current.scoreByLevel || {}), [incomingLevel]: Number(entry.score || 0), ...(entry.scoreByLevel || {}) };
+    current.seasonKey = QUIZ_SEASON_KEY;
     current.lastPlayedAt = entry.createdAt;
   } else {
-    merged.unshift({ ...entry, attempts: 1, lastScore: Number(entry.score || 0), lastPlayedAt: entry.createdAt });
+    merged.unshift({
+      ...entry,
+      playerKey: key.split(":").slice(1).join(":"),
+      seasonKey: QUIZ_SEASON_KEY,
+      attempts: 1,
+      lastScore: Number(entry.score || 0),
+      answeredQuestionIds: incomingSeen,
+      seenQuestionIds: incomingSeen,
+      correctQuestionIds: incomingCorrect,
+      completedLevels: entry.completedLevels || [],
+      scoreByLevel: { [incomingLevel]: Number(entry.score || 0), ...(entry.scoreByLevel || {}) },
+      lastPlayedAt: entry.createdAt,
+    });
   }
   return merged.slice(0, 160);
 }
@@ -730,7 +806,11 @@ async function handleApi(req, res, cleanUrl) {
         score: Math.max(0, Math.min(100, Number(payload.score || 0))),
         total: Math.max(1, Math.min(100, Number(payload.total || 1))),
         percent: Math.max(0, Math.min(100, Number(payload.percent || 0))),
-        seenQuestionIds: Array.isArray(payload.seenQuestionIds) ? payload.seenQuestionIds.map((id) => String(id).slice(0, 80)).slice(0, 20) : [],
+        seenQuestionIds: Array.isArray(payload.seenQuestionIds) ? payload.seenQuestionIds.map((id) => String(id).slice(0, 80)).slice(0, 80) : [],
+        answeredQuestionIds: Array.isArray(payload.answeredQuestionIds) ? payload.answeredQuestionIds.map((id) => String(id).slice(0, 80)).slice(0, 80) : [],
+        correctQuestionIds: Array.isArray(payload.correctQuestionIds) ? payload.correctQuestionIds.map((id) => String(id).slice(0, 80)).slice(0, 80) : [],
+        completedLevels: Array.isArray(payload.completedLevels) ? payload.completedLevels.map((level) => String(level).slice(0, 20)).slice(0, 10) : [],
+        seasonKey: QUIZ_SEASON_KEY,
         createdAt: new Date().toISOString(),
       };
       data.quizScores = upsertQuizScore(data.quizScores, entry);
@@ -738,6 +818,26 @@ async function handleApi(req, res, cleanUrl) {
       sendJson(res, 200, { ok: true, data: publicData(data) });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel salvar a pontuacao." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/quiz-reset") {
+    try {
+      const body = await collectBody(req, 1024 * 32);
+      const payload = JSON.parse(body.toString("utf8"));
+      const data = (await readAuthData()) || { users: [] };
+      const target = {
+        scope: String(payload.scope || "handball").slice(0, 20),
+        playerName: String(payload.playerName || "Visitante").replace(/[<>]/g, "").slice(0, 40),
+        playerKey: String(payload.playerKey || `visitor:${slugifyValue(payload.playerName || "Visitante")}`).replace(/[<>]/g, "").slice(0, 80),
+      };
+      const targetKey = getQuizCanonicalKey(target);
+      data.quizScores = mergeQuizScores(data.quizScores || []).filter((item) => getQuizCanonicalKey(item) !== targetKey);
+      await saveAuthData(data);
+      sendJson(res, 200, { ok: true, data: publicData(data) });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel reiniciar o quiz." });
     }
     return true;
   }

@@ -3274,6 +3274,47 @@ textarea:focus {
   color: #9a6b00;
 }
 
+.quiz-level-card.current {
+  border-color: rgba(31, 138, 76, 0.55);
+  background:
+    radial-gradient(circle at top right, rgba(255, 204, 51, 0.26), transparent 38%),
+    #f3fff8;
+  box-shadow: 0 18px 34px rgba(31, 138, 76, 0.14);
+}
+
+.quiz-level-card.completed {
+  border-color: rgba(31, 138, 76, 0.24);
+  background: #edf8f1;
+}
+
+.quiz-level-card.completed small {
+  color: var(--primary);
+}
+
+.quiz-journey-board .quiz-journey-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.quiz-journey-board .quiz-journey-head p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.button.danger-soft {
+  background: #fff3df;
+  color: #8a4d00;
+  border: 1px solid rgba(255, 204, 51, 0.55);
+}
+
+.button.danger-soft:hover {
+  background: #ffe3a8;
+  transform: translateY(-2px);
+}
+
 .quiz-play-section {
   display: grid;
   place-items: center;

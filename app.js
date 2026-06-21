@@ -372,6 +372,9 @@ Array.from({ length: 24 }, (_, index) => {
 });
 
 const QUIZ_EXPERIENCE_VERSION = "competitive-quiz-v1";
+const QUIZ_LEVEL_ORDER = ["facil", "medio", "dificil", "desafio40", "desafio80"];
+const QUIZ_SEASON_KEY = new Date().toISOString().slice(0, 7);
+const QUIZ_LEGACY_SEASON_KEY = "2026-06";
 
 const competitiveQuizQuestionSeeds = [
   { id: "quiz-competitive-facil-1", scope: "handball", level: "facil", category: "regra", question: "Quantos atletas de cada equipe ficam em quadra durante uma partida de handebol?", options: ["6 atletas", "7 atletas", "8 atletas", "5 atletas"], answerIndex: 1, explanation: "Cada equipe joga com 7 atletas em quadra: 6 jogadores de linha e 1 goleiro.", active: true, quality: "competitive" },
@@ -1158,36 +1161,61 @@ function renderQuiz() {
   const teamCount = getQuizQuestions(data, "team").length;
   const allHandball = getQuizQuestions(data, "handball").length;
   const completedAll = allHandball > 0 && stats.seenCount >= allHandball;
+  const nextHandballLevel = getNextQuizLevel(data, stats, "handball");
   return `
     <section class="section quiz-hero">
       <div class="section-head center">
         <span class="eyebrow">Fique por dentro do handebol</span>
         <h2>Quiz HeloisaHand</h2>
-        <p>Aprenda regras, historia, jogadas e curiosidades competindo com voce mesmo. Tambem tem quiz da equipe para fortalecer a nossa identidade.</p>
+        <p>Aprenda regras, história, jogadas e curiosidades em uma trilha justa: cada pergunta só vale ponto uma vez e o jogo libera a próxima etapa automaticamente.</p>
       </div>
       <div class="quiz-player-card">
         <label>Seu nome ou apelido para o ranking
-          <input id="quizPlayerName" value="${escapeAttribute(getCurrentQuizPlayerName())}" placeholder="Ex.: Alexander, Bia, Kayllan..." />
+          <input id="quizPlayerName" value="${escapeAttribute(identity.playerName)}" placeholder="Ex.: Alexander, Bia, Kayllan..." ${identity.locked ? "readonly" : ""} />
         </label>
-        <span>Ao finalizar, sua pontuacao pode aparecer no Top 7.</span>
+        <span>${identity.locked ? "Seu quiz está vinculado ao seu login de atleta." : "Visitantes competem com um perfil fixo neste aparelho."}</span>
       </div>
       <div class="quiz-status-card">
         <strong>${stats.score} pontos acumulados</strong>
-        <span>${stats.seenCount} perguntas diferentes vistas de ${allHandball}. ${completedAll ? "Medalha especial do time desbloqueada." : "Continue jogando para liberar novos desafios."}</span>
+        <span>${stats.seenCount} perguntas diferentes feitas de ${allHandball}. ${completedAll ? "Você concluiu a trilha atual." : `Próxima etapa: ${quizLevelLabel(nextHandballLevel)}.`}</span>
       </div>
       ${renderQuizAchievements(stats.score)}
       <div class="quiz-choice-grid">
-        ${renderQuizChoice("handball", "Quiz do Handebol", "Regras, historia, fundamentos, curiosidades e leitura de jogo. Cada rodada traz ate 10 perguntas.", handballCount, "facil")}
-        ${renderQuizChoice("team", "Quiz da Equipe", "Perguntas sobre o Instituto HeloisaHand, nossa rotina, competicoes e historia. Cada rodada traz ate 10 perguntas.", teamCount, "facil")}
+        ${renderQuizChoice("handball", "Quiz do Handebol", completedAll ? "Você já terminou todas as perguntas desta temporada. Recomeçar apaga sua pontuação atual." : `Continue pela etapa ${quizLevelLabel(nextHandballLevel)}.`, handballCount, nextHandballLevel || "complete")}
+        ${renderQuizChoice("team", "Quiz da Equipe", "Perguntas sobre o Instituto HeloisaHand, nossa rotina, competições e história.", teamCount, "facil")}
       </div>
-      <div class="quiz-level-board">
-        <h3>Escolha seu nivel</h3>
-        <div>
-          ${["facil", "medio", "dificil", "desafio40", "desafio80"].map((level) => renderQuizLevelCardClean(data, level, stats)).join("")}
-        </div>
-      </div>
+      ${renderQuizJourney(data, stats)}
       ${renderQuizLeaderboard(data)}
     </section>
+  `;
+}
+
+function renderQuizJourney(data, stats) {
+  const summary = getQuizLevelSummary(data, stats);
+  const next = getNextQuizLevel(data, stats, "handball");
+  const completedAll = summary.length && summary.every((item) => item.completed);
+  return `
+    <div class="quiz-level-board quiz-journey-board">
+      <div class="quiz-journey-head">
+        <div>
+          <h3>Trilha do quiz</h3>
+          <p>${completedAll ? "Você concluiu a temporada atual. Pode manter sua pontuação ou recomeçar do zero para tentar melhorar." : "O jogo libera uma etapa por vez para manter a disputa justa."}</p>
+        </div>
+        ${completedAll ? `<button class="button danger-soft" type="button" data-action="reset-quiz-progress" data-quiz-scope="handball">Recomeçar do zero</button>` : `<button class="button pulse-action" type="button" data-action="start-quiz" data-quiz-scope="handball" data-quiz-level="${next}">Jogar próxima etapa</button>`}
+      </div>
+      <div>
+        ${summary.map((item) => {
+          const isNext = item.level === next;
+          return `
+            <article class="quiz-level-card ${item.completed ? "completed" : ""} ${isNext ? "current" : ""}">
+              <strong>${quizLevelLabel(item.level)}</strong>
+              <span>${item.answered}/${item.total} perguntas</span>
+              <small>${item.completed ? "Concluído" : isNext ? "Próxima etapa" : "Aguardando liberação"}</small>
+            </article>
+          `;
+        }).join("")}
+      </div>
+    </div>
   `;
 }
 
@@ -1221,20 +1249,45 @@ function renderQuizAchievements(score = 0) {
 function getQuizPlayerStats(data, playerKey, scope = "handball") {
   const score = mergeQuizScores(data.quizScores || []).find((item) => item.scope === scope && item.playerKey === playerKey);
   const seen = new Set(score?.seenQuestionIds || []);
+  const completedLevels = new Set(score?.completedLevels || []);
+  if (scope === "handball") {
+    QUIZ_LEVEL_ORDER.forEach((level) => {
+      const levelQuestions = getQuizQuestions(data, "handball", level).map((item) => item.id);
+      if (levelQuestions.length && levelQuestions.every((id) => seen.has(id))) completedLevels.add(level);
+    });
+  }
   return {
     score: Number(score?.score || 0),
     attempts: Number(score?.attempts || 0),
     seenQuestionIds: seen,
+    correctQuestionIds: new Set(score?.correctQuestionIds || []),
+    completedLevels,
     seenCount: seen.size,
   };
 }
 
 function isQuizLevelUnlocked(level, stats) {
   if (level === "facil") return true;
-  if (level === "medio" || level === "dificil") return stats.score >= 6;
-  if (level === "desafio40") return stats.score >= 40;
-  if (level === "desafio80") return stats.score >= 80;
+  const previousLevel = QUIZ_LEVEL_ORDER[QUIZ_LEVEL_ORDER.indexOf(level) - 1];
+  if (previousLevel) return stats.completedLevels.has(previousLevel);
   return true;
+}
+
+function getNextQuizLevel(data, stats, scope = "handball") {
+  if (scope !== "handball") return "facil";
+  return QUIZ_LEVEL_ORDER.find((level) => {
+    if (!isQuizLevelUnlocked(level, stats)) return false;
+    const levelQuestions = getQuizQuestions(data, "handball", level).map((item) => item.id);
+    return levelQuestions.some((id) => !stats.seenQuestionIds.has(id));
+  }) || "";
+}
+
+function getQuizLevelSummary(data, stats) {
+  return QUIZ_LEVEL_ORDER.map((level) => {
+    const questions = getQuizQuestions(data, "handball", level);
+    const answered = questions.filter((item) => stats.seenQuestionIds.has(item.id)).length;
+    return { level, total: questions.length, answered, completed: questions.length > 0 && answered >= questions.length };
+  });
 }
 
 function renderQuizLevelCard(data, level, stats) {
@@ -1312,40 +1365,96 @@ function getQuizPlayerIdentity(playerName = "") {
   const athlete = getCurrentUser("athlete");
   if (athlete) {
     return {
-      playerName: athlete.profile?.nickname || athlete.name || playerName || "Atleta",
+      playerName: athlete.name || athlete.profile?.nickname || playerName || "Atleta",
       playerKey: `athlete:${athlete.id}`,
+      locked: true,
     };
   }
   const cleanName = (playerName || "Visitante").trim().replace(/\s+/g, " ").slice(0, 40) || "Visitante";
+  let visitorId = localStorage.getItem("heloisahand_quiz_visitor_id");
+  if (!visitorId) {
+    visitorId = `v-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+    localStorage.setItem("heloisahand_quiz_visitor_id", visitorId);
+  }
   return {
     playerName: cleanName,
-    playerKey: `visitor:${slugify(cleanName.toLowerCase())}`,
+    playerKey: `visitor:${visitorId}`,
+    locked: false,
   };
+}
+
+function normalizeQuizIdentityText(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getQuizCanonicalKey(item = {}) {
+  const scope = item.scope || "handball";
+  const name = normalizeQuizIdentityText(item.playerName || "");
+  const rawKey = String(item.playerKey || "");
+  if (name.includes("amorim") || rawKey.includes("amorim")) return `${scope}:person:alexander-alves-amorim`;
+  if (rawKey.startsWith("athlete:")) return `${scope}:${rawKey}`;
+  return `${scope}:${rawKey || `visitor:${slugify(name || "visitante")}`}`;
+}
+
+function chooseQuizDisplayName(currentName = "", incomingName = "") {
+  const current = String(currentName || "").trim();
+  const incoming = String(incomingName || "").trim();
+  if (!current) return incoming || "Atleta";
+  if (!incoming) return current;
+  return incoming.length > current.length ? incoming : current;
 }
 
 function mergeQuizScores(scores = []) {
   const map = new Map();
   scores.forEach((item) => {
     const playerName = item.playerName || "Visitante";
-    const key = `${item.scope || "handball"}:${item.playerKey || `visitor:${slugify(playerName.toLowerCase())}`}`;
+    const seasonKey = item.seasonKey || QUIZ_LEGACY_SEASON_KEY;
+    if (seasonKey !== QUIZ_SEASON_KEY) return;
+    const key = getQuizCanonicalKey({ ...item, playerName });
     const current = map.get(key);
     const score = Number(item.score || 0);
     const total = Number(item.total || item.questionsAnswered || 0);
+    const seenQuestionIds = item.seenQuestionIds || item.answeredQuestionIds || [];
+    const correctQuestionIds = item.correctQuestionIds || [];
+    const completedLevels = item.completedLevels || [];
+    const scoreByLevel = item.scoreByLevel || {};
     if (current) {
-      current.score += score;
+      const incomingCorrect = correctQuestionIds.length ? correctQuestionIds : [];
+      const currentCorrect = new Set(current.correctQuestionIds || []);
+      if (incomingCorrect.length) {
+        incomingCorrect.forEach((id) => currentCorrect.add(id));
+        current.score = currentCorrect.size;
+      } else {
+        current.score = Math.max(Number(current.score || 0), score);
+      }
       current.total += total;
       current.attempts += Number(item.attempts || 1);
-      current.seenQuestionIds = [...new Set([...(current.seenQuestionIds || []), ...(item.seenQuestionIds || [])])];
+      current.playerName = chooseQuizDisplayName(current.playerName, playerName);
+      current.seenQuestionIds = [...new Set([...(current.seenQuestionIds || []), ...seenQuestionIds])];
+      current.answeredQuestionIds = [...new Set([...(current.answeredQuestionIds || []), ...seenQuestionIds])];
+      current.correctQuestionIds = [...currentCorrect];
+      current.completedLevels = [...new Set([...(current.completedLevels || []), ...completedLevels])];
+      current.scoreByLevel = { ...(current.scoreByLevel || {}), ...scoreByLevel };
       current.lastPlayedAt = item.lastPlayedAt || item.createdAt || current.lastPlayedAt;
     } else {
       map.set(key, {
         ...item,
         playerName,
-        playerKey: item.playerKey || `visitor:${slugify(playerName.toLowerCase())}`,
+        playerKey: key.split(":").slice(1).join(":"),
+        seasonKey,
         score,
         total,
         attempts: Number(item.attempts || 1),
-        seenQuestionIds: item.seenQuestionIds || [],
+        seenQuestionIds,
+        answeredQuestionIds: item.answeredQuestionIds || seenQuestionIds,
+        correctQuestionIds,
+        completedLevels,
+        scoreByLevel,
         lastPlayedAt: item.lastPlayedAt || item.createdAt || "",
       });
     }
@@ -1355,29 +1464,56 @@ function mergeQuizScores(scores = []) {
 
 function upsertQuizScore(scores = [], entry) {
   const merged = mergeQuizScores(scores);
-  const key = `${entry.scope}:${entry.playerKey}`;
-  const current = merged.find((item) => `${item.scope}:${item.playerKey}` === key);
+  const key = getQuizCanonicalKey(entry);
+  const current = merged.find((item) => getQuizCanonicalKey(item) === key);
+  const incomingSeen = entry.seenQuestionIds || entry.answeredQuestionIds || [];
+  const incomingCorrect = entry.correctQuestionIds || [];
+  const incomingLevel = entry.level || "facil";
   if (current) {
-    current.score = Number(current.score || 0) + Number(entry.score || 0);
-    current.total = Number(current.total || 0) + Number(entry.total || 0);
+    const seenSet = new Set(current.seenQuestionIds || []);
+    const correctSet = new Set(current.correctQuestionIds || []);
+    const newSeen = incomingSeen.filter((id) => !seenSet.has(id));
+    incomingSeen.forEach((id) => seenSet.add(id));
+    incomingCorrect.forEach((id) => correctSet.add(id));
+    current.score = correctSet.size || Math.max(Number(current.score || 0), Number(entry.score || 0));
+    current.total = seenSet.size || Number(current.total || 0) + Number(entry.total || 0);
     current.attempts = Number(current.attempts || 0) + 1;
-    current.lastScore = Number(entry.score || 0);
-    current.seenQuestionIds = [...new Set([...(current.seenQuestionIds || []), ...(entry.seenQuestionIds || [])])];
+    current.lastScore = incomingCorrect.filter((id) => newSeen.includes(id)).length;
+    current.playerName = chooseQuizDisplayName(current.playerName, entry.playerName);
+    current.seenQuestionIds = [...seenSet];
+    current.answeredQuestionIds = [...seenSet];
+    current.correctQuestionIds = [...correctSet];
+    current.completedLevels = [...new Set([...(current.completedLevels || []), ...(entry.completedLevels || [])])];
+    current.scoreByLevel = { ...(current.scoreByLevel || {}), [incomingLevel]: Number(entry.score || 0), ...(entry.scoreByLevel || {}) };
+    current.seasonKey = QUIZ_SEASON_KEY;
     current.lastPlayedAt = entry.createdAt;
   } else {
-    merged.unshift({ ...entry, attempts: 1, lastScore: Number(entry.score || 0), lastPlayedAt: entry.createdAt });
+    merged.unshift({
+      ...entry,
+      playerKey: key.split(":").slice(1).join(":"),
+      seasonKey: QUIZ_SEASON_KEY,
+      attempts: 1,
+      lastScore: Number(entry.score || 0),
+      answeredQuestionIds: incomingSeen,
+      seenQuestionIds: incomingSeen,
+      correctQuestionIds: incomingCorrect,
+      completedLevels: entry.completedLevels || [],
+      scoreByLevel: { [incomingLevel]: Number(entry.score || 0), ...(entry.scoreByLevel || {}) },
+      lastPlayedAt: entry.createdAt,
+    });
   }
   return merged.slice(0, 160);
 }
 
 function renderQuizChoice(scope, title, text, count, level) {
+  const completed = scope === "handball" && level === "complete";
   return `
     <article class="quiz-choice-card ${scope}">
       <span>${scope === "team" ? "Nossa historia" : "Handebol"}</span>
       <h3>${title}</h3>
       <p>${text}</p>
       <small>Banco com ${count} perguntas</small>
-      <button class="button pulse-action" type="button" data-action="start-quiz" data-quiz-scope="${scope}" data-quiz-level="${level}">Comecar agora</button>
+      <button class="button ${completed ? "danger-soft" : "pulse-action"}" type="button" data-action="${completed ? "reset-quiz-progress" : "start-quiz"}" data-quiz-scope="${scope}" data-quiz-level="${level}">${completed ? "Recomeçar do zero" : "Começar agora"}</button>
     </article>
   `;
 }
@@ -1421,19 +1557,55 @@ function renderQuizResult() {
   const total = quizState.questions.length;
   const score = quizState.answers.reduce((sum, answer, index) => sum + (Number(answer) === Number(quizState.questions[index].answerIndex) ? 1 : 0), 0);
   const percent = Math.round((score / Math.max(1, total)) * 100);
+  const correctQuestionIds = quizState.questions
+    .filter((item, index) => Number(quizState.answers[index]) === Number(item.answerIndex))
+    .map((item) => item.id);
+  const answeredQuestionIds = quizState.questions.map((item) => item.id);
   if (!quizState.saved) {
     quizState.saved = true;
-    submitQuizScore({ scope: quizState.scope, level: quizState.level, playerName: quizState.playerName, playerKey: quizState.playerKey, score, total, percent, seenQuestionIds: quizState.questions.map((item) => item.id) });
+    submitQuizScore({
+      scope: quizState.scope,
+      level: quizState.level,
+      playerName: quizState.playerName,
+      playerKey: quizState.playerKey,
+      score,
+      total,
+      percent,
+      seenQuestionIds: answeredQuestionIds,
+      answeredQuestionIds,
+      correctQuestionIds,
+      completedLevels: [quizState.level],
+      seasonKey: QUIZ_SEASON_KEY,
+    });
   }
+  const data = getAuthData();
+  const projectedStats = getQuizPlayerStats({
+    ...data,
+    quizScores: upsertQuizScore(data.quizScores || [], {
+      scope: quizState.scope,
+      level: quizState.level,
+      playerName: quizState.playerName,
+      playerKey: quizState.playerKey,
+      score,
+      total,
+      seenQuestionIds: answeredQuestionIds,
+      answeredQuestionIds,
+      correctQuestionIds,
+      completedLevels: [quizState.level],
+      createdAt: new Date().toISOString(),
+      seasonKey: QUIZ_SEASON_KEY,
+    }),
+  }, quizState.playerKey, quizState.scope);
+  const nextLevel = getNextQuizLevel(data, projectedStats, quizState.scope);
   return `
     <section class="section quiz-play-section">
       <div class="quiz-result-card">
         <span class="eyebrow">Resultado do quiz</span>
         <h2>${score} de ${total}</h2>
-        <p>${percent >= 80 ? "Mandou muito bem. Esses pontos foram somados ao seu ranking acumulado." : percent >= 50 ? "Bom resultado. Seus acertos entraram na sua pontuacao geral." : "Comecou a jornada. Cada acerto soma ponto para voce tentar subir no ranking."}</p>
+        <p>${percent >= 80 ? "Mandou muito bem. Seus acertos inéditos entram no ranking." : percent >= 50 ? "Bom resultado. Agora a próxima etapa será liberada." : "Você concluiu a etapa. Revise a explicação das perguntas para crescer no próximo desafio."}</p>
         <div class="quiz-score-ring"><strong>${percent}%</strong></div>
         <div class="quiz-actions">
-          <button class="button" type="button" data-action="restart-quiz">Jogar de novo</button>
+          ${nextLevel ? `<button class="button" type="button" data-action="continue-quiz">Próxima etapa</button>` : `<button class="button danger-soft" type="button" data-action="reset-quiz-progress" data-quiz-scope="${quizState.scope}">Recomeçar do zero</button>`}
           <button class="button ghost-dark" type="button" data-action="cancel-quiz">Voltar aos quizzes</button>
         </div>
       </div>
@@ -1468,12 +1640,40 @@ async function submitQuizScore(score) {
   }
 }
 
+async function resetQuizProgress(scope = "handball") {
+  const identity = getQuizPlayerIdentity(getCurrentQuizPlayerName());
+  const data = getAuthData();
+  data.quizScores = (data.quizScores || []).filter((item) => !(item.scope === scope && getQuizCanonicalKey(item) === getQuizCanonicalKey({ ...identity, scope })));
+  authDataCache = data;
+  localStorage.setItem(authStoreKey, JSON.stringify(data));
+  try {
+    await fetch("/api/quiz-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scope, playerKey: identity.playerKey, playerName: identity.playerName }),
+    });
+  } catch (error) {
+    // Local reset still lets the player restart on this device if the server is temporarily unavailable.
+  }
+  quizState = null;
+  app.innerHTML = renderQuiz();
+  bindInteractions();
+  showToast("Pontuação do quiz reiniciada. Agora é uma nova tentativa.", "ok");
+}
+
 function startQuizSession(scope = "handball", level = "facil") {
   const data = getAuthData();
   const nameInput = document.querySelector("#quizPlayerName");
   const identity = getQuizPlayerIdentity(nameInput?.value || getCurrentQuizPlayerName() || "Visitante");
   localStorage.setItem("heloisahand_quiz_player_name", identity.playerName);
   const stats = getQuizPlayerStats(data, identity.playerKey, scope);
+  if (scope === "handball") {
+    level = getNextQuizLevel(data, stats, scope);
+    if (!level) {
+      showToast("Você já concluiu toda a trilha. Para jogar de novo, recomece do zero.", "ok");
+      return;
+    }
+  }
   if (scope === "handball" && !isQuizLevelUnlocked(level, stats)) {
     showToast("Esse desafio ainda esta bloqueado. Some mais pontos para liberar.", "error");
     return;
@@ -1485,7 +1685,13 @@ function startQuizSession(scope = "handball", level = "facil") {
     return;
   }
   const unseen = questions.filter((item) => !stats.seenQuestionIds.has(item.id));
-  const pool = unseen.length >= Math.min(10, questions.length) ? unseen : [...unseen, ...questions.filter((item) => stats.seenQuestionIds.has(item.id))];
+  const pool = unseen;
+  if (!pool.length) {
+    showToast("Essa etapa já foi concluída. Vamos para a próxima.", "ok");
+    app.innerHTML = renderQuiz();
+    bindInteractions();
+    return;
+  }
   quizState = {
     scope,
     level,
@@ -5824,6 +6030,13 @@ async function handleAction(event) {
     bindInteractions();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+  if (action === "continue-quiz") {
+    const scope = quizState?.scope || "handball";
+    quizState = null;
+    app.innerHTML = renderQuiz();
+    bindInteractions();
+    startQuizSession(scope);
+  }
   if (action === "cancel-quiz") {
     quizState = null;
     app.innerHTML = renderQuiz();
@@ -5834,6 +6047,9 @@ async function handleAction(event) {
     const level = quizState?.level || "facil";
     quizState = null;
     startQuizSession(scope, level);
+  }
+  if (action === "reset-quiz-progress") {
+    resetQuizProgress(event.currentTarget.dataset.quizScope || "handball");
   }
   if (action === "open-hub-topic") {
     openHubTopic(event.currentTarget);
