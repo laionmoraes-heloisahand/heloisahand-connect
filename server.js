@@ -492,6 +492,7 @@ function publicData(data) {
     sponsors: data?.sponsors || [],
     campaigns: data?.campaigns || [],
     products: data?.products || [],
+    storeOrders: [],
     quizQuestions: publicQuizQuestions(data),
     quizScores: mergeQuizScores(data?.quizScores || []),
   };
@@ -818,6 +819,41 @@ async function handleApi(req, res, cleanUrl) {
       sendJson(res, 200, { ok: true, data: publicData(data) });
     } catch (error) {
       sendJson(res, 400, { error: "Nao foi possivel salvar a pontuacao." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && cleanUrl === "/api/store-order") {
+    try {
+      const body = await collectBody(req, 1024 * 64);
+      const payload = JSON.parse(body.toString("utf8"));
+      const data = (await readAuthData()) || { users: [] };
+      data.storeOrders = data.storeOrders || [];
+      const quantity = Math.max(1, Math.min(50, Number(payload.quantity || 1)));
+      const price = Math.max(0, Number(payload.price || 0));
+      const order = {
+        id: `store-order-${Date.now()}`,
+        productId: String(payload.productId || "").replace(/[<>]/g, "").slice(0, 80),
+        productName: String(payload.productName || "Produto").replace(/[<>]/g, "").slice(0, 120),
+        price,
+        quantity,
+        total: Math.round(price * quantity * 100) / 100,
+        size: String(payload.size || "A definir").replace(/[<>]/g, "").slice(0, 40),
+        customerName: String(payload.customerName || "").replace(/[<>]/g, "").slice(0, 80),
+        customerPhone: String(payload.customerPhone || "").replace(/[<>]/g, "").slice(0, 30),
+        notes: String(payload.notes || "").replace(/[<>]/g, "").slice(0, 500),
+        status: "new",
+        createdAt: new Date().toISOString(),
+      };
+      if (!order.customerName || !order.customerPhone) {
+        sendJson(res, 400, { error: "Informe nome e WhatsApp para enviar o pedido." });
+        return true;
+      }
+      data.storeOrders.unshift(order);
+      await saveAuthData(data);
+      sendJson(res, 200, { ok: true, orderId: order.id });
+    } catch (error) {
+      sendJson(res, 400, { error: "Nao foi possivel registrar o pedido." });
     }
     return true;
   }

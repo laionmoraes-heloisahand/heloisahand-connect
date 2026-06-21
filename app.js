@@ -500,7 +500,7 @@ const routes = {
   "/projeto": renderProject,
   "/treinar": renderTraining,
   "/apoiar": renderSupport,
-  "/loja": renderStore,
+  "/loja": renderStoreModern,
   "/quiz": renderQuiz,
   "/explorar": renderExplore,
   "/atleta": renderAthlete,
@@ -2106,6 +2106,67 @@ function renderProductCard(product, editable = false) {
   `;
 }
 
+function renderStoreModern() {
+  const data = getAuthData();
+  const products = (data.products || productSeeds).filter((item) => item.active !== false);
+  return `
+    <section class="section store-page">
+      <div class="section-head center">
+        <span class="eyebrow">Loja HeloisaHand</span>
+        <h2>Vista o projeto e ajude a manter essa história viva</h2>
+        <p>Produtos oficiais e itens solidários. Cada compra ajuda treinos, transporte, materiais e oportunidades para os atletas.</p>
+      </div>
+      <div class="store-experience-strip">
+        <article><strong>1</strong><span>Escolha o produto</span></article>
+        <article><strong>2</strong><span>Envie seu pedido</span></article>
+        <article><strong>3</strong><span>A equipe confirma no WhatsApp</span></article>
+      </div>
+      <div class="store-grid">
+        ${products.length ? products.map(renderProductCardModern).join("") : `<div class="empty-state">Nenhum produto publicado no momento.</div>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderProductCardModern(product, editable = false) {
+  const price = Number(product.price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const buyMessage = `Olá! Quero comprar: ${product.name} (${price}). Pode me passar os detalhes?`;
+  const sizeOptions = ["A definir", "PP", "P", "M", "G", "GG", "XG", "Infantil 10", "Infantil 12", "Infantil 14", "Sem tamanho"]
+    .map((size) => `<option value="${escapeAttribute(size)}">${escapeHtml(size)}</option>`)
+    .join("");
+  return `
+    <article class="product-card" data-product-id="${escapeAttribute(product.id)}">
+      <div class="product-visual">${product.image ? `<img src="${escapeAttribute(product.image)}" alt="${escapeAttribute(product.name)}" />` : `<span>${product.emoji || "🛒"}</span>`}</div>
+      <div class="product-body">
+        <small>${escapeHtml(product.category || "Produto")}</small>
+        <h3>${escapeHtml(product.name)}</h3>
+        ${product.promo ? `<span class="product-promo">${escapeHtml(product.promo)}</span>` : ""}
+        <p>${escapeHtml(product.description || "")}</p>
+        <strong>${price}</strong>
+        ${editable ? "" : `
+          <details class="product-order-details">
+            <summary>Pedir este produto</summary>
+            <form class="store-order-form form-grid" data-product-id="${escapeAttribute(product.id)}">
+              <input type="hidden" name="productName" value="${escapeAttribute(product.name)}" />
+              <input type="hidden" name="productPrice" value="${escapeAttribute(product.price || 0)}" />
+              <div class="form-grid two">
+                <label>Seu nome<input name="customerName" required placeholder="Nome completo" /></label>
+                <label>WhatsApp<input name="customerPhone" required placeholder="(27) 99999-9999" /></label>
+                <label>Tamanho<select name="size">${sizeOptions}</select></label>
+                <label>Quantidade<input name="quantity" type="number" min="1" max="50" value="1" required /></label>
+              </div>
+              <label>Observação<textarea name="notes" placeholder="Ex.: quero reservar para meu filho, combinar entrega no treino..."></textarea></label>
+              <button class="button" type="submit">Enviar pedido</button>
+              <a class="store-whatsapp-link" href="${whatsappLink(buyMessage)}" target="_blank" rel="noreferrer">Prefiro chamar no WhatsApp</a>
+              <div class="portal-message"></div>
+            </form>
+          </details>
+        `}
+      </div>
+    </article>
+  `;
+}
+
 function renderProductTypeOptions(selected = "") {
   return productCatalogOptions
     .map((item) => `<option value="${escapeAttribute(item.label)}" ${item.label === selected ? "selected" : ""}>${escapeHtml(item.label)}</option>`)
@@ -2131,7 +2192,7 @@ function renderProductAdminCard(product) {
   const selectedType = product.type || catalogMatch?.label || "Produto livre";
   return `
     <article class="product-admin-card">
-      ${renderProductCard(product, true)}
+      ${renderProductCardModern(product, true)}
       <details class="product-edit-details">
         <summary>Editar produto</summary>
         <form class="form-grid product-edit-form" data-product-id="${escapeAttribute(product.id)}">
@@ -2652,6 +2713,7 @@ function createInitialAuthData() {
     sponsors: sponsorSeeds,
     campaigns: campaignSeeds,
     products: productSeeds,
+    storeOrders: [],
     rankings: [],
     quizQuestions: getQuizSeedQuestions(),
     quizVersion: QUIZ_EXPERIENCE_VERSION,
@@ -2722,6 +2784,10 @@ function normalizeAuthData(data) {
   });
   if (!Array.isArray(normalized.products)) {
     normalized.products = productSeeds;
+    changed = true;
+  }
+  if (!Array.isArray(normalized.storeOrders)) {
+    normalized.storeOrders = [];
     changed = true;
   }
   if (!Array.isArray(normalized.rankings)) {
@@ -4230,6 +4296,102 @@ function renderStoreManager(data) {
   `;
 }
 
+function renderStoreManager(data) {
+  const products = data.products || [];
+  const orders = (data.storeOrders || []).slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  const openOrders = orders.filter((order) => !["delivered", "cancelled", "archived"].includes(order.status || "new")).length;
+  return `
+    <div class="coach-panel-head">
+      <h3>Loja do instituto</h3>
+      <p class="panel-subtitle">Adicione produtos, acompanhe pedidos e organize entregas da loja pública.</p>
+    </div>
+    <div class="store-admin-summary">
+      <article><strong>${products.length}</strong><span>produtos publicados</span></article>
+      <article><strong>${orders.length}</strong><span>pedidos recebidos</span></article>
+      <article><strong>${openOrders}</strong><span>pedidos em andamento</span></article>
+    </div>
+    <div class="grid two media-manager">
+      <div class="portal-card">
+        <h3>Novo produto</h3>
+        <form id="productForm" class="form-grid">
+          <label>Tipo do produto
+            <select id="productType" data-product-type-select>
+              ${renderProductTypeOptions("Camisa feminina")}
+            </select>
+          </label>
+          <label>Nome do produto<input id="productName" required placeholder="Ex.: Camisa oficial HeloisaHand" /></label>
+          <div class="form-grid two">
+            <label>Categoria<input id="productCategory" required placeholder="Uniforme, acessório..." value="Uniforme" /></label>
+            <label>Preço<input id="productPrice" type="number" min="0" step="0.01" required placeholder="79.90" /></label>
+          </div>
+          <label>Emoji ou símbolo
+            <select id="productEmoji">${renderProductEmojiOptions("👕")}</select>
+          </label>
+          <label>Chamada promocional<input id="productPromo" placeholder="Ex.: promoção de lançamento, pronta entrega..." /></label>
+          <label>Descrição<textarea id="productDescription" required placeholder="Explique o produto e como ele ajuda o projeto"></textarea></label>
+          <button class="button" type="submit">Publicar produto</button>
+          <div id="portalMessage" class="portal-message"></div>
+        </form>
+      </div>
+      <div class="portal-card">
+        <h3>Produtos publicados</h3>
+        <div class="store-grid compact">
+          ${products.length ? products.map(renderProductAdminCard).join("") : "<p>Nenhum produto cadastrado ainda.</p>"}
+        </div>
+      </div>
+    </div>
+    <div class="portal-card store-orders-panel">
+      <div class="coach-panel-head compact">
+        <div>
+          <h3>Pedidos recebidos</h3>
+          <p class="panel-subtitle">Organize cada pedido, mude status e chame a pessoa no WhatsApp.</p>
+        </div>
+      </div>
+      <div class="store-order-list">
+        ${orders.length ? orders.map(renderStoreOrderCard).join("") : `<div class="empty-state compact"><strong>Nenhum pedido ainda.</strong><p>Quando alguém pedir pela loja, aparecerá aqui.</p></div>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderStoreOrderCard(order) {
+  const status = order.status || "new";
+  const statusOptions = [
+    ["new", "Novo pedido"],
+    ["contacted", "Em contato"],
+    ["reserved", "Produto separado"],
+    ["delivered", "Entregue"],
+    ["cancelled", "Cancelado"],
+  ];
+  const total = Number(order.total || (Number(order.price || 0) * Number(order.quantity || 1))).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const reply = `Olá, ${order.customerName}! Recebi seu pedido na loja HeloisaHand: ${order.quantity || 1}x ${order.productName}${order.size ? `, tamanho ${order.size}` : ""}. Vou confirmar os detalhes por aqui.`;
+  return `
+    <article class="store-order-card ${status}">
+      <div class="store-order-main">
+        <span class="order-status">${escapeHtml(statusOptions.find(([value]) => value === status)?.[1] || "Novo pedido")}</span>
+        <h4>${escapeHtml(order.productName || "Produto")}</h4>
+        <p><strong>Cliente:</strong> ${escapeHtml(order.customerName || "Não informado")} ${order.customerPhone ? `• ${escapeHtml(order.customerPhone)}` : ""}</p>
+        <p><strong>Quantidade:</strong> ${Number(order.quantity || 1)} ${order.size ? `• <strong>Tamanho:</strong> ${escapeHtml(order.size)}` : ""} • <strong>Total:</strong> ${total}</p>
+        ${order.notes ? `<p><strong>Observação:</strong> ${escapeHtml(order.notes)}</p>` : ""}
+        <small>${order.createdAt ? new Date(order.createdAt).toLocaleString("pt-BR") : ""}</small>
+      </div>
+      <form class="store-order-status-form" data-order-id="${escapeAttribute(order.id)}">
+        <label>Status
+          <select name="status">
+            ${statusOptions.map(([value, label]) => `<option value="${value}" ${value === status ? "selected" : ""}>${label}</option>`).join("")}
+          </select>
+        </label>
+        <div class="order-actions">
+          <button class="button" type="submit">Salvar status</button>
+          ${order.customerPhone ? `<a class="button ghost-dark" href="${whatsappLinkTo(order.customerPhone, reply)}" target="_blank" rel="noreferrer">WhatsApp</a>` : ""}
+          <button type="button" data-action="archive-store-order" data-order-id="${escapeAttribute(order.id)}">Arquivar</button>
+        </div>
+        <div class="portal-message"></div>
+      </form>
+    </article>
+  `;
+}
+
 function renderChatManager(data) {
   const athletes = data.users.filter((user) => user.role === "athlete");
   const messages = data.messages.filter((msg) => msg.category !== "external").slice().reverse();
@@ -4581,6 +4743,8 @@ function bindInteractions() {
   document.querySelector("#athleteMessageForm")?.addEventListener("submit", handleAthleteMessage);
   document.querySelector("#athleteProfileForm")?.addEventListener("submit", handleAthleteProfileSave);
   document.querySelector("#productForm")?.addEventListener("submit", handleProductSave);
+  document.querySelectorAll(".store-order-form").forEach((form) => form.addEventListener("submit", handleStoreOrderSubmit));
+  document.querySelectorAll(".store-order-status-form").forEach((form) => form.addEventListener("submit", handleStoreOrderStatusSave));
   document.querySelectorAll("[data-product-type-select]").forEach((select) => select.addEventListener("change", handleProductTypeChange));
   document.querySelectorAll(".product-edit-form").forEach((form) => form.addEventListener("submit", handleProductEdit));
   document.querySelector("#campaignForm")?.addEventListener("submit", handleCampaignSave);
@@ -5807,6 +5971,74 @@ async function handleProductEdit(event) {
   }
 }
 
+async function handleStoreOrderSubmit(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const message = form.querySelector(".portal-message");
+  const productId = form.dataset.productId;
+  const productName = form.elements.productName?.value || "Produto";
+  const price = Number(form.elements.productPrice?.value || 0);
+  const quantity = Number(form.elements.quantity?.value || 1);
+  const order = {
+    productId,
+    productName,
+    price,
+    quantity,
+    total: price * quantity,
+    customerName: form.elements.customerName.value.trim(),
+    customerPhone: form.elements.customerPhone.value.trim(),
+    size: form.elements.size?.value || "A definir",
+    notes: form.elements.notes?.value.trim() || "",
+  };
+  if (message) {
+    message.textContent = "Enviando pedido...";
+    message.className = "portal-message";
+  }
+  try {
+    const response = await fetch("/api/store-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(order),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Não foi possível enviar o pedido.");
+    form.reset();
+    if (message) {
+      message.textContent = "Pedido enviado! Vou confirmar tudo com você pelo WhatsApp.";
+      message.className = "portal-message ok";
+    }
+    showToast("Pedido enviado para a loja.", "ok");
+  } catch (error) {
+    if (message) {
+      message.textContent = error.message || "Não foi possível enviar o pedido.";
+      message.className = "portal-message error";
+    }
+  }
+}
+
+async function handleStoreOrderStatusSave(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const orderId = form.dataset.orderId;
+  const data = getAuthData();
+  const order = (data.storeOrders || []).find((item) => item.id === orderId);
+  if (!order) return;
+  order.status = form.elements.status?.value || "new";
+  order.updatedAt = new Date().toISOString();
+  try {
+    await saveAuthDataConfirmed(data);
+    app.innerHTML = renderCoachDashboard("store");
+    bindInteractions();
+    showToast("Status do pedido atualizado.", "ok");
+  } catch (error) {
+    const message = form.querySelector(".portal-message");
+    if (message) {
+      message.textContent = error.message || "Não foi possível atualizar o pedido.";
+      message.className = "portal-message error";
+    }
+  }
+}
+
 async function handleCampaignSave(event) {
   event.preventDefault();
   const data = getAuthData();
@@ -6253,6 +6485,22 @@ async function handleAction(event) {
       showToast("Produto removido da loja.", "ok");
     } catch (error) {
       showToast(error.message || "Não foi possível remover o produto.", "error");
+    }
+  }
+  if (action === "archive-store-order") {
+    const data = getAuthData();
+    const order = (data.storeOrders || []).find((item) => item.id === event.currentTarget.dataset.orderId);
+    if (order) {
+      order.status = "archived";
+      order.updatedAt = new Date().toISOString();
+    }
+    try {
+      await saveAuthDataConfirmed(data);
+      app.innerHTML = renderCoachDashboard("store");
+      bindInteractions();
+      showToast("Pedido arquivado.", "ok");
+    } catch (error) {
+      showToast(error.message || "Não foi possível arquivar o pedido.", "error");
     }
   }
   if (action === "delete-quiz-question") {
