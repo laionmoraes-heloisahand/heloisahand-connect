@@ -2124,16 +2124,13 @@ function renderStoreModern() {
       <div class="store-grid">
         ${products.length ? products.map(renderProductCardModern).join("") : `<div class="empty-state">Nenhum produto publicado no momento.</div>`}
       </div>
+      <div id="storeOrderModal" class="store-order-modal" hidden></div>
     </section>
   `;
 }
 
 function renderProductCardModern(product, editable = false) {
   const price = Number(product.price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const buyMessage = `Olá! Quero comprar: ${product.name} (${price}). Pode me passar os detalhes?`;
-  const sizeOptions = ["A definir", "PP", "P", "M", "G", "GG", "XG", "Infantil 10", "Infantil 12", "Infantil 14", "Sem tamanho"]
-    .map((size) => `<option value="${escapeAttribute(size)}">${escapeHtml(size)}</option>`)
-    .join("");
   return `
     <article class="product-card" data-product-id="${escapeAttribute(product.id)}">
       <div class="product-visual">${product.image ? `<img src="${escapeAttribute(product.image)}" alt="${escapeAttribute(product.name)}" />` : `<span>${product.emoji || "🛒"}</span>`}</div>
@@ -2143,28 +2140,69 @@ function renderProductCardModern(product, editable = false) {
         ${product.promo ? `<span class="product-promo">${escapeHtml(product.promo)}</span>` : ""}
         <p>${escapeHtml(product.description || "")}</p>
         <strong>${price}</strong>
-        ${editable ? "" : `
-          <details class="product-order-details">
-            <summary>Pedir este produto</summary>
-            <form class="store-order-form form-grid" data-product-id="${escapeAttribute(product.id)}">
-              <input type="hidden" name="productName" value="${escapeAttribute(product.name)}" />
-              <input type="hidden" name="productPrice" value="${escapeAttribute(product.price || 0)}" />
-              <div class="form-grid two">
-                <label>Seu nome<input name="customerName" required placeholder="Nome completo" /></label>
-                <label>WhatsApp<input name="customerPhone" required placeholder="(27) 99999-9999" /></label>
-                <label>Tamanho<select name="size">${sizeOptions}</select></label>
-                <label>Quantidade<input name="quantity" type="number" min="1" max="50" value="1" required /></label>
-              </div>
-              <label>Observação<textarea name="notes" placeholder="Ex.: quero reservar para meu filho, combinar entrega no treino..."></textarea></label>
-              <button class="button" type="submit">Enviar pedido</button>
-              <a class="store-whatsapp-link" href="${whatsappLink(buyMessage)}" target="_blank" rel="noreferrer">Prefiro chamar no WhatsApp</a>
-              <div class="portal-message"></div>
-            </form>
-          </details>
-        `}
+        ${editable ? "" : `<button class="button store-buy-button" type="button" data-action="open-store-order" data-product-id="${escapeAttribute(product.id)}">Pedir este produto</button>`}
       </div>
     </article>
   `;
+}
+
+function renderStoreOrderForm(product) {
+  const price = Number(product.price || 0);
+  const priceLabel = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const buyMessage = `Olá! Quero comprar: ${product.name} (${priceLabel}). Pode me passar os detalhes?`;
+  const sizeOptions = ["A definir", "PP", "P", "M", "G", "GG", "XG", "Infantil 10", "Infantil 12", "Infantil 14", "Sem tamanho"]
+    .map((size) => `<option value="${escapeAttribute(size)}">${escapeHtml(size)}</option>`)
+    .join("");
+  return `
+    <div class="store-order-backdrop" data-action="close-store-order"></div>
+    <article class="store-order-dialog" role="dialog" aria-modal="true" aria-label="Pedido de ${escapeAttribute(product.name)}">
+      <button class="store-order-close" type="button" data-action="close-store-order" aria-label="Fechar pedido">×</button>
+      <div class="store-order-preview">
+        <div class="product-visual mini">${product.image ? `<img src="${escapeAttribute(product.image)}" alt="${escapeAttribute(product.name)}" />` : `<span>${product.emoji || "🛒"}</span>`}</div>
+        <div>
+          <span class="eyebrow">Pedido da loja</span>
+          <h3>${escapeHtml(product.name)}</h3>
+          <p>${escapeHtml(product.description || "")}</p>
+          <strong>${priceLabel}</strong>
+        </div>
+      </div>
+      <form class="store-order-form form-grid" data-product-id="${escapeAttribute(product.id)}">
+        <input type="hidden" name="productName" value="${escapeAttribute(product.name)}" />
+        <input type="hidden" name="productPrice" value="${escapeAttribute(price)}" />
+        <div class="form-grid two">
+          <label>Seu nome<input name="customerName" required placeholder="Nome completo" /></label>
+          <label>WhatsApp<input name="customerPhone" required placeholder="(27) 99999-9999" /></label>
+          <label>Tamanho<select name="size">${sizeOptions}</select></label>
+          <label>Quantidade<input name="quantity" type="number" min="1" max="50" value="1" required /></label>
+        </div>
+        <label>Observação<textarea name="notes" placeholder="Ex.: camisa de linha, combinar entrega no treino..."></textarea></label>
+        <div class="store-order-dialog-actions">
+          <button class="button" type="submit">Enviar pedido</button>
+          <a class="store-whatsapp-link" href="${whatsappLink(buyMessage)}" target="_blank" rel="noreferrer">Prefiro chamar no WhatsApp</a>
+        </div>
+        <div class="portal-message"></div>
+      </form>
+    </article>
+  `;
+}
+
+function openStoreOrderModal(productId) {
+  const modal = document.querySelector("#storeOrderModal");
+  const data = getAuthData();
+  const product = (data.products || productSeeds).find((item) => item.id === productId);
+  if (!modal || !product) return;
+  modal.hidden = false;
+  modal.innerHTML = renderStoreOrderForm(product);
+  modal.querySelector(".store-order-form")?.addEventListener("submit", handleStoreOrderSubmit);
+  modal.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", handleAction));
+  modal.querySelector("input[name='customerName']")?.focus();
+}
+
+function closeStoreOrderModal() {
+  const modal = document.querySelector("#storeOrderModal");
+  if (!modal) return;
+  modal.hidden = true;
+  modal.innerHTML = "";
 }
 
 function renderProductTypeOptions(selected = "") {
@@ -5975,6 +6013,7 @@ async function handleStoreOrderSubmit(event) {
   event.preventDefault();
   const form = event.currentTarget;
   const message = form.querySelector(".portal-message");
+  const submitButton = form.querySelector("button[type='submit']");
   const productId = form.dataset.productId;
   const productName = form.elements.productName?.value || "Produto";
   const price = Number(form.elements.productPrice?.value || 0);
@@ -5994,6 +6033,10 @@ async function handleStoreOrderSubmit(event) {
     message.textContent = "Enviando pedido...";
     message.className = "portal-message";
   }
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Enviando...";
+  }
   try {
     const response = await fetch("/api/store-order", {
       method: "POST",
@@ -6008,10 +6051,15 @@ async function handleStoreOrderSubmit(event) {
       message.className = "portal-message ok";
     }
     showToast("Pedido enviado para a loja.", "ok");
+    window.setTimeout(closeStoreOrderModal, 1400);
   } catch (error) {
     if (message) {
       message.textContent = error.message || "Não foi possível enviar o pedido.";
       message.className = "portal-message error";
+    }
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Enviar pedido";
     }
   }
 }
@@ -6292,6 +6340,12 @@ async function handleAction(event) {
   if (action === "close-hub-modal") {
     const modal = document.querySelector("#handballHubModal");
     if (modal) modal.hidden = true;
+  }
+  if (action === "open-store-order") {
+    openStoreOrderModal(event.currentTarget.dataset.productId);
+  }
+  if (action === "close-store-order") {
+    closeStoreOrderModal();
   }
   if (action === "open-athlete-notifications") {
     location.hash = "#/notificacoes";
