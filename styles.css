@@ -275,6 +275,258 @@ h3 {
   margin-top: 28px;
 }
 
+.home-dashboard {
+  position: relative;
+  overflow: hidden;
+  min-height: calc(100vh - 64px);
+  padding: 32px 18px 44px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 20% 8%, rgba(255, 204, 51, 0.2), transparent 24rem),
+    radial-gradient(circle at 88% 0%, rgba(31, 138, 76, 0.36), transparent 30rem),
+    linear-gradient(135deg, #001b11 0%, #062a1b 48%, #02130d 100%);
+}
+
+.home-dashboard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.24;
+  background:
+    linear-gradient(90deg, rgba(0, 22, 13, 0.82), rgba(0, 22, 13, 0.24)),
+    url("assets/hero-handball.png") center / cover no-repeat;
+  filter: saturate(1.15) contrast(1.08);
+}
+
+.home-dashboard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 18, 11, 0.42)),
+    radial-gradient(circle at 70% 60%, rgba(255, 204, 51, 0.12), transparent 26rem);
+  pointer-events: none;
+}
+
+.home-dashboard-inner {
+  position: relative;
+  z-index: 1;
+  width: min(1320px, 100%);
+  margin: 0 auto;
+}
+
+.dash-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 34px;
+}
+
+.dash-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 70px;
+  padding: 0 30px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 18px 52px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+  font-family: Montserrat, sans-serif;
+  font-size: clamp(18px, 2.2vw, 25px);
+  font-weight: 1000;
+  text-decoration: none;
+  transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+}
+
+.dash-pill span {
+  font-size: 27px;
+}
+
+.dash-pill.primary {
+  color: var(--ink);
+  border-color: rgba(255, 204, 51, 0.8);
+  background: linear-gradient(135deg, #ffd447, #f6bd22);
+  box-shadow: 0 20px 48px rgba(255, 204, 51, 0.25);
+}
+
+.dash-pill:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 204, 51, 0.56);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dash-pill.primary:hover {
+  background: linear-gradient(135deg, #ffe070, #ffc629);
+}
+
+.dash-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.dash-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 305px;
+  display: grid;
+  align-items: end;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  padding: clamp(22px, 3vw, 34px);
+  color: #fff;
+  text-decoration: none;
+  background:
+    linear-gradient(90deg, rgba(0, 24, 15, 0.93), rgba(0, 24, 15, 0.54) 48%, rgba(0, 24, 15, 0.16)),
+    url("assets/hero-handball.png") center / cover no-repeat;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+  transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease, filter 0.24s ease;
+}
+
+.dash-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 62% 20%, rgba(255, 204, 51, 0.28), transparent 18rem),
+    radial-gradient(circle at 12% 92%, rgba(31, 138, 76, 0.28), transparent 16rem);
+  mix-blend-mode: screen;
+}
+
+.dash-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 52%;
+  z-index: -1;
+  background: linear-gradient(0deg, rgba(0, 14, 9, 0.88), transparent);
+}
+
+.dash-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255, 204, 51, 0.42);
+  box-shadow: 0 30px 86px rgba(0, 0, 0, 0.34);
+  filter: saturate(1.08);
+}
+
+.dash-card-athletes {
+  background-position: center;
+}
+
+.dash-card-categories {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.62fr);
+  align-items: center;
+  background-position: center right;
+}
+
+.dash-card-events {
+  background-position: 42% center;
+}
+
+.dash-card-support {
+  background:
+    linear-gradient(90deg, rgba(0, 24, 15, 0.94), rgba(0, 24, 15, 0.52) 48%, rgba(0, 24, 15, 0.1)),
+    radial-gradient(circle at 74% 38%, rgba(255, 204, 51, 0.34), transparent 13rem),
+    url("assets/feature-support.svg") center right / min(54%, 420px) no-repeat,
+    linear-gradient(135deg, #062a1b, #00160e);
+}
+
+.dash-card-copy {
+  max-width: 450px;
+}
+
+.dash-card-copy > strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--accent);
+  font-family: Montserrat, sans-serif;
+  font-size: clamp(64px, 8vw, 94px);
+  font-weight: 1000;
+  line-height: 0.9;
+}
+
+.dash-card h2 {
+  max-width: 420px;
+  font-size: clamp(28px, 3.4vw, 44px);
+  color: #fff;
+}
+
+.dash-card h2 mark {
+  color: var(--accent);
+  background: transparent;
+}
+
+.dash-card p {
+  max-width: 380px;
+  margin: 16px 0 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: clamp(17px, 1.8vw, 21px);
+  line-height: 1.45;
+}
+
+.dash-card-copy > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+  color: var(--accent);
+  font-weight: 1000;
+}
+
+.dash-card-copy > span b {
+  color: #fff;
+  font-size: 30px;
+}
+
+.dash-category-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.dash-category-stack article {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-height: 88px;
+  border: 1px solid rgba(255, 204, 51, 0.34);
+  border-radius: 18px;
+  padding: 14px 18px;
+  background: rgba(0, 20, 13, 0.58);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.dash-category-stack article > b {
+  width: 44px;
+  color: var(--accent);
+  font-size: 32px;
+  text-align: center;
+}
+
+.dash-category-stack span {
+  display: grid;
+  gap: 4px;
+}
+
+.dash-category-stack strong {
+  color: var(--accent);
+  font-family: Montserrat, sans-serif;
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+.dash-category-stack small {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 800;
+  font-size: 15px;
+}
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -6111,6 +6363,45 @@ textarea:focus {
 }
 
 @media (max-width: 860px) {
+  .home-dashboard {
+    min-height: auto;
+    padding: 22px 14px 34px;
+  }
+
+  .dash-quick-actions {
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .dash-pill {
+    flex: 1 1 100%;
+    min-height: 58px;
+    padding: 0 18px;
+  }
+
+  .dash-card-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .dash-card,
+  .dash-card-categories {
+    min-height: 300px;
+    grid-template-columns: 1fr;
+  }
+
+  .dash-category-stack {
+    margin-top: 18px;
+  }
+
+  .dash-category-stack article {
+    min-height: 70px;
+  }
+
+  .dash-card-copy > strong {
+    font-size: 62px;
+  }
+
   .store-grid {
     grid-template-columns: minmax(0, 1fr);
   }

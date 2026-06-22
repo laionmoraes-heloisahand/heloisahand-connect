@@ -911,27 +911,49 @@ function renderHome() {
 
 function renderHomeVitrine() {
   return `
-    <section class="hero">
-      <div class="hero-inner">
-        <div class="hero-copy">
-          <span class="eyebrow">Instituto de Handebol</span>
-          <h1 class="hero-brand-title">
-            <span class="hero-name-prefix">Instituto</span>
-            <span class="hero-name-heloisa">Heloísa</span><span class="hero-name-hand">Hand</span>
-          </h1>
-          <p class="hero-subtitle">Transformando vidas atraves do handebol</p>
-          <p>Uma plataforma para conectar atletas, familias, treinador e apoiadores em uma jornada de esporte, disciplina e oportunidade.</p>
-          <div class="hero-actions">
-            ${cta("Quero Treinar", "#/treinar", "yellow")}
-            ${cta("Sou Atleta", "#/atleta", "ghost")}
-            ${cta("Explorar Handebol", "#/explorar", "ghost")}
-          </div>
-          <div class="impact-links" aria-label="Acessos rapidos do instituto">
-            <a class="impact-link" href="#/atletas-em-acao"><strong>50+</strong><span>Atletas atendidos</span><small>Ver trajetorias</small></a>
-            <a class="impact-link" href="#/categorias"><strong>3</strong><span>Categorias de base</span><small>Conhecer fases</small></a>
-            <a class="impact-link" href="#/competicoes"><strong>+</strong><span>Treinos e competicoes</span><small>Acompanhar agenda</small></a>
-            <a class="impact-link" href="#/apoiar"><strong>Pix</strong><span>Apoio ao projeto</span><small>Doar ou patrocinar</small></a>
-          </div>
+    <section class="home-dashboard">
+      <div class="home-dashboard-inner">
+        <div class="dash-quick-actions" aria-label="Acessos principais">
+          <a class="dash-pill primary" href="#/treinar"><span>⚽</span>Quero Treinar</a>
+          <a class="dash-pill" href="#/atleta"><span>♙</span>Sou Atleta</a>
+          <a class="dash-pill" href="#/explorar"><span>◉</span>Explorar Handebol</a>
+        </div>
+        <div class="dash-card-grid">
+          <a class="dash-card dash-card-athletes" href="#/atletas-em-acao">
+            <div class="dash-card-copy">
+              <strong>50+</strong>
+              <h2>Atletas atendidos</h2>
+              <p>Transformando vidas através do handebol.</p>
+              <span>Ver trajetórias <b>→</b></span>
+            </div>
+          </a>
+          <a class="dash-card dash-card-categories" href="#/categorias">
+            <div class="dash-card-copy">
+              <strong>3</strong>
+              <h2>Categorias</h2>
+              <p>Para jovens de 10 a 17 anos.</p>
+              <span>Conhecer categorias <b>→</b></span>
+            </div>
+            <div class="dash-category-stack" aria-hidden="true">
+              <article><b>☺</b><span><strong>Mirim</strong><small>10 e 11 anos</small></span></article>
+              <article><b>🏃</b><span><strong>Infantil</strong><small>12 a 14 anos</small></span></article>
+              <article><b>🏅</b><span><strong>Cadete</strong><small>15 a 17 anos</small></span></article>
+            </div>
+          </a>
+          <a class="dash-card dash-card-events" href="#/competicoes">
+            <div class="dash-card-copy">
+              <h2>Treinos e <mark>Competições</mark></h2>
+              <p>Rotina de treinos, desafios e conquistas que constroem campeões dentro e fora das quadras.</p>
+              <span>Acompanhar agenda <b>→</b></span>
+            </div>
+          </a>
+          <a class="dash-card dash-card-support" href="#/apoiar">
+            <div class="dash-card-copy">
+              <h2>Apoie esta <mark>Transformação</mark></h2>
+              <p>Seu apoio fortalece sonhos e cria oportunidades. Seja parte dessa mudança!</p>
+              <span>Quero apoiar <b>→</b></span>
+            </div>
+          </a>
         </div>
       </div>
     </section>
