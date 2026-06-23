@@ -9,6 +9,8 @@ const coachCpf = "";
 const pixKey = "lalves.unimed@gmail.com";
 const pixPayload = "00020126450014br.gov.bcb.pix0123lalves.unimed@gmail.com5204000053039865802BR5914LAIONEL MORAES6007VITORIA62130509HHCONNECT6304EAA6";
 let quizState = null;
+const storeCartKey = "heloisahand_store_cart_v1";
+let storeCart = loadStoreCart();
 
 const mediaAlbums = [
   { id: "treinos", label: "Treinos", badge: "TR", description: "Rotina de treinos, fundamentos e preparacao da equipe." },
@@ -2125,6 +2127,7 @@ function renderStoreModern() {
         ${products.length ? products.map(renderProductCardModern).join("") : `<div class="empty-state">Nenhum produto publicado no momento.</div>`}
       </div>
       <div id="storeOrderModal" class="store-order-modal" hidden></div>
+      <div id="storeCartDock">${renderStoreCartDock()}</div>
     </section>
   `;
 }
@@ -2133,17 +2136,191 @@ function renderProductCardModern(product, editable = false) {
   const price = Number(product.price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   return `
     <article class="product-card" data-product-id="${escapeAttribute(product.id)}">
-      <div class="product-visual">${product.image ? `<img src="${escapeAttribute(product.image)}" alt="${escapeAttribute(product.name)}" />` : `<span>${product.emoji || "🛒"}</span>`}</div>
+      <div class="product-visual">
+        <span class="product-stock-badge">Disponível</span>
+        ${product.image ? `<img src="${escapeAttribute(product.image)}" alt="${escapeAttribute(product.name)}" />` : `<span>${product.emoji || "🛒"}</span>`}
+      </div>
       <div class="product-body">
-        <small>${escapeHtml(product.category || "Produto")}</small>
+        <div class="product-meta-row">
+          <small>${escapeHtml(product.category || "Produto")}</small>
+          <em>Pedido rápido</em>
+        </div>
         <h3>${escapeHtml(product.name)}</h3>
         ${product.promo ? `<span class="product-promo">${escapeHtml(product.promo)}</span>` : ""}
         <p>${escapeHtml(product.description || "")}</p>
-        <strong>${price}</strong>
-        ${editable ? "" : `<button class="button store-buy-button" type="button" data-action="open-store-order" data-product-id="${escapeAttribute(product.id)}">Pedir este produto</button>`}
+        <div class="product-price-row">
+          <strong>${price}</strong>
+          <span>Confirmação pelo treinador</span>
+        </div>
+        ${editable ? "" : `
+          <div class="product-actions">
+            <button class="button store-buy-button" type="button" data-action="add-to-cart" data-product-id="${escapeAttribute(product.id)}">
+              <span>Adicionar</span>
+              <small>ao carrinho</small>
+            </button>
+            <button class="store-card-whatsapp" type="button" data-action="quick-buy-product" data-product-id="${escapeAttribute(product.id)}">Comprar agora</button>
+          </div>
+        `}
       </div>
     </article>
   `;
+}
+
+function loadStoreCart() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(storeCartKey) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoreCart() {
+  localStorage.setItem(storeCartKey, JSON.stringify(storeCart));
+}
+
+function getStoreProducts() {
+  const data = getAuthData();
+  return (data.products || productSeeds).filter((item) => item.active !== false);
+}
+
+function getStoreCartTotals() {
+  return storeCart.reduce(
+    (totals, item) => {
+      const quantity = Math.max(1, Number(item.quantity || 1));
+      const price = Math.max(0, Number(item.price || 0));
+      totals.count += quantity;
+      totals.total += price * quantity;
+      return totals;
+    },
+    { count: 0, total: 0 },
+  );
+}
+
+function addProductToCart(productId, quantity = 1) {
+  const product = getStoreProducts().find((item) => item.id === productId);
+  if (!product) return;
+  const existing = storeCart.find((item) => item.productId === product.id);
+  if (existing) {
+    existing.quantity = Math.min(50, Number(existing.quantity || 1) + quantity);
+  } else {
+    storeCart.push({
+      productId: product.id,
+      productName: product.name,
+      price: Number(product.price || 0),
+      category: product.category || "Produto",
+      emoji: product.emoji || "🛒",
+      quantity,
+      size: "A definir",
+    });
+  }
+  saveStoreCart();
+  renderStoreCartDockIntoPage();
+}
+
+function updateStoreCartItem(productId, updates = {}) {
+  const item = storeCart.find((cartItem) => cartItem.productId === productId);
+  if (!item) return;
+  if (updates.quantity !== undefined) item.quantity = Math.max(1, Math.min(50, Number(updates.quantity || 1)));
+  if (updates.size !== undefined) item.size = updates.size || "A definir";
+  saveStoreCart();
+  renderStoreCartDockIntoPage();
+}
+
+function removeStoreCartItem(productId) {
+  storeCart = storeCart.filter((item) => item.productId !== productId);
+  saveStoreCart();
+  renderStoreCartDockIntoPage();
+}
+
+function clearStoreCart() {
+  storeCart = [];
+  saveStoreCart();
+  renderStoreCartDockIntoPage();
+}
+
+function renderStoreCartDock() {
+  const totals = getStoreCartTotals();
+  if (!totals.count) return "";
+  return `
+    <button class="store-cart-dock" type="button" data-action="open-store-cart" aria-label="Abrir carrinho da loja">
+      <span>🛒</span>
+      <strong>${totals.count} ${totals.count === 1 ? "item" : "itens"}</strong>
+      <em>${totals.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</em>
+    </button>
+  `;
+}
+
+function renderStoreCartDockIntoPage() {
+  const dock = document.querySelector("#storeCartDock");
+  if (dock) dock.innerHTML = renderStoreCartDock();
+  dock?.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", handleAction));
+}
+
+function renderStoreCartModal() {
+  const totals = getStoreCartTotals();
+  const sizeOptions = ["A definir", "PP", "P", "M", "G", "GG", "XG", "Infantil 10", "Infantil 12", "Infantil 14", "Sem tamanho"];
+  const items = storeCart
+    .map(
+      (item) => `
+        <article class="cart-item">
+          <span>${item.emoji || "🛒"}</span>
+          <div>
+            <strong>${escapeHtml(item.productName)}</strong>
+            <small>${Number(item.price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} cada</small>
+          </div>
+          <label>Tamanho
+            <select data-action="update-cart-size" data-product-id="${escapeAttribute(item.productId)}">
+              ${sizeOptions.map((size) => `<option value="${escapeAttribute(size)}" ${size === (item.size || "A definir") ? "selected" : ""}>${escapeHtml(size)}</option>`).join("")}
+            </select>
+          </label>
+          <label>Qtd.
+            <input type="number" min="1" max="50" value="${escapeAttribute(item.quantity || 1)}" data-action="update-cart-quantity" data-product-id="${escapeAttribute(item.productId)}" />
+          </label>
+          <button type="button" data-action="remove-cart-item" data-product-id="${escapeAttribute(item.productId)}">Remover</button>
+        </article>
+      `,
+    )
+    .join("");
+  return `
+    <div class="store-order-backdrop" data-action="close-store-order"></div>
+    <article class="store-order-dialog store-cart-dialog" role="dialog" aria-modal="true" aria-label="Carrinho da loja">
+      <button class="store-order-close" type="button" data-action="close-store-order" aria-label="Fechar carrinho">×</button>
+      <div class="cart-head">
+        <span class="eyebrow">Carrinho HeloisaHand</span>
+        <h3>Finalize seu pedido</h3>
+        <p>Coloque todos os itens no carrinho e envie tudo de uma vez. O pedido chega para o treinador e também abre no WhatsApp.</p>
+      </div>
+      <div class="cart-list">${items || `<div class="empty-state compact">Seu carrinho está vazio.</div>`}</div>
+      <div class="cart-total">
+        <span>${totals.count} ${totals.count === 1 ? "item" : "itens"}</span>
+        <strong>${totals.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
+      </div>
+      <form class="store-order-form store-cart-form form-grid">
+        <div class="form-grid two">
+          <label>Seu nome<input name="customerName" required placeholder="Nome completo" /></label>
+          <label>WhatsApp<input name="customerPhone" required placeholder="(27) 99999-9999" /></label>
+        </div>
+        <label>Observação geral<textarea name="notes" placeholder="Ex.: entregar no treino, reservar para meu filho, combinar pagamento..."></textarea></label>
+        <div class="store-order-dialog-actions">
+          <button class="button" type="submit" ${storeCart.length ? "" : "disabled"}>Enviar pedido completo</button>
+          <button class="store-card-whatsapp" type="button" data-action="clear-store-cart" ${storeCart.length ? "" : "disabled"}>Limpar carrinho</button>
+        </div>
+        <div class="portal-message"></div>
+      </form>
+    </article>
+  `;
+}
+
+function openStoreCartModal() {
+  const modal = document.querySelector("#storeOrderModal");
+  if (!modal) return;
+  modal.hidden = false;
+  modal.innerHTML = renderStoreCartModal();
+  modal.querySelector(".store-cart-form")?.addEventListener("submit", handleStoreCartSubmit);
+  modal.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", handleAction));
+  modal.querySelectorAll("select[data-action='update-cart-size']").forEach((select) => select.addEventListener("change", handleCartFieldChange));
+  modal.querySelectorAll("input[data-action='update-cart-quantity']").forEach((input) => input.addEventListener("change", handleCartFieldChange));
 }
 
 function renderStoreOrderForm(product) {
@@ -2187,15 +2364,8 @@ function renderStoreOrderForm(product) {
 }
 
 function openStoreOrderModal(productId) {
-  const modal = document.querySelector("#storeOrderModal");
-  const data = getAuthData();
-  const product = (data.products || productSeeds).find((item) => item.id === productId);
-  if (!modal || !product) return;
-  modal.hidden = false;
-  modal.innerHTML = renderStoreOrderForm(product);
-  modal.querySelector(".store-order-form")?.addEventListener("submit", handleStoreOrderSubmit);
-  modal.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", handleAction));
-  modal.querySelector("input[name='customerName']")?.focus();
+  addProductToCart(productId);
+  openStoreCartModal();
 }
 
 function closeStoreOrderModal() {
@@ -3754,19 +3924,9 @@ function renderInterestCard(item) {
   const isClass = item.type === "aula";
   const label = isTryout ? "Seletiva" : isClass ? "Aula particular" : "Dúvida";
   const replySubject = isTryout ? "solicitação para participar da seletiva" : isClass ? "solicitação de aula particular" : "dúvida sobre o Instituto HeloisaHand";
-  const reply = `Olá, ${item.name}! Recebi sua ${replySubject} e vou te responder por aqui.`;
-  const lessonDate = item.lessonDate ? new Date(`${item.lessonDate}T00:00:00`).toLocaleDateString("pt-BR") : "";
-  const lessonDetails = isClass
-    ? `
-      <div class="interest-lesson-details">
-        <strong>Detalhes da aula</strong>
-        <span>${escapeHtml(item.lessonPackage || "Duração e valor a definir")}</span>
-        <span>Nível: ${escapeHtml(item.lessonLevel || "A definir")}</span>
-        <span>Objetivo: ${escapeHtml(item.lessonObjective || "A definir")}</span>
-        <span>Agendamento: ${escapeHtml(lessonDate || "Data a definir")} ${escapeHtml(item.lessonTime || "")}</span>
-      </div>
-    `
-    : "";
+  const orderItems = normalizeStoreOrderItems(order);
+  const itemSummary = orderItems.map((item) => `${item.quantity || 1}x ${item.productName}${item.size ? ` (${item.size})` : ""}`).join(", ");
+  const reply = `Olá, ${order.customerName}! Recebi seu pedido na loja HeloisaHand: ${itemSummary}. Vou confirmar os detalhes por aqui.`;
   return `
     <article class="interest-card ${item.type}">
       <div class="interest-card-head">
@@ -4409,7 +4569,8 @@ function renderStoreOrderCard(order) {
         <span class="order-status">${escapeHtml(statusOptions.find(([value]) => value === status)?.[1] || "Novo pedido")}</span>
         <h4>${escapeHtml(order.productName || "Produto")}</h4>
         <p><strong>Cliente:</strong> ${escapeHtml(order.customerName || "Não informado")} ${order.customerPhone ? `• ${escapeHtml(order.customerPhone)}` : ""}</p>
-        <p><strong>Quantidade:</strong> ${Number(order.quantity || 1)} ${order.size ? `• <strong>Tamanho:</strong> ${escapeHtml(order.size)}` : ""} • <strong>Total:</strong> ${total}</p>
+        <p><strong>Quantidade total:</strong> ${Number(order.quantity || 1)} | <strong>Total:</strong> ${total}</p>
+        ${renderStoreOrderItems(orderItems)}
         ${order.notes ? `<p><strong>Observação:</strong> ${escapeHtml(order.notes)}</p>` : ""}
         <small>${order.createdAt ? new Date(order.createdAt).toLocaleString("pt-BR") : ""}</small>
       </div>
@@ -4427,6 +4588,48 @@ function renderStoreOrderCard(order) {
         <div class="portal-message"></div>
       </form>
     </article>
+  `;
+}
+
+function normalizeStoreOrderItems(order) {
+  if (Array.isArray(order.items) && order.items.length) {
+    return order.items.map((item) => ({
+      productName: item.productName || "Produto",
+      category: item.category || "Produto",
+      quantity: Number(item.quantity || 1),
+      size: item.size || "A definir",
+      price: Number(item.price || 0),
+      subtotal: Number(item.subtotal || Number(item.price || 0) * Number(item.quantity || 1)),
+    }));
+  }
+  return [
+    {
+      productName: order.productName || "Produto",
+      category: order.category || "Produto",
+      quantity: Number(order.quantity || 1),
+      size: order.size || "A definir",
+      price: Number(order.price || 0),
+      subtotal: Number(order.total || Number(order.price || 0) * Number(order.quantity || 1)),
+    },
+  ];
+}
+
+function renderStoreOrderItems(items) {
+  return `
+    <div class="store-order-items">
+      ${items
+        .map(
+          (item) => `
+            <div class="store-order-item-line">
+              <span>${escapeHtml(item.quantity)}x</span>
+              <strong>${escapeHtml(item.productName)}</strong>
+              <small>${escapeHtml(item.size || "A definir")}</small>
+              <em>${Number(item.subtotal || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</em>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
   `;
 }
 
@@ -6064,6 +6267,96 @@ async function handleStoreOrderSubmit(event) {
   }
 }
 
+function handleCartFieldChange(event) {
+  const productId = event.currentTarget.dataset.productId;
+  if (event.currentTarget.dataset.action === "update-cart-size") {
+    updateStoreCartItem(productId, { size: event.currentTarget.value });
+  }
+  if (event.currentTarget.dataset.action === "update-cart-quantity") {
+    updateStoreCartItem(productId, { quantity: event.currentTarget.value });
+  }
+  openStoreCartModal();
+}
+
+function buildCartWhatsappMessage(order) {
+  const lines = [
+    "Olá! Fiz um pedido pela loja HeloisaHand:",
+    "",
+    ...order.items.map((item, index) => `${index + 1}. ${item.productName} - Tam: ${item.size || "A definir"} - Qtd: ${item.quantity} - ${Number(item.price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`),
+    "",
+    `Total: ${Number(order.total || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`,
+    `Nome: ${order.customerName}`,
+    `WhatsApp: ${order.customerPhone}`,
+  ];
+  if (order.notes) lines.push(`Observação: ${order.notes}`);
+  return lines.join("\n");
+}
+
+async function handleStoreCartSubmit(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const message = form.querySelector(".portal-message");
+  const submitButton = form.querySelector("button[type='submit']");
+  const totals = getStoreCartTotals();
+  const order = {
+    items: storeCart.map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      price: Number(item.price || 0),
+      quantity: Math.max(1, Number(item.quantity || 1)),
+      size: item.size || "A definir",
+      category: item.category || "Produto",
+    })),
+    total: Math.round(totals.total * 100) / 100,
+    quantity: totals.count,
+    customerName: form.elements.customerName.value.trim(),
+    customerPhone: form.elements.customerPhone.value.trim(),
+    notes: form.elements.notes?.value.trim() || "",
+  };
+  if (!order.items.length) {
+    if (message) {
+      message.textContent = "Adicione pelo menos um produto ao carrinho.";
+      message.className = "portal-message error";
+    }
+    return;
+  }
+  if (message) {
+    message.textContent = "Enviando pedido completo...";
+    message.className = "portal-message";
+  }
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Enviando...";
+  }
+  try {
+    const response = await fetch("/api/store-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(order),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Não foi possível enviar o pedido.");
+    const whatsappMessage = buildCartWhatsappMessage(order);
+    clearStoreCart();
+    if (message) {
+      message.textContent = "Pedido enviado! Vamos abrir o WhatsApp com o resumo também.";
+      message.className = "portal-message ok";
+    }
+    showToast("Pedido completo enviado para a loja.", "ok");
+    window.open(whatsappLink(whatsappMessage), "_blank", "noreferrer");
+    window.setTimeout(closeStoreOrderModal, 1200);
+  } catch (error) {
+    if (message) {
+      message.textContent = error.message || "Não foi possível enviar o pedido.";
+      message.className = "portal-message error";
+    }
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Enviar pedido completo";
+    }
+  }
+}
+
 async function handleStoreOrderStatusSave(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -6343,6 +6636,24 @@ async function handleAction(event) {
   }
   if (action === "open-store-order") {
     openStoreOrderModal(event.currentTarget.dataset.productId);
+  }
+  if (action === "add-to-cart") {
+    addProductToCart(event.currentTarget.dataset.productId);
+    showToast("Produto adicionado ao carrinho.", "ok");
+  }
+  if (action === "quick-buy-product") {
+    openStoreOrderModal(event.currentTarget.dataset.productId);
+  }
+  if (action === "open-store-cart") {
+    openStoreCartModal();
+  }
+  if (action === "remove-cart-item") {
+    removeStoreCartItem(event.currentTarget.dataset.productId);
+    openStoreCartModal();
+  }
+  if (action === "clear-store-cart") {
+    clearStoreCart();
+    openStoreCartModal();
   }
   if (action === "close-store-order") {
     closeStoreOrderModal();

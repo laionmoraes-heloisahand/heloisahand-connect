@@ -829,16 +829,40 @@ async function handleApi(req, res, cleanUrl) {
       const payload = JSON.parse(body.toString("utf8"));
       const data = (await readAuthData()) || { users: [] };
       data.storeOrders = data.storeOrders || [];
-      const quantity = Math.max(1, Math.min(50, Number(payload.quantity || 1)));
-      const price = Math.max(0, Number(payload.price || 0));
+      const rawItems = Array.isArray(payload.items) && payload.items.length
+        ? payload.items
+        : [{
+            productId: payload.productId,
+            productName: payload.productName,
+            price: payload.price,
+            quantity: payload.quantity,
+            size: payload.size,
+            category: payload.category,
+          }];
+      const items = rawItems.slice(0, 30).map((item) => {
+        const quantity = Math.max(1, Math.min(50, Number(item.quantity || 1)));
+        const price = Math.max(0, Number(item.price || 0));
+        return {
+          productId: String(item.productId || "").replace(/[<>]/g, "").slice(0, 80),
+          productName: String(item.productName || "Produto").replace(/[<>]/g, "").slice(0, 120),
+          category: String(item.category || "Produto").replace(/[<>]/g, "").slice(0, 80),
+          price,
+          quantity,
+          size: String(item.size || "A definir").replace(/[<>]/g, "").slice(0, 40),
+          subtotal: Math.round(price * quantity * 100) / 100,
+        };
+      }).filter((item) => item.productName && item.quantity > 0);
+      const total = Math.round(items.reduce((sum, item) => sum + item.subtotal, 0) * 100) / 100;
+      const quantity = items.reduce((sum, item) => sum + item.quantity, 0);
       const order = {
         id: `store-order-${Date.now()}`,
-        productId: String(payload.productId || "").replace(/[<>]/g, "").slice(0, 80),
-        productName: String(payload.productName || "Produto").replace(/[<>]/g, "").slice(0, 120),
-        price,
+        productId: items[0]?.productId || "",
+        productName: items.length > 1 ? `${items.length} produtos` : (items[0]?.productName || "Produto"),
+        price: items[0]?.price || 0,
         quantity,
-        total: Math.round(price * quantity * 100) / 100,
-        size: String(payload.size || "A definir").replace(/[<>]/g, "").slice(0, 40),
+        total,
+        size: items.length > 1 ? "Vários" : (items[0]?.size || "A definir"),
+        items,
         customerName: String(payload.customerName || "").replace(/[<>]/g, "").slice(0, 80),
         customerPhone: String(payload.customerPhone || "").replace(/[<>]/g, "").slice(0, 30),
         notes: String(payload.notes || "").replace(/[<>]/g, "").slice(0, 500),
@@ -847,6 +871,10 @@ async function handleApi(req, res, cleanUrl) {
       };
       if (!order.customerName || !order.customerPhone) {
         sendJson(res, 400, { error: "Informe nome e WhatsApp para enviar o pedido." });
+        return true;
+      }
+      if (!items.length) {
+        sendJson(res, 400, { error: "Adicione pelo menos um produto ao pedido." });
         return true;
       }
       data.storeOrders.unshift(order);
