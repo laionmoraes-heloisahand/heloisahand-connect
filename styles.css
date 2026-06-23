@@ -5267,8 +5267,14 @@ textarea:focus {
 }
 
 .public-media-albums {
+  width: 100%;
   display: grid;
   gap: 26px;
+}
+
+.public-media-root {
+  width: min(1180px, 100%);
+  margin: 0 auto;
 }
 
 .public-media-album {
@@ -5277,6 +5283,10 @@ textarea:focus {
   padding: 24px;
   background: #fff;
   box-shadow: 0 14px 34px rgba(9, 32, 24, 0.06);
+}
+
+.public-media-album .media-gallery {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
 .compact-media-card small {

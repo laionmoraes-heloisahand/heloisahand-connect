@@ -2462,9 +2462,9 @@ function renderInclusion() {
 
 function renderAthletesAction() {
   return `
-    ${pageIntro("Galeria", "50+ Atletas em Acao", "Momentos reais de dedicacao, garra e superacao dos nossos atletas dentro e fora das quadras.")}
-    <section class="section">
-      <div id="publicMediaGallery" class="media-gallery"></div>
+    ${pageIntro("Galeria", "50+ Atletas em Ação", "Momentos reais de dedicação, garra e superação dos nossos atletas dentro e fora das quadras.")}
+    <section class="section athletes-action-section">
+      <div id="publicMediaGallery" class="public-media-root"></div>
     </section>
   `;
 }
